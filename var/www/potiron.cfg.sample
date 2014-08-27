@@ -1,0 +1,17 @@
+#Configuration file of the dashboard of the sensor hp-cxxc-1
+
+[dashboard]
+#Web Server Settings
+version="1.0"
+sensorname=hp-cxxc-1
+interface=127.0.0.1
+port=2222
+debug=True
+#In the evolution graphs only the last <coverage> days are shown
+#only for the evolution graphs not the small graphs on the main page
+coverage=180
+#The last <shortcoverage> days are shown on the graphs on the overview
+#page 
+shortcoverage=7
+[redis]
+unix_socket_path=/tmp/redis.sock
