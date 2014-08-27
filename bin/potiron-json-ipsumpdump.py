@@ -140,13 +140,13 @@ def process_file(rootdir, filename):
             pass
         if ipsrc == '-':
             ipsrc = None
-        if ipdst== '-':
+        if ipdst == '-':
             ipdst = None
         #Convert timestamp
         (a,b) = timestamp.split('.')
         dobj = datetime.datetime.fromtimestamp(float(a))
         stime = dobj.strftime("%Y-%m-%d %H:%M:%S")
-        stime = stime + "." +b
+        stime = stime + "." + b
 
         packet = { 'timestamp' : stime,
                    'length' : ilength,
@@ -178,15 +178,15 @@ def process_file(rootdir, filename):
 
 
 
-if __name__=='__main__':
+if __name__ == '__main__':
     try:
         opts, args = getopt.getopt(sys.argv[1:], "hr:d:k")
     except getopt.GetoptError as err:
         usage()
         sys.exit(1)
 
-    filename  = None
-    rootdir   = None
+    filename = None
+    rootdir = None
     output = None
     verbose = False
     for o, a in opts:
@@ -202,19 +202,19 @@ if __name__=='__main__':
         else:
             sys.exit(1)
 
-    if filename == None:
+    if filename is None:
         errormsg("A filename must be specified")
         sys.exit(1)
 
-    if os.path.exists(filename) == False:
-        errormsg("The filename "+filename+ " was not found")
+    if os.path.exists(filename) is False:
+        errormsg("The filename " + filename + " was not found")
         sys.exit(1)
 
-    if  rootdir == None:
+    if rootdir is None:
         errormsg("The root directory was not specified")
         sys.exit(1)
 
-    if os.path.isdir(rootdir) == False:
+    if os.path.isdir(rootdir) is False:
         errormsg("The root directory is not a directory")
         sys.exit(1)
 
