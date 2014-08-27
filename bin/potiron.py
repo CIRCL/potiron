@@ -18,7 +18,6 @@
 
 import os
 import datetime
-import sys
 import syslog
 
 #Common functions related to importer scripts
@@ -44,10 +43,10 @@ def get_file_struct(rootdir, filename, suffix="json"):
         f = os.path.basename(filename)
         f = f.replace('.cap.gz', '')
         (prefix,sensorname, instance, date) = f.split('-')
-        obj = datetime.datetime.strptime(date,"%Y%m%d%H%M%S")   
+        obj = datetime.datetime.strptime(date,"%Y%m%d%H%M%S")
         out = obj.strftime("%Y/%m/%d")
         result = rootdir + os.sep + out + os.sep +f + suffix
-        return result 
+        return result
     except ValueError,e:
         errormsg("get_file_struct." + str(e) + "\n")
         raise OSError("Do not know where to store the file "+filename)
@@ -57,24 +56,24 @@ def derive_sensor_name(filename):
         f = os.path.basename(filename)
         (prefix, sensorname, instance, date) = f.split('-')
         return prefix + "-" + sensorname + "-" + instance
-    except ValueError,e:
-        errormsg("Cannot derive sensor name form "+filename )     
+    except ValueError:
+        errormsg("Cannot derive sensor name form "+filename )
 
 def infomsg(msg):
     if logconsole:
-        syslog.openlog("potiron",syslog.LOG_PID | syslog.LOG_PERROR, 
+        syslog.openlog("potiron",syslog.LOG_PID | syslog.LOG_PERROR,
                        syslog.LOG_INFO)
-    else:    
+    else:
         syslog.openlog("potiron",syslog.LOG_PID, syslog.LOG_INFO)
     syslog.syslog("[INFO] "+msg);
 
 def errormsg(msg):
     if logconsole:
-        syslog.openlog("potiron",syslog.LOG_PID | syslog.LOG_PERROR, 
+        syslog.openlog("potiron",syslog.LOG_PID | syslog.LOG_PERROR,
                        syslog.LOG_ERR)
     else:
         syslog.openlog("potiron",syslog.LOG_PID , syslog.LOG_ERR)
-        
+
     syslog.syslog("[ERROR] "+ msg)
 
 if __name__ == "__main__":
