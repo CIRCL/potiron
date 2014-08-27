@@ -1,0 +1,102 @@
+{% extends "base.html" %}
+{% block head %}
+    {{ super() }}
+{% endblock %}
+{% block content %}
+<div class="panel panel-info">
+        <div class="panel-heading">
+            <form name="changedate" action="{{params.prefix}}/" method="POST">
+                Selected Fields for
+                <input type="text" name="datepicker" value={{seldate}} data-date-format="yyyy-mm-dd" class="datepicker" id='dp'>
+                <script type="text/javascript">
+                    $('#dp').datepicker();
+                </script>
+                <input type="submit" value="update">
+            </form>
+        </div>
+        <div class="panel-body">
+            {% for field in fields %}
+                {{field}} 
+            {% endfor %}
+        </div>
+    </div>
+
+    <div class="panel panel-primary">
+    <div class="panel-heading">
+        <!-- FIXME Use more with pagination of bootstrap -->
+        TOP 10 fields
+    </div>
+    <div class="panel-body">
+
+    <table class="table table-bordered">
+    {% for field in topdata %}   
+        <tr>
+            <td width="30%">
+                <table class="table table-striped">
+                    <tr><th>{{field.name}}</th><th>score</th><th>@</th></tr>
+                    {% for entry in field.data %}
+                        <tr>
+                            <td width="80%"> 
+                                <a href="{{params.prefix}}/evolution/{{params.rtoday}}/{{field.name}}/{{entry.key}}"> {{entry.key}}</a>
+                            </td> 
+                            <td width="18%"> {{entry.score}}</td>
+                            <td width="2%"> {{entry.annot}}</td>
+                        </tr>
+                    {% endfor %}
+    <form name="hostquery" action="{{params.prefix}}/custom/" method="POST">
+                <tr>
+                    <td>
+                        Custom key: <input type="text" name="field">
+                        <input type="hidden" name="fieldname" value="{{field.name}}">
+                        <input type="hidden" name="date" value="{{seldate}}">
+                    </td>
+                    <td>
+                        <input type="submit" value="Submit">
+                    </td>
+                </tr>
+     </form>
+                </table>
+            </td>
+            <td valign="top">
+                <div>
+                    <div class="panel panel-primary">
+                        <div class="panel panel-header">
+                            Explanations
+                        </div>
+                        <div class="panel-body">
+                            {{field.desc}} 
+                        </div>
+                    </div>
+                </div>
+                <div>
+                    <div class="panel panel-primary">
+                        <div class="panel panel-header">
+                            Data Evolution
+                        <div>
+                        <div class="panel-body">
+                            <div id="graphdiv_{{field.name}}" style="width:600px; height:240px;border: 1px solid black;"></div>
+                            <script type="text/javascript">
+                                g = new Dygraph(
+
+                                // containing div
+                                document.getElementById("graphdiv_{{field.name}}"),
+                                        // CSV or path to a CSV file.
+                                        "{{field.legend}}\n"+
+                                        {% for g in field.evol %}
+                                            "{{g.day}},{{g.scores}}\n"+
+                                        {% endfor %}
+                       "", {labelsKMG2: true, logscale : true, legend: 'always'}
+    );
+</script>     
+                       </div>
+                    </div>
+                </div>
+            </td>
+        </tr>
+    {% endfor %}
+    </table>
+    </div>
+    </div>
+
+{% endblock %}
+

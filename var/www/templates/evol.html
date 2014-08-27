@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+{% block head %}
+    {{ super() }}
+{% endblock %}
+{% block content %}
+<h1> Evolution for {{field}} {{key}} (until {{date}}) </h1>
+    <div id="graphdiv_{{field.name}}" style="width:800px; height:440px;border: 1px solid black;"></div>
+     <script type="text/javascript">
+                                g = new Dygraph(
+
+                                // containing div
+                                document.getElementById("graphdiv_{{field.name}}"),
+                                        // CSV or path to a CSV file.
+                                        "Date,Score\n"+
+                                        {% for entry in data %}
+                                            "{{entry.date}},{{entry.score}}\n"+
+                                        {% endfor %}
+                       "", {labelsKMG2: true, logscale : true, legend: 'always'}
+    );
+</script>     
+                       </div>
+
+{% endblock %}
+

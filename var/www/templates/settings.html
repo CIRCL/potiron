@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% block head %}
+    {{ super() }}
+{% endblock %}
+{% block content %}
+    <div class="panel panel-primary">
+    <div class="panel-heading">
+        Displayed fields 
+    </div>
+    <div class="panel-body">
+    <form name="enfields" action="{{params.prefix}}/settings/" method="POST">
+        <table>
+            {% for field in fields %}
+                <tr>  
+                    <td> 
+                       <input type="checkbox" {{field.checked}} name="selectedfields" 
+                              value={{field.name}}>
+                    </td>
+                    <td>
+                        {{field.name}} 
+                    </td>
+                </tr>
+            {% endfor %}    
+            <tr>
+                <td rowspan="2"> <input type="submit" value="Update"></td>
+            </tr>
+        </table>
+    </form>
+    </div>
+    </div>
+
+{% endblock %}
+
