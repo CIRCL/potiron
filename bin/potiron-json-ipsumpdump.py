@@ -22,18 +22,17 @@ import os
 import json
 import getopt
 import sys
-import potiron 
+import potiron
 from potiron import errormsg
 from potiron import infomsg
 import datetime
-import pprint 
 
 def usage():
     print """potiron-json-ipsumpdump.py [-h] [-r filename]  [-d directory] [-k]
 
     -h              Shows this screen
     -d directory    Specify the directory where the files should be stored
-    -r filename     Specify the pcap filename that should be dissected by 
+    -r filename     Specify the pcap filename that should be dissected by
                     ipsumdump
     -k              Log data also sent to console and not only to syslog
                     The filename is specified with the -r option
@@ -41,7 +40,7 @@ def usage():
 FILENAME CONVENTION
 
     The filename must have the format
-    
+
     prefix-sensorname-instance-date
 
   EXAMPLE
@@ -81,7 +80,7 @@ def numerize_proto(pstr):
     #If there is a protocol number return it
     try:
         return int(pstr)
-    except ValueError,e:
+    except ValueError:
         errormsg("Unknown protocol "+pstr)
         return potiron.PROTO_UNKNOWN
     #Should not be executed
@@ -93,7 +92,7 @@ def store_packet(rootdir, pcapfilename, obj):
     f.write(obj)
     f.close()
     infomsg("Created filename "+jsonfilename)
-    
+
 def create_dirs(rootdir, pcapfilename):
     jsonfilename = potiron.get_file_struct(rootdir, pcapfilename)
     d = os.path.dirname(jsonfilename)
@@ -107,20 +106,20 @@ def process_file(rootdir, filename):
     sensorname = potiron.derive_sensor_name(filename)
     allpackets = []
     #Each packet as a incremental numeric id
-    #A packet is identified with its sensorname filename and packet id for 
+    #A packet is identified with its sensorname filename and packet id for
     #further aggregation with meta data.
     #Assumption: Each program process the pcap file the same way?
     packet_id = 0
-    #FIXME check if there is an executable ipsumpdump 
+    #FIXME check if there is an executable ipsumpdump
     proc = subprocess.Popen(["ipsumdump","--no-headers","--quiet","--timestamp",
     "--length","--protocol","--ip-src","--ip-dst","--ip-opt","--ip-ttl","--ip-tos",
     "--sport","--dport","--icmp-code","--icmp-type",
-    "-f",potiron.bpffilter, "-r", filename], stdout=subprocess.PIPE, 
+    "-f",potiron.bpffilter, "-r", filename], stdout=subprocess.PIPE,
          stderr=subprocess.PIPE)
     for line in proc.stdout.readlines():
         packet_id = packet_id + 1
         line = line[:-1]
-        (timestamp, length,  protocol, ipsrc, ipdst, ipop, ipttl, iptos, 
+        (timestamp, length,  protocol, ipsrc, ipdst, ipop, ipttl, iptos,
         sport, dport, icmpcode, icmptype) = line.split(' ')
         ilength = -1
         iipttl = -1
@@ -128,7 +127,7 @@ def process_file(rootdir, filename):
         isport = -1
         idport = -1
         iicmpcode = 255
-        iicmptype = 255 
+        iicmptype = 255
         try:
             ilength = int(length)
             iipttl = int(ipttl)
@@ -137,7 +136,7 @@ def process_file(rootdir, filename):
             idport = int(dport)
             iicmpcode = int(iicmpcode)
             iicmptype = int(iicmptype)
-        except ValueError,e:
+        except ValueError:
             pass
         if ipsrc == '-':
             ipsrc = None
@@ -145,12 +144,11 @@ def process_file(rootdir, filename):
             ipdst = None
         #Convert timestamp
         (a,b) = timestamp.split('.')
-        millis = int(b)
         dobj = datetime.datetime.fromtimestamp(float(a))
         stime = dobj.strftime("%Y-%m-%d %H:%M:%S")
         stime = stime + "." +b
-        
-        packet = { 'timestamp' : stime, 
+
+        packet = { 'timestamp' : stime,
                    'length' : ilength,
                    'protocol': numerize_proto(protocol),
                   'ipsrc': ipsrc,
@@ -165,16 +163,16 @@ def process_file(rootdir, filename):
                  'sensorname': sensorname,
                  'packet_id' : packet_id,
                  'filename': os.path.basename(filename),
-		        };
+                    };
         #FIXME might consume a lot of memory
         allpackets.append(packet)
 
     #FIXME Implement polling because wait can last forever
     proc.wait()
-    
+
     if proc.returncode != 0:
         errmsg = "".join(proc.stderr.readlines())
-        raise OSError("ipsumdump failed. Return code "+str(proc.returncode) 
+        raise OSError("ipsumdump failed. Return code "+str(proc.returncode)
                       + ". " + errmsg)
     store_packet(rootdir, filename, json.dumps(allpackets))
 
