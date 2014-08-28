@@ -19,7 +19,7 @@
 from flask import Flask
 from flask import render_template
 from flask import send_from_directory
-from flask import request 
+from flask import request
 import datetime
 import redis
 import time
@@ -41,7 +41,7 @@ def get_latest_day():
 
 def enum_last_days(today, period):
     days=[]
-    i=period   
+    i=period
     eToday=time.mktime(time.strptime(today,"%Y%m%d"))
     while i>=0:
         delay = i * 60 * 60 * 24
@@ -50,7 +50,7 @@ def enum_last_days(today, period):
         days.append(sDay)
         i = i - 1
     return days
-        
+
 
 def get_description(name):
     k = "DS:"+name
@@ -96,14 +96,14 @@ def get_recent_evolution(day, field, keys, period):
         entry['day'] = day
         entry['scores'] = ",".join(scores)
         out.append(entry)
-    return out             
+    return out
 
 def create_legend(field, top3):
     htop3 =[]
     for key in top3:
         htop3.append(translate_key_human(field, key))
     return "Date,"+",".join(htop3)
- 
+
 def get_top_10_per_day(day, fields):
     topdata = []
     for field in fields:
@@ -130,9 +130,9 @@ def get_top_10_per_day(day, fields):
 def create_program_meta():
     desc=dict()
     desc['sensorname'] = sensorname
-    desc['version'] = version 
+    desc['version'] = version
     return desc
-    
+
 #Transversal parameters for all the templates
 def build_params():
     params = dict()
@@ -153,30 +153,30 @@ def welcome():
         p = request.form.get('datepicker')
         if p != None:
             try:
-                #Let the datetime library check if the parameters correspond to 
-                #the right date format. If bad parameters are specified, 
+                #Let the datetime library check if the parameters correspond to
+                #the right date format. If bad parameters are specified,
                 #the most recent date is used
                 d = datetime.datetime.strptime(p, "%Y-%m-%d")
                 day = d.strftime("%Y%m%d")
             except ValueError:
                 #TODO log bad parameters
                 pass
-    fields = [] 
+    fields = []
     for field in red.smembers("ENFIELDS"):
         fields.append(field)
 
     topdata=get_top_10_per_day(day, fields)
 
     desc = create_program_meta()
-    
+
     #Convert back the selected date
     d = datetime.datetime.strptime(day, "%Y%m%d")
     selday = d.strftime("%Y-%m-%d")
 
-    return render_template('content.html',desc=desc, fields=fields, 
+    return render_template('content.html',desc=desc, fields=fields,
                             topdata=topdata, params=build_params(),
                             seldate=selday)
-                            
+
 
 def check_date(date):
     #TODO Check if date has the right format and
@@ -203,8 +203,8 @@ def  deliver_evolution(date,field,key):
     #Convert date
     d = datetime.datetime.strptime(date,"%Y%m%d")
     showdate = d.strftime("%Y-%m-%d")
-    return render_template("evol.html", desc=desc, date=showdate, field=field, 
-                           key=key, data=data, params=build_params()) 
+    return render_template("evol.html", desc=desc, date=showdate, field=field,
+                           key=key, data=data, params=build_params())
 
 @app.route('/custom/', methods=['POST'])
 def deliver_custom():
@@ -226,10 +226,10 @@ def deliver_custom():
             pass
     if red.sismember("FIELDS",fieldname):
         #TODO Return another template or pop up if there is no data
-        return deliver_evolution(today, fieldname, field)   
-    
+        return deliver_evolution(today, fieldname, field)
+
     return "TODO write fancy error here. Invalid data queried"
-    
+
 #Deliver all the files in static directory
 #TODO ../../../etc/passwd seems not to work
 @app.route('/static/<path:filename>')
@@ -242,7 +242,7 @@ def load_selected_fields():
     for field in red.smembers("FIELDS"):
         k = "ENFIELDS"
         obj = dict()
-        obj['name'] = field     
+        obj['name'] = field
         if red.sismember(k,field):
             obj['checked'] = "checked"
         else:
@@ -268,20 +268,20 @@ def send_settings():
                 #in a previous iteration
                 if red.sismember("ENFIELDS", f):
                     red.srem("ENFIELDS",f)
-                            
+
     fields = load_selected_fields()
     return render_template('settings.html',fields=fields,
-                            desc=create_program_meta(), 
+                            desc=create_program_meta(),
                             params=build_params())
 if __name__=='__main__':
 
     try:
         #Load config file
-        configfile="server.cfg"
+        configfile="potiron.cfg"
         conf = ConfigParser.ConfigParser()
         conf.readfp(open(configfile))
-    
-    
+
+
         interface = conf.get("dashboard","interface")
         port = conf.getint("dashboard", "port")
         sensorname = conf.get("dashboard", "sensorname")
