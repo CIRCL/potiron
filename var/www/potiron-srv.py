@@ -154,6 +154,9 @@ def build_params():
     return params
 
 
+def get_enabled_fields_num():
+    x = red.scard("ENFIELDS")
+    return x
 
 @app.route('/', methods=['GET', 'POST'])
 def welcome():
@@ -182,6 +185,14 @@ def welcome():
     # Convert back the selected date
     d = datetime.datetime.strptime(day, "%Y%m%d")
     selday = d.strftime("%Y-%m-%d")
+
+    # Put a warning when no fields are selected
+    if get_enabled_fields_num() == 0:
+        emsg = "No data fields are selected. Please select some fields in \
+the settings menu."
+        return render_template('content.html', desc=desc, fields=fields,
+                                topdata=topdata, params=build_params(),
+                                seldate=selday, emsg=emsg)
 
     return render_template('content.html', desc=desc, fields=fields,
                             topdata=topdata, params=build_params(),
