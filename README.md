@@ -36,5 +36,5 @@ to proceed your network capture files to generate the JSON files:
 
 Then the JSON file can be imported into the Redis database:
 
-   ./potiron-redis.py --filename ../out/2014/08/26/test-honeypot-1-20140826000000.json --unix /tmp/redis.sock
+    ./potiron-redis.py --filename ../out/2014/08/26/test-honeypot-1-20140826000000.json --unix /tmp/redis.sock
 
