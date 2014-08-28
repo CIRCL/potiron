@@ -34,3 +34,5 @@ rm -rf ./static/css/plugins/
 mv temp/${filename}/css/* ./static/css/
 
 rm -rf temp/
+
+wget https://raw.githubusercontent.com/eternicode/bootstrap-datepicker/master/js/bootstrap-datepicker.js -O ./static/js/bootstrap-datepicker.js
