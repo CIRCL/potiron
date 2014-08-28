@@ -10,6 +10,8 @@ normalized information.
 
 The current version potiron supports ipsumdump.
 
+![Potiron web interface](./doc/screenshot.png?raw=true "Potiron web interface")
+
 Requirements
 ------------
 
