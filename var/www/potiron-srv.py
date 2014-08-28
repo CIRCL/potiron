@@ -24,6 +24,7 @@ import datetime
 import redis
 import time
 import sys
+import os
 import ConfigParser
 app = Flask(__name__, static_folder='static', static_url_path='/static')
 
@@ -302,6 +303,14 @@ if __name__=='__main__':
         # Load config file
         configfile = "potiron.cfg"
         conf = ConfigParser.ConfigParser()
+        if len(sys.argv) != 2:
+            sys.stderr.write("[ERROR] A config file must be specified as first\
+ command line argument.\n")
+            sys.exit(1)
+        configfile = sys.argv[1]
+        if os.path.exists(configfile) == False:
+            sys.stderr.write("[ERROR] Config file was not found.\n")
+            sys.exit(1)
         conf.readfp(open(configfile))
 
 
