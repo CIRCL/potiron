@@ -32,8 +32,7 @@ app = Flask(__name__, static_folder='static', static_url_path='/static')
 def check_fields():
     if red.scard("DAYS") > 0:
         if red.scard("FIELDS") > 0:
-            if red.scard("ENFIELDS") > 0:
-                return True
+            return True
     #There was an error
     return False
 
