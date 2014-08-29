@@ -28,6 +28,30 @@ import os
 import ConfigParser
 app = Flask(__name__, static_folder='static', static_url_path='/static')
 
+#returns true if all the mandatory fields are set
+def check_fields():
+    if red.scard("DAYS") > 0:
+        if red.scard("FIELDS") > 0:
+            if red.scard("ENFIELDS") > 0:
+                return True
+    #There was an error
+    return False
+
+def check_database():
+    if check_fields() == False:
+        return "Mandatory fields are missing in the redis database."
+    #Take a random day, random field, that was ranked and check if the
+    #configured sensorname correspond to the ranked data
+
+    day = red.srandmember("DAYS",1)[0]
+    field = red.srandmember("FIELDS", 1)[0]
+    key = sensorname + ":" + day + ":" + field
+    if red.exists(key) == False:
+        return "The sensorname does not correspond to the data in redis."
+
+    #all checks are fine
+    return None
+
 # FIXME to slow to compute at each time?
 
 
