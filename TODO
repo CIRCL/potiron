@@ -1,0 +1,11 @@
+- Add command line argument for potiron-json-ipsumpdump.py for 
+    forcing to reimport days and destroy partial data
+- Add command line argument to show how many records are imported at the end 
+  or status update during import
+- Give example of automated processing chain
+- Local html anchors for the selected fields to access quicker the graph
+- Display a warning when not enough of data is there for building a graph
+- Write annotation modules
+- Write document aggregator via filename and packet_id key
+- Write field index per day / hour/ 5 minutes?
+- Test to display pcap samples with annotation data
