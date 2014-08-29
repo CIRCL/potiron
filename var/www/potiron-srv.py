@@ -28,12 +28,14 @@ import os
 import ConfigParser
 app = Flask(__name__, static_folder='static', static_url_path='/static')
 
-#returns true if all the mandatory fields are set
+# returns true if all the mandatory fields are set
+
+
 def check_fields():
     if red.scard("DAYS") > 0:
         if red.scard("FIELDS") > 0:
             return True
-    #There was an error
+    # There was an error
     return False
 
 def check_database():
