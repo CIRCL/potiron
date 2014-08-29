@@ -56,6 +56,8 @@ def check_database():
 
 
 def get_latest_day():
+    if red.exists("DAYS") == False:
+        return None
     days = []
     for day in red.smembers("DAYS"):
         days.append(day)
@@ -171,11 +173,13 @@ def build_params():
     params = dict()
     # TODO Catch exceptions
     sday = get_latest_day()
-    oday = datetime.datetime.strptime(sday, "%Y%m%d")
-    nday = oday.strftime("%Y-%m-%d")
-    params['today'] = nday
-    # Raw format than in redis db
-    params['rtoday'] = sday
+    if sday is not None:
+        oday = datetime.datetime.strptime(sday, "%Y%m%d")
+        nday = oday.strftime("%Y-%m-%d")
+        params['today'] = nday
+        # Raw format than in redis db
+        params['rtoday'] = sday
+    #FIXME add version and prefix
     return params
 
 
@@ -185,6 +189,12 @@ def get_enabled_fields_num():
 
 @app.route('/', methods=['GET', 'POST'])
 def welcome():
+    desc = create_program_meta()
+    params = build_params()
+    emsg = check_database()
+    if emsg is not None:
+        return render_template('content.html', desc=desc, params=params, emsg=emsg)
+
     # By default the latest day is used
     day = get_latest_day()
     if request.method == 'POST':
@@ -205,7 +215,6 @@ def welcome():
 
     topdata = get_top_10_per_day(day, fields)
 
-    desc = create_program_meta()
 
     # Convert back the selected date
     d = datetime.datetime.strptime(day, "%Y%m%d")
