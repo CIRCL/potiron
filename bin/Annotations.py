@@ -53,8 +53,8 @@ class Annotate(object):
             newdocs.append(doc)
         return newdocs
 
-    def index_docs(self, red, docs):
-        p = red.pipeline()
+    def index_docs(self, docs):
+        p = self.red.pipeline()
         #FIXME put in config
         bulksize = 100 # Multiplied by 4 as 4 keys are updated per document
         cnt = 0
@@ -84,7 +84,7 @@ class Annotate(object):
                 raise OSError("No target directory was specified to store files\n")
 
         #FIXME read from config
-        red=redis.Redis(unix_socket_path="/tmp/redis.sock")
+        self.red=redis.Redis(unix_socket_path="/tmp/redis.sock")
         gi = GeoIP.open(self.database,GeoIP.GEOIP_STANDARD)
         f = open(self.sourceFile,"r")
         docs = json.load(f)
@@ -92,7 +92,7 @@ class Annotate(object):
         f.close()
         docs = self.handle_docs(docs)
         if self.shouldIndex == True:
-            self.index_docs(red, docs)    
+            self.index_docs(docs)
 
     def handle_cli(self):
         try:
