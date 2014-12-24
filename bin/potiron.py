@@ -76,6 +76,19 @@ def errormsg(msg):
 
     syslog.syslog("[ERROR] "+ msg)
 
+#Returns true if the program can be found and executed
+#Returns false otherwise
+def check_program(program):
+    if program.find('/') >= 0:
+        if os.path.isfile(program) and os.access(program,os.X_OK):
+            return True
+    #Search program in the path
+    for i in os.environ['PATH'].split(':'):
+        p = i + os.sep + program
+        if os.path.isfile(p) and os.access(p, os.X_OK):
+            return True
+    return False
+
 if __name__ == "__main__":
     print get_file_struct("/tmp","aaa")
 
