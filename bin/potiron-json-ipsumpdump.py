@@ -25,6 +25,7 @@ import sys
 import potiron
 from potiron import errormsg
 from potiron import infomsg
+from potiron import check_program
 import datetime
 
 def usage():
@@ -100,6 +101,8 @@ def create_dirs(rootdir, pcapfilename):
         os.makedirs(d)
 
 def process_file(rootdir, filename):
+    if check_program("ipsumdump") == False:
+        raise OSError("The program ipsumpdump is not installed")
     #FIXME Put in config file
     create_dirs(rootdir, filename)
     packet = {}
@@ -110,7 +113,6 @@ def process_file(rootdir, filename):
     #further aggregation with meta data.
     #Assumption: Each program process the pcap file the same way?
     packet_id = 0
-    #FIXME check if there is an executable ipsumpdump
     proc = subprocess.Popen(["ipsumdump","--no-headers","--quiet","--timestamp",
     "--length","--protocol","--ip-src","--ip-dst","--ip-opt","--ip-ttl","--ip-tos",
     "--sport","--dport","--icmp-code","--icmp-type",
