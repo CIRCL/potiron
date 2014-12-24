@@ -9,4 +9,5 @@
 - Write document aggregator via filename and packet_id key
 - Write field index per day / hour/ 5 minutes?
 - Test to display pcap samples with annotation data
-
+- Do annotation via stdin stdout. Documents can be merged via cat, decompressed
+  with gzip.
