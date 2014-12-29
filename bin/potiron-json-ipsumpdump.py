@@ -64,6 +64,9 @@ EXAMPLE
 
     document-root/honeypot-1/2014/08/26/lowint-honeypot-1-20140826
 
+
+If no DOCUMENT STORE directory is specified the json object is written
+on standard output
 """
 
 def numerize_proto(pstr):
@@ -88,11 +91,14 @@ def numerize_proto(pstr):
     return potiron.PROTO_UNKNOWN
 
 def store_packet(rootdir, pcapfilename, obj):
-    jsonfilename = potiron.get_file_struct(rootdir, pcapfilename)
-    f = open(jsonfilename,"w")
-    f.write(obj)
-    f.close()
-    infomsg("Created filename "+jsonfilename)
+    if rootdir is not None:
+        jsonfilename = potiron.get_file_struct(rootdir, pcapfilename)
+        f = open(jsonfilename,"w")
+        f.write(obj)
+        f.close()
+        infomsg("Created filename "+jsonfilename)
+    else:
+        sys.stdout.write(obj)
 
 def create_dirs(rootdir, pcapfilename):
     jsonfilename = potiron.get_file_struct(rootdir, pcapfilename)
@@ -104,7 +110,8 @@ def process_file(rootdir, filename):
     if check_program("ipsumdump") == False:
         raise OSError("The program ipsumpdump is not installed")
     #FIXME Put in config file
-    create_dirs(rootdir, filename)
+    if rootdir is not None:
+        create_dirs(rootdir, filename)
     packet = {}
     sensorname = potiron.derive_sensor_name(filename)
     allpackets = []
@@ -212,11 +219,7 @@ if __name__ == '__main__':
         errormsg("The filename " + filename + " was not found")
         sys.exit(1)
 
-    if rootdir is None:
-        errormsg("The root directory was not specified")
-        sys.exit(1)
-
-    if os.path.isdir(rootdir) is False:
+    if rootdir is not None and os.path.isdir(rootdir) is False:
         errormsg("The root directory is not a directory")
         sys.exit(1)
 
