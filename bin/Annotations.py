@@ -60,6 +60,8 @@ class Annotate(object):
         newdocs = []
         f.close()
         docs = self.handle_docs(docs)
+        if self.directory is None:
+            json.dump(docs, sys.stdout)
 
     def handle_cli(self):
         try:
