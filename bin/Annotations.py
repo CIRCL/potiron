@@ -53,10 +53,6 @@ class Annotate(object):
         return newdocs
 
     def process_file(self):
-        if self.shouldIndex == False:
-            if self.directory is None:
-                raise OSError("No target directory was specified to store files\n")
-
         #FIXME read from config
         gi = GeoIP.open(self.database,GeoIP.GEOIP_STANDARD)
         f = open(self.sourceFile,"r")
@@ -64,8 +60,6 @@ class Annotate(object):
         newdocs = []
         f.close()
         docs = self.handle_docs(docs)
-        if self.shouldIndex == True:
-            self.index_docs(docs)
 
     def handle_cli(self):
         try:
