@@ -21,7 +21,6 @@ import sys
 import json
 import pprint
 import GeoIP
-import redis
 import datetime
 
 class Annotate(object):
@@ -53,38 +52,12 @@ class Annotate(object):
             newdocs.append(doc)
         return newdocs
 
-    def index_docs(self, docs):
-        p = self.red.pipeline()
-        #FIXME put in config
-        bulksize = 100 # Multiplied by 4 as 4 keys are updated per document
-        cnt = 0
-        for doc in docs:
-            date = doc[ "timestamp"].split(' ')[0].replace('-','')
-            datetime.datetime.strptime(date, "%Y%m%d")
-            if "sipcountry" in doc:
-                k = doc["sensorname"] + ":" + date + ":" + "sipcountry"
-                p.zincrby(k, doc["sipcountry"],1)
-            if "sipcity" in doc:
-                k = doc["sensorname"] + ":" + date + ":" + "sipcity"
-                p.zincrby(k, doc["sipcity"],1)
-            if "dipcountry" in doc:
-                k = doc["sensorname"] + ":" + date + ":" + "dipcountry"
-                p.zincrby(k, doc["dipcountry"],1)
-            if "dipcity" in doc:
-                k = doc["sensorname"] + ":" + date + ":" + "dipcity"
-                p.zincrby(k, doc["dipcity"],1)
-            cnt = cnt + 1
-            if (cnt > 0) and (cnt % bulksize == 0):
-                p.execute()
-        p.execute()
-
     def process_file(self):
         if self.shouldIndex == False:
             if self.directory is None:
                 raise OSError("No target directory was specified to store files\n")
 
         #FIXME read from config
-        self.red=redis.Redis(unix_socket_path="/tmp/redis.sock")
         gi = GeoIP.open(self.database,GeoIP.GEOIP_STANDARD)
         f = open(self.sourceFile,"r")
         docs = json.load(f)

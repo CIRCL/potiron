@@ -21,7 +21,6 @@ import sys
 import json
 import pprint
 import GeoIP
-import redis
 import datetime
 from Annotations import Annotate
 class AnnotateGeo(Annotate):
@@ -86,13 +85,6 @@ dipcity       City of the Destination IP address
 
         return doc
 
-    def update_fields(self):
-        self.red.sadd("FIELDS", "sipcountry")
-        self.red.sadd("FIELDS", "dipcountry")
-        self.red.sadd("FIELDS", "sipcity")
-        self.red.sadd("FIELDS", "dipcity")
-
 if __name__== "__main__":
     obj = AnnotateGeo()
     obj.handle_cli()
-    obj.update_fields()
