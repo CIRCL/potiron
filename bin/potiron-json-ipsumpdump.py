@@ -23,6 +23,7 @@ import json
 import getopt
 import sys
 import potiron
+import argparse
 from potiron import errormsg
 from potiron import infomsg
 from potiron import check_program
@@ -188,43 +189,34 @@ def process_file(rootdir, filename):
 
 
 if __name__ == '__main__':
-    try:
-        opts, args = getopt.getopt(sys.argv[1:], "hr:d:k")
-    except getopt.GetoptError as err:
-        usage()
-        sys.exit(1)
+    parser = argparse.ArgumentParser(description="Start the too ipsumpdump and\
+transform the output in a json document")
+    parser.add_argument("-r","--read", type=str, nargs=1, help = "Compressed pcap\
+file or pcap filename")
+    parser.add_argument("-c","--console",  action='store_true',
+                        help="Log output also to console")
+    parser.add_argument("-d","--directory", nargs=1, help="Result directory where\
+the json documents are stored")
 
-    filename = None
-    rootdir = None
-    output = None
-    verbose = False
-    for o, a in opts:
-        if o == "-h":
-            usage()
-            sys.exit(0)
-        elif o == "-r":
-            filename = a
-        elif o == "-d":
-            rootdir = a
-        elif o == "-k":
-            potiron.logconsole = True
-        else:
+    args = parser.parse_args()
+    potiron.logconsole = args.console
+    if args.read is not None:
+        if os.path.exists(args.read[0]) is False:
+            errormsg("The filename " + args.read[0] + " was not found")
             sys.exit(1)
 
-    if filename is None:
-        errormsg("A filename must be specified")
-        sys.exit(1)
-
-    if os.path.exists(filename) is False:
-        errormsg("The filename " + filename + " was not found")
-        sys.exit(1)
-
-    if rootdir is not None and os.path.isdir(rootdir) is False:
+    if args.directory  is not None and os.path.isdir(args.directory[0]) is False:
         errormsg("The root directory is not a directory")
         sys.exit(1)
 
+    if args.read is None:
+        errormsg("At least a pcap file must be specified")
+        sys.exit(1)
     try:
-        process_file(rootdir, filename)
+        rootdir = None
+        if args.directory is not None:
+            rootdir = args.directory[0]
+        process_file(rootdir, args.read[0])
     except OSError,e:
         errormsg("A processing error happend."+str(e)+".\n")
         sys.exit(1)
