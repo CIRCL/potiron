@@ -22,6 +22,9 @@ import json
 import pprint
 import GeoIP
 import datetime
+import os
+from potiron import get_file_struct
+from potiron import errormsg
 
 class Annotate(object):
 
@@ -62,6 +65,28 @@ class Annotate(object):
         docs = self.handle_docs(docs)
         if self.directory is None:
             json.dump(docs, sys.stdout)
+        else:
+            #FIXME assume that always the same filename
+            filename = None
+            if len(docs) > 0:
+                item = docs[0]
+                if item.has_key("filename"):
+                    filename = item["filename"]
+            if filename is None:
+                errormsg("Cannot store file as no filename was found")
+                return
+            fn = get_file_struct(self.directory, filename)
+            t = fn.split("/")
+            t.pop()
+            d = "/".join(t)
+            if os.path.exists(d) == False:
+                os.makedirs(d)
+            if os.path.exists(fn):
+                #FIXME Merge files?
+                errormsg("Do not overwrite file " + fn)
+                return
+        f = open(fn,"w")
+        json.dump(docs,f)
 
     def handle_cli(self):
         try:
