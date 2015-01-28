@@ -42,6 +42,7 @@ def get_file_struct(rootdir, filename, suffix="json"):
 
         f = os.path.basename(filename)
         f = f.replace('.cap.gz', '')
+        f = f.replace('.json','')
         (prefix,sensorname, instance, date) = f.split('-')
         obj = datetime.datetime.strptime(date,"%Y%m%d%H%M%S")
         out = obj.strftime("%Y/%m/%d")
