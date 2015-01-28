@@ -22,7 +22,9 @@ import json
 import pprint
 import GeoIP
 import datetime
+from unidecode import unidecode
 from Annotations import Annotate
+
 class AnnotateGeo(Annotate):
 
     def __init__(self):
@@ -72,16 +74,16 @@ dipcity       City of the Destination IP address
         g = self.gi.record_by_addr(doc["ipdst"])
         if g is not None:
             if g["city"] is not None:
-                doc["dipcity"] = g["city"]
+                doc["dipcity"] = unidecode(g["city"])
             if g["country_name"] is not None:
-                doc["dipcountry"] = g["country_name"]
+                doc["dipcountry"] = unidecode(g["country_name"])
 
         g = self.gi.record_by_addr(doc["ipsrc"])
         if g is not None:
             if g["city"] is not None:
-                doc["sipcity"] = g["city"]
+                doc["sipcity"] = unidecode(g["city"])
             if g["country_name"] is not None:
-                doc["sipcountry"] = g["country_name"]
+                doc["sipcountry"] = unidecode(g["country_name"])
 
         return doc
 
