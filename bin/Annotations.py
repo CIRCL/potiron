@@ -117,7 +117,7 @@ class Annotate(object):
             
         except getopt.GetoptError,p:
             sys.stderr.write(str(p)+"\n")
-            usage()
+            self.usage()
             sys.exit(1)
         except OSError,e:
             sys.stderr.write(str(e)+"\n")
