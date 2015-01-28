@@ -83,8 +83,8 @@ class Annotate(object):
                 #FIXME Merge files?
                 errormsg("Do not overwrite file " + fn)
                 return
-        f = open(fn,"w")
-        json.dump(docs,f)
+            f = open(fn,"w")
+            json.dump(docs,f)
 
     def handle_cli(self):
         try:
