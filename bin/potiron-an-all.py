@@ -24,13 +24,15 @@ from PotironAnPDNS import *
 import pprint
 from potiron import get_file_struct
 parser = argparse.ArgumentParser(description="Do all potiron annotations")
-parser.add_argument("-r","--read", type=str, nargs=1, required=True,
+parser.add_argument("-r","--read", type=str, nargs=1,
 help ="Json document that should be annotated")
 parser.add_argument("-d","--directory", type=str, nargs=1, 
 help="Directory containing the annotated files")
 args = parser.parse_args()
 
-f = open(args.read[0],"r")
+f = sys.stdin
+if args.read is not None:
+    f = open(args.read[0],"r")
 docs = json.load(f)
 obj = AnnotateGeo()
 pdns = AnnotatePDNS("127.0.0.1",8900)
