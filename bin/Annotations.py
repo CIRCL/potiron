@@ -20,7 +20,6 @@ import getopt
 import sys
 import json
 import pprint
-import GeoIP
 import datetime
 import os
 from potiron import get_file_struct
@@ -57,7 +56,6 @@ class Annotate(object):
 
     def process_file(self):
         #FIXME read from config
-        gi = GeoIP.open(self.database,GeoIP.GEOIP_STANDARD)
         f = open(self.sourceFile,"r")
         docs = json.load(f)
         newdocs = []
