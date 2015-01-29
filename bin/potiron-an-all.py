@@ -38,10 +38,17 @@ obj = AnnotateGeo()
 pdns = AnnotatePDNS("127.0.0.1",8900)
 fd = sys.stdout
 if args.directory is not None:
-    fn = get_file_struct(args.directory[0], args.read[0])
+    filename = None
+    if args.read is None:
+        filename = docs[0]["filename"]
+    else:
+        filename = args.read[0]
+
+    fn = get_file_struct(args.directory[0], filename)
     t = fn.split('/')
     d = "/".join(t[0:-1])
-    os.makedirs(d)
+    if os.path.exists(d) == False:
+        os.makedirs(d)
     fd = open(fn,"w")
 newdocs = []
 for doc in docs:
