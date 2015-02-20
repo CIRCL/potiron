@@ -31,6 +31,12 @@ PROTO_TCP     = 6
 PROTO_ICMP6   = 41
 PROTO_UNKNOWN = 254
 DEFAULTBULKBUFFER = 1000
+
+#Object types that are included in the json documents
+TYPE_PACKET     = 1
+TYPE_GEO_DICT   = 2
+TYPE_PDNS_DICT  = 3
+
 logconsole=False
 
 def get_file_struct(rootdir, filename, suffix="json"):
