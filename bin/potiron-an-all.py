@@ -34,6 +34,7 @@ f = sys.stdin
 if args.read is not None:
     f = open(args.read[0],"r")
 docs = json.load(f)
+#FIXME Mandatory fields are not checked
 obj = AnnotateGeo()
 pdns = AnnotatePDNS("127.0.0.1",8900)
 fd = sys.stdout
