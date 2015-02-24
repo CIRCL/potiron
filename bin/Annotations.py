@@ -38,16 +38,20 @@ class Annotate(object):
     def annoate_doc(self, doc):
         pass
 
+    def check_mandatory_fields(self, doc):
+        complete = True
+        pprint.pprint(self.mfields)
+        print "---"
+        pprint.pprint(doc)
+        for field in self.mfields:
+            if field not in doc:
+                complete = False
+        return complete
+
     def handle_docs(self, docs):
         newdocs = [] 
         for doc in docs:
-            complete = True
-            for field in self.mfields:
-                if field not in self.mfields:
-                    errormsg("Incomplete packet found in " + filename + "." +
-                         str(doc)) 
-                    complete = False
-            if complete == True:
+            if self.check_mandatory_fields(doc):
                 doc = self.annoate_doc(doc)
             #If the document is not complete or could not be annotated it should be
             #left intact
