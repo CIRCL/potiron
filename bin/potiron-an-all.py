@@ -57,6 +57,6 @@ for doc in docs:
     mod_doc = pdns.annoate_doc(mod_doc)
     newdocs.append(mod_doc)
     
-    json.dump(newdocs,fd)
+json.dump(newdocs,fd)
 fd.close()
 
