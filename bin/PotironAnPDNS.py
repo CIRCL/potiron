@@ -57,6 +57,7 @@ class AnnotatePDNS(Annotate):
     def annoate_doc(self, doc):
         doc["ipsrc_pdns"] = self.get_rrnames(doc["ipsrc"])
         doc["ipdst_pdns"] = self.get_rrnames(doc["ipdst"])
+        doc["state"] = doc["state"] | potiron.STATE_PDNS_AN
         return doc
 
 if __name__ == "__main__":
