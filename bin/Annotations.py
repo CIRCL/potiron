@@ -61,6 +61,7 @@ class Annotate(object):
         newdocs = []
         f.close()
         docs = self.handle_docs(docs)
+        #FIXME Two different dump functions one here one in potiron-an-all.py
         if self.directory is None:
             json.dump(docs, sys.stdout)
         else:
