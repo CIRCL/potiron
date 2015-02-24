@@ -37,6 +37,11 @@ TYPE_PACKET     = 1
 TYPE_GEO_DICT   = 2
 TYPE_PDNS_DICT  = 3
 
+#Object states that can be merged using OR
+STATE_NOT_ANNOATE = 0
+STATE_TO_ANNOTATE = 1
+STATE_GEO_AN = 2
+STATE_PDNS_AN = 4
 logconsole=False
 
 def get_file_struct(rootdir, filename, suffix="json"):
