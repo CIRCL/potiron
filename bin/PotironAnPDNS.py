@@ -19,6 +19,7 @@
 import requests
 import json
 from Annotations import Annotate
+import potiron
 class AnnotatePDNS(Annotate):
 
     def __init__(self,server, port):
@@ -30,6 +31,7 @@ class AnnotatePDNS(Annotate):
         self.help = "NYI"
         self.cache = dict()
         self.cacheid = 0
+        self.cachetype = potiron.TYPE_PDNS_DICT
 
     def get_rrnames(self, ipaddress):
         if self.cache.has_key(ipaddress):
