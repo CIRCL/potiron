@@ -173,7 +173,8 @@ def process_file(rootdir, filename):
                  'sensorname': sensorname,
                  'packet_id' : packet_id,
                  'filename': os.path.basename(filename),
-                 'type': potiron.TYPE_PACKET
+                 'type': potiron.TYPE_PACKET,
+                 'state': potiron.STATE_NOT_ANNOATE
                     };
         #FIXME might consume a lot of memory
         allpackets.append(packet)
