@@ -40,9 +40,6 @@ class Annotate(object):
 
     def check_mandatory_fields(self, doc):
         complete = True
-        pprint.pprint(self.mfields)
-        print "---"
-        pprint.pprint(doc)
         for field in self.mfields:
             if field not in doc:
                 complete = False
