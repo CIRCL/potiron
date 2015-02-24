@@ -53,9 +53,14 @@ if args.directory is not None:
     fd = open(fn,"w")
 newdocs = []
 for doc in docs:
+    #If the mandatory fields are not present the document should be left
+    #intact
+    mod_doc = doc
     #Do all the annotations
-    mod_doc = obj.annoate_doc(doc)
-    mod_doc = pdns.annoate_doc(mod_doc)
+    if obj.check_mandatory_fields(doc):
+        mod_doc = obj.annoate_doc(doc)
+    if pdns.check_mandatory_fields(doc):
+        mod_doc = pdns.annoate_doc(mod_doc)
     newdocs.append(mod_doc)
 
 #Add Caches
