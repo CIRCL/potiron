@@ -24,6 +24,7 @@ import GeoIP
 import datetime
 from unidecode import unidecode
 from Annotations import Annotate
+import potiron
 
 class AnnotateGeo(Annotate):
 
@@ -84,7 +85,7 @@ dipcity       City of the Destination IP address
                 doc["sipcity"] = unidecode(g["city"])
             if g["country_name"] is not None:
                 doc["sipcountry"] = unidecode(g["country_name"])
-
+        doc['state'] = doc['state'] | potiron.STATE_GEO_AN
         return doc
 
 if __name__== "__main__":
