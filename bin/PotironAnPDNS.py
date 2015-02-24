@@ -29,10 +29,12 @@ class AnnotatePDNS(Annotate):
                          "sensorname", "filename"]
         self.help = "NYI"
         self.cache = dict()
+        self.cacheid = 0
 
     def get_rrnames(self, ipaddress):
         if self.cache.has_key(ipaddress):
-            return self.cache[ipaddress]
+            (rid,rrname) = self.cache[ipaddress]
+            return rid
         names = []
         rrnames = dict()
         r = requests.get(self.url  +  ipaddress)
@@ -46,8 +48,9 @@ class AnnotatePDNS(Annotate):
             names = rrnames.keys()
             names.sort()
         r =  ",".join(names)
-        self.cache[ipaddress] = r
-        return r
+        self.cacheid = self.cacheid + 1
+        self.cache[ipaddress] = (self.cacheid, r)
+        return self.cacheid
 
     def annoate_doc(self, doc):
         doc["ipsrc_pdns"] = self.get_rrnames(doc["ipsrc"])
