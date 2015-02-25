@@ -74,16 +74,16 @@ dipcity       City of the Destination IP address
     def annoate_doc(self, doc):
         g = self.gi.record_by_addr(doc["ipdst"])
         if g is not None:
-            if g["city"] is not None:
+            if g["city"] is not None and type(g["city"]) is unicode:
                 doc["dipcity"] = unidecode(g["city"])
-            if g["country_name"] is not None:
+            if g["country_name"] is not None and type(g["country_name"]) is unicode:
                 doc["dipcountry"] = unidecode(g["country_name"])
 
         g = self.gi.record_by_addr(doc["ipsrc"])
         if g is not None:
-            if g["city"] is not None:
+            if g["city"] is not None and type(g["city"]) is unicode:
                 doc["sipcity"] = unidecode(g["city"])
-            if g["country_name"] is not None:
+            if g["country_name"] is not None and type(g["country_name"]) is unicode:
                 doc["sipcountry"] = unidecode(g["country_name"])
         doc['state'] = doc['state'] | potiron.STATE_GEO_AN
         return doc
