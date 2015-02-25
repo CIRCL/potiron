@@ -35,8 +35,7 @@ class AnnotatePDNS(Annotate):
 
     def get_rrnames(self, ipaddress):
         if self.cache.has_key(ipaddress):
-            (rid,rrname) = self.cache[ipaddress]
-            return rid
+            return self.cache[ipaddress]
         names = []
         rrnames = dict()
         r = requests.get(self.url  +  ipaddress)
