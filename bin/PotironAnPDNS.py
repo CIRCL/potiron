@@ -52,13 +52,25 @@ class AnnotatePDNS(Annotate):
         r =  ",".join(names)
         self.cacheid = self.cacheid + 1
         self.cache[ipaddress] = (self.cacheid, r)
-        return self.cacheid
+        return (self.cacheid, r)
 
     def annoate_doc(self, doc):
-        doc["ipsrc_pdns"] = self.get_rrnames(doc["ipsrc"])
-        doc["ipdst_pdns"] = self.get_rrnames(doc["ipdst"])
+        (rid,name) = self.get_rrnames(doc["ipsrc"])
+        if name != "":
+            doc["ipsrc_pdns"] = rid
+        (rid,name) = self.get_rrnames(doc["ipdst"])
+        if name != "":
+            doc["ipdst_pdns"] = rid
         doc["state"] = doc["state"] | potiron.STATE_PDNS_AN
         return doc
+
+    #Remove all the IP addresses that had no PDNS results
+    def compact_cache(self):
+        for key in self.cache.keys():
+            if key is not "type":
+                (rid, rrname) = self.cache[key]
+                if rrname is "":
+                    del self.cache[key]
 
 if __name__ == "__main__":
     #FIXME put in config file

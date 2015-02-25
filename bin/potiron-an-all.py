@@ -63,6 +63,7 @@ for doc in docs:
         mod_doc = pdns.annoate_doc(mod_doc)
     newdocs.append(mod_doc)
 
+pdns.compact_cache()
 #Add Caches
 newdocs.insert(0,pdns.cache)
 json.dump(newdocs,fd)
