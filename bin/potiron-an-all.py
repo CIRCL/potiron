@@ -41,7 +41,13 @@ fd = sys.stdout
 if args.directory is not None:
     filename = None
     if args.read is None:
-        filename = docs[0]["filename"]
+        if len(docs) > 0:
+            if docs[0].has_key("filename") == False:
+                sys.exit(0)
+            filename = docs[0]["filename"]
+        else:
+            #When no filename can be extracted abort
+            sys.exit(0)
     else:
         filename = args.read[0]
 
