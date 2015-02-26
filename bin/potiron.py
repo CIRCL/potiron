@@ -33,10 +33,14 @@ PROTO_UNKNOWN = 254
 DEFAULTBULKBUFFER = 1000
 
 #Object types that are included in the json documents
-TYPE_PACKET     = 1
-TYPE_GEO_DICT   = 2
-TYPE_PDNS_DICT  = 3
-TYPE_SOURCE     = 4
+TYPE_SOURCE     = 1
+TYPE_PACKET     = 2
+
+#Types that identify annotation objects should have a value larger than
+#10 such that simple if clause > 10 is enough to distinguish between
+#data objects and annotation objects
+TYPE_GEO_DICT   = 11
+TYPE_PDNS_DICT  = 12
 
 #Object states that can be merged using OR
 STATE_NOT_ANNOATE = 0
