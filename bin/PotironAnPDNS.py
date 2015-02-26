@@ -56,10 +56,10 @@ class AnnotatePDNS(Annotate):
     def annoate_doc(self, doc):
         (rid,name) = self.get_rrnames(doc["ipsrc"])
         if name != "":
-            doc["ipsrc_pdns"] = rid
+            doc["a_"+str(potiron.TYPE_PDNS_DICT)+"_ipsrc_pdns"] = rid
         (rid,name) = self.get_rrnames(doc["ipdst"])
         if name != "":
-            doc["ipdst_pdns"] = rid
+            doc["a_"+str(potiron.TYPE_PDNS_DICT)+"_ipdst_pdns"] = rid
         doc["state"] = doc["state"] | potiron.STATE_PDNS_AN
         return doc
 
