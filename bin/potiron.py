@@ -36,6 +36,7 @@ DEFAULTBULKBUFFER = 1000
 TYPE_PACKET     = 1
 TYPE_GEO_DICT   = 2
 TYPE_PDNS_DICT  = 3
+TYPE_SOURCE     = 4
 
 #Object states that can be merged using OR
 STATE_NOT_ANNOATE = 0
