@@ -26,8 +26,7 @@ class AnnotatePDNS(Annotate):
         self.server = server
         self.port = port
         self.url = "http://"+server+":"+str(port)+"/query/"
-        self.mfields = [ "ipsrc", "ipdst", "packet_id", "timestamp",
-                         "sensorname", "filename"]
+        self.mfields = [ "ipsrc", "ipdst", "packet_id", "timestamp" ]
         self.help = "NYI"
         self.cache = dict()
         self.cacheid = 0
