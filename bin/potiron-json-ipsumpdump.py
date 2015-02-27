@@ -116,6 +116,9 @@ def process_file(rootdir, filename):
     packet = {}
     sensorname = potiron.derive_sensor_name(filename)
     allpackets = []
+    #Describe the source
+    allpackets.append( { "type":potiron.TYPE_SOURCE, "sensorname": sensorname,
+                         "filename":os.path.basename(filename)} )
     #Each packet as a incremental numeric id
     #A packet is identified with its sensorname filename and packet id for
     #further aggregation with meta data.
@@ -170,9 +173,7 @@ def process_file(rootdir, filename):
                  'dport': idport,
                  'icmpcode': iicmpcode,
                  'icmptype': iicmptype,
-                 'sensorname': sensorname,
                  'packet_id' : packet_id,
-                 'filename': os.path.basename(filename),
                  'type': potiron.TYPE_PACKET,
                  'state': potiron.STATE_NOT_ANNOATE
                     };
