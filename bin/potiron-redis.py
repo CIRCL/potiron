@@ -22,7 +22,6 @@ import redis
 import sys
 import os
 import potiron
-
 # List of fields that are included in the json documents that should not
 # be ranked
 # FIXME Put this as argument to the program as this list depends on the
@@ -63,6 +62,8 @@ f = open(filename, 'r')
 doc = json.load(f)
 f.close()
 
+#Record local dictionaries
+local_dicts = dict()
 
 # Get sensorname assume one document per sensor name
 
@@ -72,6 +73,8 @@ item = doc[0]
 sensorname = potiron.get_sensor_name(doc)
 lastday = None
 for di in doc:
+    if di["type"] > potiron.DICT_BOUNDARY:
+        local_dicts[di["type"]] = di
     if di["type"] == potiron.TYPE_PACKET:
         timestamp = di['timestamp']
         (day, time) = timestamp.split(' ')
