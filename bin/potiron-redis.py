@@ -70,17 +70,18 @@ item = doc[0]
 # FIXME documents must include at least a sensorname and a timestamp
 # FIXME check timestamp format
 sensorname = potiron.get_sensor_name(doc)
-timestamp = item['timestamp']
-(day, time) = timestamp.split(' ')
-day = day.replace('-', '')
-red.sadd("DAYS", day)
 for di in doc:
-    p = red.pipeline()
-    for k in di.keys():
-        if k not in non_index:
-            keyname = sensorname + ":" + day + ":" + k
-            feature = di[k]
-            p.sadd("FIELDS", k)
-            p.zincrby(keyname, feature, 1)
-    # FIXME the pipe might be to big peridocially flush them
-    p.execute()
+    if di["type"] == potiron.TYPE_PACKET:
+        timestamp = di['timestamp']
+        (day, time) = timestamp.split(' ')
+        day = day.replace('-', '')
+        red.sadd("DAYS", day)
+        p = red.pipeline()
+        for k in di.keys():
+            if k not in non_index:
+                keyname = sensorname + ":" + day + ":" + k
+                feature = di[k]
+                p.sadd("FIELDS", k)
+                p.zincrby(keyname, feature, 1)
+        # FIXME the pipe might be to big peridocially flush them
+        p.execute()
