@@ -21,6 +21,7 @@ import json
 import redis
 import sys
 import os
+import potiron
 
 # List of fields that are included in the json documents that should not
 # be ranked
@@ -68,7 +69,7 @@ f.close()
 item = doc[0]
 # FIXME documents must include at least a sensorname and a timestamp
 # FIXME check timestamp format
-sensorname = item['sensorname']
+sensorname = potiron.get_sensor_name(doc)
 timestamp = item['timestamp']
 (day, time) = timestamp.split(' ')
 day = day.replace('-', '')

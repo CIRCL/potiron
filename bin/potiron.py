@@ -107,6 +107,14 @@ def check_program(program):
             return True
     return False
 
+def get_sensor_name(doc):
+    for obj in doc:
+        if obj.has_key("type"):
+            if obj["type"] == TYPE_SOURCE:
+                if obj.has_key("sensorname"):
+                    return obj["sensorname"]
+    return None
+
 if __name__ == "__main__":
     print get_file_struct("/tmp","aaa")
 
