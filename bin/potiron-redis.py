@@ -70,12 +70,14 @@ item = doc[0]
 # FIXME documents must include at least a sensorname and a timestamp
 # FIXME check timestamp format
 sensorname = potiron.get_sensor_name(doc)
+lastday = None
 for di in doc:
     if di["type"] == potiron.TYPE_PACKET:
         timestamp = di['timestamp']
         (day, time) = timestamp.split(' ')
         day = day.replace('-', '')
-        red.sadd("DAYS", day)
+        if day != lastday:
+            red.sadd("DAYS", day)
         p = red.pipeline()
         for k in di.keys():
             if k not in non_index:
