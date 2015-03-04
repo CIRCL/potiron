@@ -130,6 +130,47 @@ def create_reverse_local_dicts(dicts):
                 rdicts[typ][aid] = an
     return rdicts
 
+
+#The json creation process should be completely independant for parallel
+#processing.  The identifiers are only locally known.
+#The following situtation my arise
+#   Annotation A has ID 1
+#In an other instance  the
+#   Annotation A has the ID 2
+#Hence One annotation has two different identifiers which should be avoided
+#by merging them centrally in redis
+def translate_dictionaries(rev_dicts, red ,key, localvalue):
+    #If the new value cannot be identified -1 is returned
+    new_id = -1
+    if key.startswith("a_"):
+        try:
+            t = key.split('_')
+            dt = int(t[1])
+            new_value = rev_dicts[dt][localvalue]
+            #TODO check in local cache
+            name = "_".join(t[2:])
+            k = "DTH_"+str(dt)+"_"+name
+            new_id = red.hget(k, new_value)
+            if new_id is None:
+                #Create new identifier
+                ki = "DTI_"+str(dt)+"_"+name
+                #In the meantime another process could have created an
+                #identifier for the key X. So the key X might have multiple
+                #identifiers. Therefore, update only the identifier if it
+                #does not exist
+                #FIXME not tested
+                new_id = red.incr(ki)
+                if red.hsetnx(k, new_value, new_id) == 1:
+                    #Someone else created already an id use this one
+                    new_id = red.hget(k,new_value)
+                #TODO Create reverse keys
+        except IndexError,e:
+            errormsg("translate_dictionaries: Invalid key notation. key="+key)
+        except KeyError,e:
+            errormsg("translate_dictionaries: Key " + key + " is unknown")
+
+    return new_id
+
 if __name__ == "__main__":
     print get_file_struct("/tmp","aaa")
 

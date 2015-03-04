@@ -90,8 +90,8 @@ for di in doc:
         p = red.pipeline()
         for k in di.keys():
             if k not in non_index:
+                feature = potiron.translate_dictionaries(rev_dics, red, k, di[k])
                 keyname = sensorname + ":" + day + ":" + k
-                feature = di[k]
                 p.sadd("FIELDS", k)
                 p.zincrby(keyname, feature, 1)
         # FIXME the pipe might be to big peridocially flush them
