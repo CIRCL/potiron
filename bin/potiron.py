@@ -160,7 +160,7 @@ def translate_dictionaries(rev_dicts, red ,key, localvalue):
                 #does not exist
                 #FIXME not tested
                 new_id = red.incr(ki)
-                if red.hsetnx(k, new_value, new_id) == 1:
+                if red.hsetnx(k, new_value, new_id) == 0:
                     #Someone else created already an id use this one
                     new_id = red.hget(k,new_value)
                 #TODO Create reverse keys
