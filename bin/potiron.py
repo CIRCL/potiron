@@ -115,6 +115,21 @@ def get_sensor_name(doc):
                     return obj["sensorname"]
     return None
 
+#In order to save space in json documents the annotations are not repeated
+#each time. Just a pure local numeric ID is stored. These numeric ids are
+#stored in local dictionaries. This function takes all dictionaries and
+#creates a dictionary to lookup an id in a local dictionary
+def create_reverse_local_dicts(dicts):
+    rdicts = dict()
+    for typ in dicts.keys():
+        if rdicts.has_key(typ) == False:
+            rdicts[typ] = dict()
+        for key in dicts[typ]:
+            if key != "type":
+                (aid, an) = dicts[typ][key]
+                rdicts[typ][aid] = an
+    return rdicts
+
 if __name__ == "__main__":
     print get_file_struct("/tmp","aaa")
 
