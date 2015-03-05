@@ -82,6 +82,7 @@ for di in doc:
     if di["type"] == potiron.TYPE_PACKET:
         if revcreated == False:
             rev_dics = potiron.create_reverse_local_dicts(local_dicts)
+            revcreated = True
         timestamp = di['timestamp']
         (day, time) = timestamp.split(' ')
         day = day.replace('-', '')
