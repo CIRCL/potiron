@@ -146,7 +146,7 @@ def translate_dictionaries(rev_dicts, red ,key, localvalue):
         try:
             t = key.split('_')
             dt = int(t[1])
-            if rev_dicts.has_key("dt") == False:
+            if rev_dicts.has_key(dt) == False:
                 raise KeyError("Dictionary type " +  str(dt) + " is not known")
             if rev_dicts[dt].has_key(localvalue) == False:
                 raise KeyError("Local value in dictionary "+str(dt) +":"
