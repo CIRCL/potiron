@@ -146,6 +146,11 @@ def translate_dictionaries(rev_dicts, red ,key, localvalue):
         try:
             t = key.split('_')
             dt = int(t[1])
+            if rev_dicts.has_key("dt") == False:
+                raise KeyError("Dictionary type " +  str(dt) + " is not known")
+            if rev_dicts[dt].has_key(localvalue) == False:
+                raise KeyError("Local value in dictionary "+str(dt) +":"
+                                +str(localvalue) + "is unknown")
             new_value = rev_dicts[dt][localvalue]
             #TODO check in local cache
             name = "_".join(t[2:])
@@ -167,7 +172,7 @@ def translate_dictionaries(rev_dicts, red ,key, localvalue):
         except IndexError,e:
             errormsg("translate_dictionaries: Invalid key notation. key="+key)
         except KeyError,e:
-            errormsg("translate_dictionaries: Key " + key + " is unknown")
+            errormsg("translate_dictionaries: "+str(e))
 
     return new_id
 
