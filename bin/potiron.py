@@ -155,6 +155,9 @@ def translate_dictionaries(rev_dicts, red ,key, localvalue):
             #TODO check in local cache
             name = "_".join(t[2:])
             k = "DTH_"+str(dt)+"_"+name
+            #Remembers the annotation keys for later enumeration for generating
+            #the reverse keys
+            red.sadd("DTHK",k)
             new_id = red.hget(k, new_value)
             if new_id is None:
                 #Create new identifier
