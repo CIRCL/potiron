@@ -48,7 +48,7 @@ STATE_NOT_ANNOATE = 0
 STATE_TO_ANNOTATE = 1
 STATE_GEO_AN = 2
 STATE_PDNS_AN = 4
-logconsole=False
+logconsole=True
 
 def get_file_struct(rootdir, filename, suffix="json"):
     try:
