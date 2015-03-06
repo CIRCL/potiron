@@ -36,6 +36,8 @@ parser.add_argument('--filename', type=str, nargs=1, help='Filename of a \
 json document that should be imported.')
 parser.add_argument('--unix', type=str, nargs=1, help='Unix socket to connect to \
 redis-server.')
+parser.add_argument('--reverse', action='store_false',
+                    help = 'Create global reverse dictionaries')
 
 args = parser.parse_args()
 if args.unix is None:
@@ -44,13 +46,18 @@ if args.unix is None:
 
 usocket = args.unix[0]
 
+red = redis.Redis(unix_socket_path=usocket)
+
+if args.reverse == False:
+    potiron.create_reverse_global_dicts(red)
+    potiron.infomsg("Created global reverse annotation dictionaries")
+    sys.exit(0)
+
 if args.filename is None:
     sys.stderr.write('A filename must be specified\n')
     sys.exit(1)
 
 filename = args.filename[0]
-
-red = redis.Redis(unix_socket_path=usocket)
 
 # Check if file was already imported
 fn = os.path.basename(filename)
