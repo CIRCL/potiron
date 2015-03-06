@@ -88,6 +88,9 @@ for di in doc:
         local_dicts[di["type"]] = di
     if di["type"] == potiron.TYPE_PACKET:
         if revcreated == False:
+            #FIXME if a json file was annotated twice the resulting json file
+            #includes two dictionaries of the same type
+            #Only the last one is considered
             rev_dics = potiron.create_reverse_local_dicts(local_dicts)
             revcreated = True
         timestamp = di['timestamp']
