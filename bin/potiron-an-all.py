@@ -54,8 +54,16 @@ if args.directory is not None:
     fn = get_file_struct(args.directory[0], filename)
     t = fn.split('/')
     d = "/".join(t[0:-1])
-    if os.path.exists(d) == False:
-        os.makedirs(d)
+    #When processing in parallel the directory could have been created
+    #Between the directory test and makedirs
+    try:
+        if os.path.exists(d) == False:
+            os.makedirs(d)
+    except OSError,e:
+        if e.errno != 17:
+            #Something else happened propagate exception
+            raise OSError(e)
+        potiron.infomsg("Someone else created the directory")
     fd = open(fn,"w")
 newdocs = []
 for doc in docs:
