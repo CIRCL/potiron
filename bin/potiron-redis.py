@@ -98,7 +98,9 @@ for di in doc:
         p = red.pipeline()
         for k in di.keys():
             if k not in non_index:
-                feature = potiron.translate_dictionaries(rev_dics, red, k, di[k])
+                feature = di[k]
+                if k.startswith(potiron.ANNOTATION_PREFIX):
+                    feature = potiron.translate_dictionaries(rev_dics, red, k, di[k])
                 keyname = sensorname + ":" + day + ":" + k
                 p.sadd("FIELDS", k)
                 p.zincrby(keyname, feature, 1)
