@@ -179,6 +179,17 @@ def translate_dictionaries(rev_dicts, red ,key, localvalue):
 
     return new_id
 
+#The global reverse dictionary should be created by a single process in order
+#to avoid race conditions
+#FIXME This does not scale if the number of keys becomes too large
+def create_reverse_global_dicts(red):
+    for k in red.smembers("DTHK"):
+        kr = k.replace("DTH", "DTHR")
+        di = red.hgetall(k)
+        for k in di.keys():
+            v = di[k]
+            red.hset(kr,v,k)
+
 if __name__ == "__main__":
     print get_file_struct("/tmp","aaa")
 
