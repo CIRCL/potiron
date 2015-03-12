@@ -88,7 +88,7 @@ def get_description(name):
 
 
 def translate_key_human(name, key):
-    k = "TR:"+name
+    k = "TR_"+name
     disp_key = red.hget(k, key)
     if disp_key is not None:
         return disp_key
@@ -96,7 +96,7 @@ def translate_key_human(name, key):
 
 
 def translate_human_to_redis(name, key):
-    k = "RT:"+name
+    k = "RT_"+name
     disp_key = red.hget(k, key)
     if disp_key is not None:
         return disp_key

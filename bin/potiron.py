@@ -157,14 +157,14 @@ def translate_dictionaries(rev_dicts, red ,key, localvalue):
             new_value = rev_dicts[dt][localvalue]
             #TODO check in local cache
             name = "_".join(t[2:])
-            k = "DTH_"+str(dt)+"_"+name
+            k = "RT_a_"+str(dt)+"_"+name
             #Remembers the annotation keys for later enumeration for generating
             #the reverse keys
-            red.sadd("DTHK",k)
+            red.sadd("RTK",k)
             new_id = red.hget(k, new_value)
             if new_id is None:
                 #Create new identifier
-                ki = "DTI_"+str(dt)+"_"+name
+                ki = "RTI_"+str(dt)+"_"+name
                 #In the meantime another process could have created an
                 #identifier for the key X. So the key X might have multiple
                 #identifiers. Therefore, update only the identifier if it
@@ -186,8 +186,8 @@ def translate_dictionaries(rev_dicts, red ,key, localvalue):
 #to avoid race conditions
 #FIXME This does not scale if the number of keys becomes too large
 def create_reverse_global_dicts(red):
-    for k in red.smembers("DTHK"):
-        kr = k.replace("DTH", "DTHR")
+    for k in red.smembers("RTK"):
+        kr = k.replace("RT_a_", "TR_a_")
         di = red.hgetall(k)
         for k in di.keys():
             v = di[k]
