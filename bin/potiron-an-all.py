@@ -79,7 +79,9 @@ for doc in docs:
 
 pdns.compact_cache()
 #Add Caches
-newdocs.insert(0,pdns.cache)
+#Do not add empty dictionaries
+if len(pdns.cache) > 1:
+    newdocs.insert(0,pdns.cache)
 json.dump(newdocs,fd)
 fd.close()
 
