@@ -80,7 +80,7 @@ def enum_last_days(today, period):
 
 
 def get_description(name):
-    k = "DS:"+name
+    k = "DS_"+name
     desc = red.get(k)
     if desc is not None:
         return desc
