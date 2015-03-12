@@ -53,10 +53,10 @@ class AnnotatePDNS(Annotate):
         return (self.cacheid, r)
 
     def annoate_doc(self, doc):
-        (rid,name) = self.get_rrnames(doc["ipsrc"])
         if doc['state'] & potiron.STATE_PDNS_AN:
             #The document was already annotated
             return doc
+        (rid,name) = self.get_rrnames(doc["ipsrc"])
         if name != "":
             doc["a_"+str(potiron.TYPE_PDNS_DICT)+"_ipsrc_pdns"] = rid
         (rid,name) = self.get_rrnames(doc["ipdst"])
