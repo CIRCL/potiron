@@ -42,6 +42,7 @@ TYPE_PACKET     = 2
 DICT_BOUNDARY   = 10
 TYPE_GEO_DICT   = 11
 TYPE_PDNS_DICT  = 12
+TYPE_UPPER_BOUNDARY   = 13
 
 #Object states that can be merged using OR
 STATE_NOT_ANNOATE = 0
