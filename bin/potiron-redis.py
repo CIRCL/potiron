@@ -84,7 +84,7 @@ lastday = None
 revcreated = False
 
 for di in doc:
-    if di["type"] > potiron.DICT_BOUNDARY:
+    if di["type"] > potiron.DICT_LOWER_BOUNDARY:
         local_dicts[di["type"]] = di
     if di["type"] == potiron.TYPE_PACKET:
         if revcreated == False:

@@ -39,7 +39,7 @@ TYPE_PACKET     = 2
 #Types that identify annotation objects should have a value larger than
 #10 such that simple if clause > 10 is enough to distinguish between
 #data objects and annotation objects
-DICT_BOUNDARY   = 10
+DICT_LOWER_BOUNDARY   = 10
 TYPE_GEO_DICT   = 11
 TYPE_PDNS_DICT  = 12
 TYPE_UPPER_BOUNDARY   = 13
