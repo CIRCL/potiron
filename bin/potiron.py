@@ -194,6 +194,24 @@ def create_reverse_global_dicts(red):
             v = di[k]
             red.hset(kr,v,k)
 
+#Extract the origin of an annotation key does the lookup in the document
+#and return the corresponding value
+#Example:
+#         a_12_ipsrc ->  5
+#         RT_a_12_ipsrc [www.circl.lu] -> 5
+#         TR_a_12_isrc [5] -> www.circl.lu
+# Creates the relationship 149.13.33.4 -> 5
+def get_annotation_origin(doc,k):
+    try:
+        t =  k.split("_")
+        probe = t[2]
+        return doc[probe]
+    except IndexError, e:
+        errormsg("Key is to incomplete "+ str(k) +"\n")
+    except KeyError,e:
+        errormsg("Corresponding key not found for "+str(k)+"\n")
+    return None
+
 if __name__ == "__main__":
     print get_file_struct("/tmp","aaa")
 
