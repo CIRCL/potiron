@@ -212,6 +212,17 @@ def get_annotation_origin(doc,k):
         errormsg("Corresponding key not found for "+str(k)+"\n")
     return None
 
+#Returns the dictionary identifier from a given key
+def get_dictionary_id(k):
+    try:
+        t = k.split('_')
+        return int(t[1])
+    except IndexError,e:
+        errormsg("Could not extract dictionary key from "+k)
+    except ValueError,e:
+        errormsg("Could not dictionary key from "+k)
+    return None
+
 if __name__ == "__main__":
     print get_file_struct("/tmp","aaa")
 

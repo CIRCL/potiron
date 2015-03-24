@@ -105,9 +105,10 @@ for di in doc:
                 if k.startswith(potiron.ANNOTATION_PREFIX):
                     feature = potiron.translate_dictionaries(rev_dics, red, k, di[k])
                     #Create the links between annotations and theire objects
+                    idn = potiron.get_dictionary_id(k)
                     obj = potiron.get_annotation_origin(di,k)
-                    if obj is not None:
-                        kn = "AR_"+obj
+                    if obj is not None and idn is not None:
+                        kn = "AR_"+str(idn)+"_"+obj
                         p.set(kn,feature)
                 keyname = sensorname + ":" + day + ":" + k
                 p.sadd("FIELDS", k)
