@@ -40,7 +40,7 @@
                                 <a href="{{params.prefix}}/evolution/{{params.rtoday}}/{{field.name}}/{{entry.key}}"> {{entry.key}}</a>
                             </td> 
                             <td width="18%"> {{entry.score}}</td>
-                            <td width="2%"> {{entry.annot}}</td>
+                            <td> <div rel="tooltip" title="{{entry.annot}}"><span class="badge badge-important"> {{entry.anum}} </span> </td>
                         </tr>
                     {% endfor %}
     <form name="hostquery" action="{{params.prefix}}/custom/" method="POST">

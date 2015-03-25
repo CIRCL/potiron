@@ -158,7 +158,8 @@ def get_top_10_per_day(day, fields):
             annotations = get_annotations(red, key, field)
             n = len(annotations)
             if n > 0:
-                entry['annot'] = n
+                entry['annot'] = ",".join(annotations)
+                entry['anum'] = n
             d['data'].append(entry)
         d['evol'] = get_recent_evolution(day, field, top3, shortcoverage)
         d['legend'] = create_legend(field, top3)
