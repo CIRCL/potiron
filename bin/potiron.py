@@ -223,6 +223,21 @@ def get_dictionary_id(k):
         errormsg("Could not dictionary key from "+k)
     return None
 
+#Returns a list of annotations corresponding to the key feature identified
+#with its name
+#example get_annotations(redis_instance, "192.168.1.1", "ipsrc")
+def get_annotations(red, feature, name):
+    out = []
+    #Probe all the dictionaries
+    for i in xrange(DICT_LOWER_BOUNDARY,TYPE_UPPER_BOUNDARY):
+        k = "AR_"+str(i)+"_"+feature
+        idn = red.get(k)
+        if idn is not None:
+            kd = "TR_a_"+str(i)+"_"+ name
+            value = red.hget(kd,idn)
+            out.append(value)
+    return out
+
 if __name__ == "__main__":
     print get_file_struct("/tmp","aaa")
 
