@@ -26,6 +26,7 @@ import time
 import sys
 import os
 import ConfigParser
+from potiron import get_annotations
 app = Flask(__name__, static_folder='static', static_url_path='/static')
 
 # returns true if all the mandatory fields are set
@@ -154,6 +155,10 @@ def get_top_10_per_day(day, fields):
             entry = dict()
             entry['key'] = translate_key_human(field, key)
             entry['score'] = score
+            annotations = get_annotations(red, key, field)
+            n = len(annotations)
+            if n > 0:
+                entry['annot'] = n
             d['data'].append(entry)
         d['evol'] = get_recent_evolution(day, field, top3, shortcoverage)
         d['legend'] = create_legend(field, top3)
