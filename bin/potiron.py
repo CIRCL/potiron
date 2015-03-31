@@ -235,7 +235,10 @@ def get_annotations(red, feature, name):
         if idn is not None:
             kd = "TR_a_"+str(i)+"_"+ name
             value = red.hget(kd,idn)
-            out.append(value)
+            if value is not None:
+                out.append(value)
+            else:
+               errormsg("Reverse keys not created?. No data for "+kd)
     return out
 
 if __name__ == "__main__":
