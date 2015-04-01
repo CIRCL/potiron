@@ -23,20 +23,35 @@ from PotironAnGeo import *
 from PotironAnPDNS import *
 import pprint
 from potiron import get_file_struct
+from potiron import errormsg
+import ConfigParser
+
 parser = argparse.ArgumentParser(description="Do all potiron annotations")
 parser.add_argument("-r","--read", type=str, nargs=1,
 help ="Json document that should be annotated")
 parser.add_argument("-d","--directory", type=str, nargs=1, 
 help="Directory containing the annotated files")
-args = parser.parse_args()
+parser.add_argument("-c", "--config", type=str, nargs=1,
+help="Config file")
 
+args = parser.parse_args()
+if args.config is None:
+    errormsg("A config file must be specified")
+    sys.exit(1)
+#Load config file
+config = ConfigParser.ConfigParser()
+config.readfp(open(args.config[0], 'r'))
+#Access the fields if not exits throw excpetion
+#FIXME implement cleaner error handling
+config.get("pdns","server")
+config.getint("pdns","port")
 f = sys.stdin
 if args.read is not None:
     f = open(args.read[0],"r")
 docs = json.load(f)
 #FIXME Mandatory fields are not checked
 obj = AnnotateGeo()
-pdns = AnnotatePDNS("127.0.0.1",8900)
+pdns = AnnotatePDNS(config.get("pdns","server"),config.getint("pdns" ,"port"))
 fd = sys.stdout
 if args.directory is not None:
     filename = None
