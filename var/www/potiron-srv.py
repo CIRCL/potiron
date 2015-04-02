@@ -271,6 +271,7 @@ def check_date(date):
         errormsg("check_date: Wrong date format."+str(e))
     return False
 
+#FIXME Verify the field and key parameters too
 @app.route('/evolution/<date>/<field>/<key>/')
 @app.route('/evolution/<date>/<field>/<key>')
 def deliver_evolution(date, field, key):
