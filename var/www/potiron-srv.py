@@ -246,8 +246,7 @@ def check_date(date):
     return True
 
 @app.route('/evolution/<date>/<field>/<key>/')
-
-
+@app.route('/evolution/<date>/<field>/<key>')
 def deliver_evolution(date, field, key):
     if check_date(date) is False:
         return "Error"
@@ -271,6 +270,7 @@ def deliver_evolution(date, field, key):
                            key=key, data=data, params=build_params())
 
 @app.route('/custom/', methods=['POST'])
+@app.route('/custom', methods=['POST'])
 def deliver_custom():
     field = request.form.get("field")
     fieldname = request.form.get("fieldname")
@@ -315,6 +315,7 @@ def load_selected_fields():
     return fields
 
 @app.route('/settings/',methods=['POST','GET'])
+@app.route('/settings',methods=['POST','GET'])
 def send_settings():
     if request.method == 'POST':
         sfields = request.form.getlist('selectedfields')
