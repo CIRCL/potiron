@@ -274,10 +274,13 @@ def check_date(date):
 @app.route('/evolution/<date>/<field>/<key>/')
 @app.route('/evolution/<date>/<field>/<key>')
 def deliver_evolution(date, field, key):
-    if check_date(date) is False:
-        return "Error"
-    data = []
     desc = create_program_meta()
+    params = build_params()
+    if check_date(date) is False:
+        emsg="Invalid date specified"
+        return render_template('content.html', desc=desc, params=params,
+                               emsg=emsg)
+    data = []
     daterange = enum_last_days(date, coverage)
     rkey = translate_human_to_redis(field, key)
     for date in daterange:
@@ -293,7 +296,7 @@ def deliver_evolution(date, field, key):
     d = datetime.datetime.strptime(date, "%Y%m%d")
     showdate = d.strftime("%Y-%m-%d")
     return render_template("evol.html", desc=desc, date=showdate, field=field,
-                           key=key, data=data, params=build_params())
+                           key=key, data=data, params=params)
 
 @app.route('/custom/', methods=['POST'])
 @app.route('/custom', methods=['POST'])
