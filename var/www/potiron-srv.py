@@ -45,8 +45,8 @@ def check_database():
     #Take a random day, random field, that was ranked and check if the
     #configured sensorname correspond to the ranked data
 
-    day = red.srandmember("DAYS",1)[0]
-    field = red.srandmember("FIELDS", 1)[0]
+    day = red.srandmember("DAYS",)
+    field = red.srandmember("FIELDS")
     key = sensorname + ":" + day + ":" + field
     if red.exists(key) == False:
         return "The sensorname does not correspond to the data in redis."
