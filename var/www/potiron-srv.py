@@ -216,6 +216,11 @@ def welcome():
             except ValueError:
                 # TODO log bad parameters
                 pass
+            #Check if there is data for this day
+            if red.sismember("DAYS", day) == 0:
+                return render_template('content.html', desc=desc,
+                                        params=params, emsg=
+                                       "No data is available for day "+day)
     fields = []
     for field in red.smembers("ENFIELDS"):
         fields.append(field)
