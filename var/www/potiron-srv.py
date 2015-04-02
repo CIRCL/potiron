@@ -27,6 +27,7 @@ import sys
 import os
 import ConfigParser
 from potiron import get_annotations
+from potiron import errormsg
 app = Flask(__name__, static_folder='static', static_url_path='/static')
 
 # returns true if all the mandatory fields are set
@@ -194,6 +195,19 @@ def get_enabled_fields_num():
     x = red.scard("ENFIELDS")
     return x
 
+def check_user_day(day):
+    try:
+        if len(day) > 20:
+            raise ValueError("User day string is too large." + day)
+        # Let the datetime library check if the parameters correspond to
+        # the right date format. If bad parameters are specified,
+        # the most recent date is used
+        d = datetime.datetime.strptime(day, "%Y-%m-%d")
+        day = d.strftime("%Y%m%d")
+    except ValueError, error:
+        errormsg("check_user_day: "+str(error))
+    return day
+
 @app.route('/', methods=['GET', 'POST'])
 def welcome():
     desc = create_program_meta()
@@ -207,15 +221,9 @@ def welcome():
     if request.method == 'POST':
         p = request.form.get('datepicker')
         if p is not None:
-            try:
-                # Let the datetime library check if the parameters correspond to
-                # the right date format. If bad parameters are specified,
-                # the most recent date is used
-                d = datetime.datetime.strptime(p, "%Y-%m-%d")
-                day = d.strftime("%Y%m%d")
-            except ValueError:
-                # TODO log bad parameters
-                pass
+            #JavaScript Library does also some checks. Do not trust the
+            #code running on client machines
+            day = check_user_day(p)
             #Check if there is data for this day
             if red.sismember("DAYS", day) == 0:
                 return render_template('content.html', desc=desc,
