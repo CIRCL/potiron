@@ -186,7 +186,7 @@ def build_params():
         params['today'] = nday
         # Raw format than in redis db
         params['rtoday'] = sday
-    #FIXME add version and prefix
+        params['prefix'] = prefix
     return params
 
 
@@ -364,6 +364,7 @@ if __name__=='__main__':
         coverage = conf.getint("dashboard", "coverage")
         usock = conf.get("redis", "unix_socket_path")
         shortcoverage = conf.getint("dashboard", "shortcoverage")
+        prefix = conf.get("dashboard", "prefix")
         red = redis.Redis(unix_socket_path=usock)
 
         app.debug = debug
