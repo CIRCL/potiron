@@ -254,11 +254,22 @@ the settings menu."
                             topdata=topdata, params=build_params(),
                             seldate=selday)
 
-
+#Check if the date delivered by potiron in the overview screen  was not
+#tampered in the meantime
 def check_date(date):
-    # TODO Check if date has the right format and
-    # is the right rage
-    return True
+    try:
+        if date is None:
+            errormsg("check_date: No date was specified")
+            return False
+        if len(date) > 20:
+            errormsg("check_date: Date field is too large")
+            return False
+        #Try to parse it. If it fails exception is thrown
+        datetime.datetime.strptime(date, "%Y%m%d")
+        return True
+    except ValueError,e:
+        errormsg("check_date: Wrong date format."+str(e))
+    return False
 
 @app.route('/evolution/<date>/<field>/<key>/')
 @app.route('/evolution/<date>/<field>/<key>')
