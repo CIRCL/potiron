@@ -197,6 +197,8 @@ def get_enabled_fields_num():
 
 def check_user_day(day):
     try:
+        if day is None:
+            return None
         if len(day) > 20:
             raise ValueError("User day string is too large." + day)
         # Let the datetime library check if the parameters correspond to
@@ -204,9 +206,12 @@ def check_user_day(day):
         # the most recent date is used
         d = datetime.datetime.strptime(day, "%Y-%m-%d")
         day = d.strftime("%Y%m%d")
+        #Check if there is data for this day
+        if red.sismember("DAYS", day) == 1:
+            return day
     except ValueError, error:
         errormsg("check_user_day: "+str(error))
-    return day
+    return None
 
 @app.route('/', methods=['GET', 'POST'])
 def welcome():
@@ -215,18 +220,15 @@ def welcome():
     emsg = check_database()
     if emsg is not None:
         return render_template('content.html', desc=desc, params=params, emsg=emsg)
-
-    # By default the latest day is used
+    #By default use latest day
     day = get_latest_day()
     if request.method == 'POST':
         p = request.form.get('datepicker')
-        if p is not None:
-            #JavaScript Library does also some checks. Do not trust the
-            #code running on client machines
-            day = check_user_day(p)
-            #Check if there is data for this day
-            if red.sismember("DAYS", day) == 0:
-                return render_template('content.html', desc=desc,
+        #JavaScript Library does also some checks. Do not trust the
+        #code running on client machines
+        day = check_user_day(p)
+        if day is None:
+            return render_template('content.html', desc=desc,
                                         params=params, emsg=
                                        "Invalid date specified")
     fields = []
