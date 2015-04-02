@@ -228,7 +228,7 @@ def welcome():
             if red.sismember("DAYS", day) == 0:
                 return render_template('content.html', desc=desc,
                                         params=params, emsg=
-                                       "No data is available for day "+day)
+                                       "Invalid date specified")
     fields = []
     for field in red.smembers("ENFIELDS"):
         fields.append(field)
