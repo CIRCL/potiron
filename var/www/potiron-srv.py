@@ -310,27 +310,30 @@ def deliver_evolution(date, field, key):
 @app.route('/custom/', methods=['POST'])
 @app.route('/custom', methods=['POST'])
 def deliver_custom():
-    field = request.form.get("field")
-    fieldname = request.form.get("fieldname")
-    date = request.form.get("date")
-    if fieldname is None:
-        # TODO write error html template"
-        return "ERROR no custom fieldname was specified"
-    # By default the latest day is used. When another date was specified
-    # this one is used
-    today = get_latest_day()
-    if date is not None:
-        try:
-            d = datetime.datetime.strptime(date, "%Y-%m-%d")
-            today = d.strftime("%Y%m%d")
-        except ValueError:
-            # TODO log invalid date that was specified
-            pass
-    if red.sismember("FIELDS", fieldname):
-        # TODO Return another template or pop up if there is no data
-        return deliver_evolution(today, fieldname, field)
-
-    return "TODO write fancy error here. Invalid data queried"
+    try:
+        field = request.form.get("field")
+        fieldname = request.form.get("fieldname")
+        date = request.form.get("date")
+        if fieldname is None:
+            # TODO write error html template"
+            return "ERROR no custom fieldname was specified"
+        # By default the latest day is used. When another date was specified
+        # this one is used
+        today = get_latest_day()
+        if date is not None:
+            try:
+                d = datetime.datetime.strptime(date, "%Y-%m-%d")
+                today = d.strftime("%Y%m%d")
+            except ValueError:
+                # TODO log invalid date that was specified
+                pass
+        if red.sismember("FIELDS", fieldname):
+            # TODO Return another template or pop up if there is no data
+            return deliver_evolution(today, fieldname, field)
+        return "TODO write fancy error here. Invalid data queried"
+    except redis.ConnectionError,err:
+        errormsg("deliver_custom: Cannot connect to redis "+str(err))
+        return render_template('offline.html', prefix=prefix)
 
 # Deliver all the files in static directory
 # TODO ../../../etc/passwd seems not to work
