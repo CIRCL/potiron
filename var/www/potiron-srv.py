@@ -279,29 +279,33 @@ def check_date(date):
 @app.route('/evolution/<date>/<field>/<key>/')
 @app.route('/evolution/<date>/<field>/<key>')
 def deliver_evolution(date, field, key):
-    desc = create_program_meta()
-    params = build_params()
-    if check_date(date) is False:
-        emsg="Invalid date specified"
-        return render_template('content.html', desc=desc, params=params,
-                               emsg=emsg)
-    data = []
-    daterange = enum_last_days(date, coverage)
-    rkey = translate_human_to_redis(field, key)
-    for date in daterange:
-        entry = dict()
-        k = sensorname+":"+date+":"+field
-        score = red.zscore(k, rkey)
-        if (score is not None):
-            entry['date'] = date
-            entry['score'] = score
-            data.append(entry)
+    try:
+        desc = create_program_meta()
+        params = build_params()
+        if check_date(date) is False:
+            emsg="Invalid date specified"
+            return render_template('content.html', desc=desc, params=params,
+                                   emsg=emsg)
+        data = []
+        daterange = enum_last_days(date, coverage)
+        rkey = translate_human_to_redis(field, key)
+        for date in daterange:
+            entry = dict()
+            k = sensorname+":"+date+":"+field
+            score = red.zscore(k, rkey)
+            if (score is not None):
+                entry['date'] = date
+                entry['score'] = score
+                data.append(entry)
 
-    # Convert date
-    d = datetime.datetime.strptime(date, "%Y%m%d")
-    showdate = d.strftime("%Y-%m-%d")
-    return render_template("evol.html", desc=desc, date=showdate, field=field,
-                           key=key, data=data, params=params)
+        # Convert date
+        d = datetime.datetime.strptime(date, "%Y%m%d")
+        showdate = d.strftime("%Y-%m-%d")
+        return render_template("evol.html", desc=desc, date=showdate, field=field,
+                               key=key, data=data, params=params)
+    except redis.ConnectionError,err:
+        errormsg("Cannot connect to redis "+str(err))
+        return render_template('offline.html', prefix=prefix)
 
 @app.route('/custom/', methods=['POST'])
 @app.route('/custom', methods=['POST'])
