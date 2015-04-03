@@ -215,44 +215,48 @@ def check_user_day(day):
 
 @app.route('/', methods=['GET', 'POST'])
 def welcome():
-    desc = create_program_meta()
-    params = build_params()
-    emsg = check_database()
-    if emsg is not None:
-        return render_template('content.html', desc=desc, params=params, emsg=emsg)
-    #By default use latest day
-    day = get_latest_day()
-    if request.method == 'POST':
-        p = request.form.get('datepicker')
-        #JavaScript Library does also some checks. Do not trust the
-        #code running on client machines
-        day = check_user_day(p)
-        if day is None:
-            return render_template('content.html', desc=desc,
-                                        params=params, emsg=
-                                       "Invalid date specified")
-    fields = []
-    for field in red.smembers("ENFIELDS"):
-        fields.append(field)
+    try:
+        desc = create_program_meta()
+        params = build_params()
+        emsg = check_database()
+        if emsg is not None:
+            return render_template('content.html', desc=desc, params=params, emsg=emsg)
+        #By default use latest day
+        day = get_latest_day()
+        if request.method == 'POST':
+            p = request.form.get('datepicker')
+            #JavaScript Library does also some checks. Do not trust the
+            #code running on client machines
+            day = check_user_day(p)
+            if day is None:
+                return render_template('content.html', desc=desc,
+                                            params=params, emsg=
+                                           "Invalid date specified")
+        fields = []
+        for field in red.smembers("ENFIELDS"):
+            fields.append(field)
 
-    topdata = get_top_10_per_day(day, fields)
+        topdata = get_top_10_per_day(day, fields)
 
 
-    # Convert back the selected date
-    d = datetime.datetime.strptime(day, "%Y%m%d")
-    selday = d.strftime("%Y-%m-%d")
+        # Convert back the selected date
+        d = datetime.datetime.strptime(day, "%Y%m%d")
+        selday = d.strftime("%Y-%m-%d")
 
-    # Put a warning when no fields are selected
-    if get_enabled_fields_num() == 0:
-        emsg = "No data fields are selected. Please select some fields in \
+        # Put a warning when no fields are selected
+        if get_enabled_fields_num() == 0:
+            emsg = "No data fields are selected. Please select some fields in \
 the settings menu."
-        return render_template('content.html', desc=desc, fields=fields,
-                                topdata=topdata, params=build_params(),
-                                seldate=selday, emsg=emsg)
+            return render_template('content.html', desc=desc, fields=fields,
+                                    topdata=topdata, params=build_params(),
+                                    seldate=selday, emsg=emsg)
 
-    return render_template('content.html', desc=desc, fields=fields,
+        return render_template('content.html', desc=desc, fields=fields,
                             topdata=topdata, params=build_params(),
                             seldate=selday)
+    except redis.ConnectionError,err:
+        errormsg("Could not connect to redis. "+str(err))
+        return render_template('offline.html',prefix=prefix)
 
 #Check if the date delivered by potiron in the overview screen  was not
 #tampered in the meantime
