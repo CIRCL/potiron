@@ -351,27 +351,32 @@ def load_selected_fields():
 @app.route('/settings/',methods=['POST','GET'])
 @app.route('/settings',methods=['POST','GET'])
 def send_settings():
-    if request.method == 'POST':
-        sfields = request.form.getlist('selectedfields')
-        vfields = dict()
-        # Check if the fields are valid
-        for field in sfields:
-            if red.sismember("FIELDS", field):
-                red.sadd("ENFIELDS", field)
-                vfields[field] = True
-            # TODO log invalid fields
-            # Find checkboxes that were not set or unticketed and remove them
-        for f in red.smembers('FIELDS'):
-            if vfields.has_key(f) is False:
-                # Found a field that was not selected but is marked as being set
-                # in a previous iteration
-                if red.sismember("ENFIELDS", f):
-                    red.srem("ENFIELDS", f)
+    try:
+        if request.method == 'POST':
+            sfields = request.form.getlist('selectedfields')
+            vfields = dict()
+            # Check if the fields are valid
+            for field in sfields:
+                if red.sismember("FIELDS", field):
+                    red.sadd("ENFIELDS", field)
+                    vfields[field] = True
+                # TODO log invalid fields
+                # Find checkboxes that were not set or unticketed and remove them
+            for f in red.smembers('FIELDS'):
+                if vfields.has_key(f) is False:
+                    # Found a field that was not selected but is marked as being set
+                    # in a previous iteration
+                    if red.sismember("ENFIELDS", f):
+                        red.srem("ENFIELDS", f)
 
-    fields = load_selected_fields()
-    return render_template('settings.html', fields=fields,
-                            desc = create_program_meta(),
-                            params = build_params())
+        fields = load_selected_fields()
+        return render_template('settings.html', fields=fields,
+                                desc = create_program_meta(),
+                                params = build_params())
+    except redis.ConnectionError,err:
+        errormsg("Cannot connect to redis. "+str(err))
+        return render_template('offline.html', prefix=prefix)
+
 if __name__=='__main__':
 
     try:
