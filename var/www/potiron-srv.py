@@ -314,9 +314,11 @@ def deliver_custom():
         field = request.form.get("field")
         fieldname = request.form.get("fieldname")
         date = request.form.get("date")
-        if fieldname is None:
-            # TODO write error html template"
-            return "ERROR no custom fieldname was specified"
+        if field == "" or fieldname == "" or date =="":
+            emsg = "An empty parameter was provided."
+            errormsg(emsg)
+            return render_template('content.html', desc=create_program_meta,
+                                    params=build_params(), emsg=emsg)
         # By default the latest day is used. When another date was specified
         # this one is used
         today = get_latest_day()
@@ -324,13 +326,15 @@ def deliver_custom():
             try:
                 d = datetime.datetime.strptime(date, "%Y-%m-%d")
                 today = d.strftime("%Y%m%d")
-            except ValueError:
-                # TODO log invalid date that was specified
-                pass
+            except ValueError,e:
+                errormsg("deliver_custom: Invalid timestamp. "+str(e))
         if red.sismember("FIELDS", fieldname):
-            # TODO Return another template or pop up if there is no data
             return deliver_evolution(today, fieldname, field)
-        return "TODO write fancy error here. Invalid data queried"
+
+        emsg = "An invalid parameter was provided"
+        return render_template('content.html', desc=create_program_meta,
+                                  params=build_params(), emsg=emsg)
+
     except redis.ConnectionError,err:
         errormsg("deliver_custom: Cannot connect to redis "+str(err))
         return render_template('offline.html', prefix=prefix)
