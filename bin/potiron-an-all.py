@@ -96,6 +96,8 @@ for doc in docs:
                 mod_doc = obj.annoate_doc(doc)
             if pdns.check_mandatory_fields(doc):
                 mod_doc = pdns.annoate_doc(mod_doc)
+            if asn.check_mandatory_fields(mod_doc):
+                mod_doc = asn.annoate_doc(mod_doc)
             newdocs.append(mod_doc)
 
 pdns.compact_cache()
