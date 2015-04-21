@@ -21,6 +21,7 @@ import json
 import os
 from PotironAnGeo import *
 from PotironAnPDNS import *
+from PotironAnASN import *
 import pprint
 from potiron import get_file_struct
 from potiron import errormsg
@@ -45,6 +46,8 @@ config.readfp(open(args.config[0], 'r'))
 #FIXME implement cleaner error handling
 config.get("pdns","server")
 config.getint("pdns","port")
+config.get("ipasn","server")
+config.getint("ipasn","port")
 f = sys.stdin
 if args.read is not None:
     f = open(args.read[0],"r")
@@ -52,6 +55,7 @@ docs = json.load(f)
 #FIXME Mandatory fields are not checked
 obj = AnnotateGeo()
 pdns = AnnotatePDNS(config.get("pdns","server"),config.getint("pdns" ,"port"))
+asn = AnnotateASN(config.get("ipasn","server"), config.getint("ipasn","port"))
 fd = sys.stdout
 if args.directory is not None:
     filename = None
