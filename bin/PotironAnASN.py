@@ -30,11 +30,10 @@ import ipasn_redis as ipasn
 import ConfigParser
 class AnnotateASN(Annotate):
 
-    def __init__(self, config):
+    def __init__(self, server, port):
         self.mfields = ["ipsrc" , "ipdst"]
-        self.config = config
-        ipasn.hostname = self.config.get("ipasn","server")
-        ipasn.port = self.config.getint("ipasn","port")
+        ipasn.hostname = server
+        ipasn.port = port
         self.cache = dict()
         self.cacheid = 0
         self.help=\
@@ -115,7 +114,4 @@ CREATED dictionary
         return doc
 
 if __name__== "__main__":
-    config = ConfigParser.ConfigParser()
-    config.readfp(open("../var/www/potiron.cfg"))
-    obj = AnnotateASN(config)
-    obj.handle_cli()
+    pass
