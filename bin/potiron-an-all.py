@@ -92,8 +92,8 @@ for doc in docs:
     if doc.has_key('type'):
         if doc['type'] == potiron.TYPE_PACKET:
             #Do all the annotations
-            if obj.check_mandatory_fields(doc):
-                mod_doc = obj.annoate_doc(doc)
+            #if obj.check_mandatory_fields(doc):
+            #    mod_doc = obj.annoate_doc(doc)
             if pdns.check_mandatory_fields(doc):
                 mod_doc = pdns.annoate_doc(mod_doc)
             if asn.check_mandatory_fields(mod_doc):
