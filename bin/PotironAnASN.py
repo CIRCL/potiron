@@ -79,7 +79,7 @@ CREATED dictionary
         #FIXME Cache is common between all annotations
         self.cacheid = self.cacheid + 1
         self.cache[ipaddress]  = (self.cacheid,asn)
-        self.cache['type'] = potiron.TYPE_PDNS_DICT
+        self.cache['type'] = potiron.TYPE_ASN_DICT
         if returndate != date:
             #FIXME Not tested
             potiron.errormsg("Date mismatch between ASN database and encountered timestamp in packet capture. IP="+ipaddress+". Date="+date+" "+"Return date= "+returndate)
