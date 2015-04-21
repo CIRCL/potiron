@@ -89,12 +89,14 @@ for doc in docs:
     #If the mandatory fields are not present the document should be left
     #intact
     mod_doc = doc
-    #Do all the annotations
-    if obj.check_mandatory_fields(doc):
-        mod_doc = obj.annoate_doc(doc)
-    if pdns.check_mandatory_fields(doc):
-        mod_doc = pdns.annoate_doc(mod_doc)
-    newdocs.append(mod_doc)
+    if doc.has_key('type'):
+        if doc['type'] == potiron.TYPE_PACKET:
+            #Do all the annotations
+            if obj.check_mandatory_fields(doc):
+                mod_doc = obj.annoate_doc(doc)
+            if pdns.check_mandatory_fields(doc):
+                mod_doc = pdns.annoate_doc(mod_doc)
+            newdocs.append(mod_doc)
 
 pdns.compact_cache()
 #Add Caches
