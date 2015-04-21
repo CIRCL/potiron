@@ -43,6 +43,7 @@ class Annotate(object):
         complete = True
         for field in self.mfields:
             if field not in doc:
+                infomsg("Field "+ field +" is missing for annotations")
                 complete = False
         return complete
 
