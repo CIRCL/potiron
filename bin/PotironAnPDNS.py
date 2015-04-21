@@ -53,6 +53,8 @@ class AnnotatePDNS(Annotate):
         return (self.cacheid, r)
 
     def annoate_doc(self, doc):
+        if doc.has_key('state') == False:
+            doc['state'] = 0
         if doc['state'] & potiron.STATE_PDNS_AN:
             #The document was already annotated
             return doc
