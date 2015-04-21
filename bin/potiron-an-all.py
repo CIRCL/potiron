@@ -105,6 +105,8 @@ pdns.compact_cache()
 #Do not add empty dictionaries
 if len(pdns.cache) > 1:
     newdocs.insert(0,pdns.cache)
+if len(asn.cache) > 1:
+    newdocs.insert(0,asn.cache)
 json.dump(newdocs,fd)
 fd.close()
 
