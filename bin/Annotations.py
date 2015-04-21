@@ -24,6 +24,7 @@ import datetime
 import os
 from potiron import get_file_struct
 from potiron import errormsg
+from potiron import infomsg
 
 class Annotate(object):
 
@@ -46,10 +47,15 @@ class Annotate(object):
         return complete
 
     def handle_docs(self, docs):
+        i = 0
         newdocs = [] 
         for doc in docs:
+            i = i + 1
             if self.check_mandatory_fields(doc):
                 doc = self.annoate_doc(doc)
+            else:
+                infomsg("Document number "+ str(i) +
+                        " cannot be annotated due to missing mandatory fields")
             #If the document is not complete or could not be annotated it should be
             #left intact
             newdocs.append(doc)
