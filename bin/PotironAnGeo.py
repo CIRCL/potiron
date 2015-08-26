@@ -33,7 +33,6 @@ class AnnotateGeo(Annotate):
                          "sensorname", "filename"]
         #Open the geoip database
         self.database    = "/usr/share/GeoIP/GeoIPCity.dat"
-        self.gi = GeoIP.open(self.database,GeoIP.GEOIP_STANDARD)
 
         self.help=\
 """potiron-json-geo.py [-h] [-r filename] [-d directory] [-k]
@@ -70,22 +69,33 @@ sipcity       City of the source IP
 dipcountry    Country of the Destination IP address
 dipcity       City of the Destination IP address
 """
+        try:
+            self.gi = GeoIP.open(self.database,GeoIP.GEOIP_STANDARD)
+        except Exception,e:
+            potiron.errormsg("Failed to initialize GeoIP module. Cause="+str(e))
+            self.gi = None
+
 #Function to annoate the data
     def annoate_doc(self, doc):
-        g = self.gi.record_by_addr(doc["ipdst"])
-        if g is not None:
-            if g["city"] is not None and type(g["city"]) is unicode:
-                doc["dipcity"] = unidecode(g["city"])
-            if g["country_name"] is not None and type(g["country_name"]) is unicode:
-                doc["dipcountry"] = unidecode(g["country_name"])
+        if self.gi is None:
+            return doc
+        try:
+            g = self.gi.record_by_addr(doc["ipdst"])
+            if g is not None:
+                if g["city"] is not None and type(g["city"]) is unicode:
+                    doc["dipcity"] = unidecode(g["city"])
+                if g["country_name"] is not None and type(g["country_name"]) is unicode:
+                    doc["dipcountry"] = unidecode(g["country_name"])
 
-        g = self.gi.record_by_addr(doc["ipsrc"])
-        if g is not None:
-            if g["city"] is not None and type(g["city"]) is unicode:
-                doc["sipcity"] = unidecode(g["city"])
-            if g["country_name"] is not None and type(g["country_name"]) is unicode:
-                doc["sipcountry"] = unidecode(g["country_name"])
-        doc['state'] = doc['state'] | potiron.STATE_GEO_AN
+            g = self.gi.record_by_addr(doc["ipsrc"])
+            if g is not None:
+                if g["city"] is not None and type(g["city"]) is unicode:
+                    doc["sipcity"] = unidecode(g["city"])
+                if g["country_name"] is not None and type(g["country_name"]) is unicode:
+                    doc["sipcountry"] = unidecode(g["country_name"])
+            doc['state'] = doc['state'] | potiron.STATE_GEO_AN
+        except Exception,e:
+            errormsg("Geoip annotation failed. Cause=",str(e))
         return doc
 
 if __name__== "__main__":
