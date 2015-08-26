@@ -58,13 +58,16 @@ class AnnotatePDNS(Annotate):
         if doc['state'] & potiron.STATE_PDNS_AN:
             #The document was already annotated
             return doc
-        (rid,name) = self.get_rrnames(doc["ipsrc"])
-        if name != "":
-            doc["a_"+str(potiron.TYPE_PDNS_DICT)+"_ipsrc"] = rid
-        (rid,name) = self.get_rrnames(doc["ipdst"])
-        if name != "":
-            doc["a_"+str(potiron.TYPE_PDNS_DICT)+"_ipdst"] = rid
-        doc["state"] = doc["state"] | potiron.STATE_PDNS_AN
+        try:
+            (rid,name) = self.get_rrnames(doc["ipsrc"])
+            if name != "":
+                doc["a_"+str(potiron.TYPE_PDNS_DICT)+"_ipsrc"] = rid
+            (rid,name) = self.get_rrnames(doc["ipdst"])
+            if name != "":
+                doc["a_"+str(potiron.TYPE_PDNS_DICT)+"_ipdst"] = rid
+            doc["state"] = doc["state"] | potiron.STATE_PDNS_AN
+        except Exception,e:
+            potiron.errormsg("Failed to annotate with PDNS data. Cause="+str(e))
         return doc
 
     #Remove all the IP addresses that had no PDNS results
