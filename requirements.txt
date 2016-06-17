@@ -2,3 +2,4 @@ flask
 redis
 GeoIP
 unidecode
+ipasn_redis
