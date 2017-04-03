@@ -16,25 +16,21 @@
 #    You should have received a copy of the GNU Affero General Public License
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
-import getopt
-import sys
-import json
-import pprint
 import GeoIP
-import datetime
 from unidecode import unidecode
 from Annotations import Annotate
 import potiron
 
+
 class AnnotateGeo(Annotate):
 
     def __init__(self):
-        self.mfields = [ "ipsrc" , "ipdst", "packet_id", "timestamp",
-                         "sensorname", "filename"]
-        #Open the geoip database
-        self.database    = "/usr/share/GeoIP/GeoIPCity.dat"
+        self.mfields = ["ipsrc", "ipdst", "packet_id", "timestamp",
+                        "sensorname", "filename"]
+        # Open the geoip database
+        self.database = "/usr/share/GeoIP/GeoIPCity.dat"
 
-        self.help=\
+        self.help = \
 """potiron-json-geo.py [-h] [-r filename] [-d directory] [-k]
                                  [-c config] [-i index]
 
@@ -70,12 +66,12 @@ dipcountry    Country of the Destination IP address
 dipcity       City of the Destination IP address
 """
         try:
-            self.gi = GeoIP.open(self.database,GeoIP.GEOIP_STANDARD)
+            self.gi = GeoIP.open(self.database, GeoIP.GEOIP_STANDARD)
         except Exception as e:
-            potiron.errormsg("Failed to initialize GeoIP module. Cause="+str(e))
+            potiron.errormsg("Failed to initialize GeoIP module. Cause={}".format(e))
             self.gi = None
 
-#Function to annoate the data
+    # Function to annoate the data
     def annoate_doc(self, doc):
         if self.gi is None:
             return doc
@@ -95,9 +91,9 @@ dipcity       City of the Destination IP address
                     doc["sipcountry"] = unidecode(g["country_name"])
             doc['state'] = doc['state'] | potiron.STATE_GEO_AN
         except Exception as e:
-            errormsg("Geoip annotation failed. Cause=",str(e))
+            potiron.errormsg("Geoip annotation failed. Cause={}".format(e))
         return doc
 
-if __name__== "__main__":
+if __name__ == "__main__":
     obj = AnnotateGeo()
     obj.handle_cli()

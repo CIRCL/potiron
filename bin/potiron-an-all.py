@@ -19,53 +19,51 @@
 import argparse
 import json
 import os
-from PotironAnGeo import *
-from PotironAnPDNS import *
-from PotironAnASN import *
-import pprint
+import sys
+from PotironAnGeo import AnnotateGeo
+from PotironAnPDNS import AnnotatePDNS
+from PotironAnASN import AnnotateASN
 from potiron import get_file_struct
 from potiron import errormsg
+import potiron
 import configparser
 
 parser = argparse.ArgumentParser(description="Do all potiron annotations")
-parser.add_argument("-r","--read", type=str, nargs=1,
-help ="Json document that should be annotated")
-parser.add_argument("-d","--directory", type=str, nargs=1,
-help="Directory containing the annotated files")
-parser.add_argument("-c", "--config", type=str, nargs=1,
-help="Config file")
+parser.add_argument("-r", "--read", type=str, nargs=1, help="Json document that should be annotated")
+parser.add_argument("-d", "--directory", type=str, nargs=1, help="Directory containing the annotated files")
+parser.add_argument("-c", "--config", type=str, nargs=1, help="Config file")
 
 args = parser.parse_args()
 if args.config is None:
     errormsg("A config file must be specified")
     sys.exit(1)
-#Load config file
+# Load config file
 config = configparser.ConfigParser()
 config.readfp(open(args.config[0], 'r'))
-#Access the fields if not exits throw excpetion
-#FIXME implement cleaner error handling
-config.get("pdns","server")
-config.getint("pdns","port")
-config.get("ipasn","server")
-config.getint("ipasn","port")
+# Access the fields if not exits throw excpetion
+# FIXME implement cleaner error handling
+config.get("pdns", "server")
+config.getint("pdns", "port")
+config.get("ipasn", "server")
+config.getint("ipasn", "port")
 f = sys.stdin
 if args.read is not None:
-    f = open(args.read[0],"r")
+    f = open(args.read[0], "r")
 docs = json.load(f)
-#FIXME Mandatory fields are not checked
+# FIXME Mandatory fields are not checked
 obj = AnnotateGeo()
-pdns = AnnotatePDNS(config.get("pdns","server"),config.getint("pdns" ,"port"))
-asn = AnnotateASN(config.get("ipasn","server"), config.getint("ipasn","port"))
+pdns = AnnotatePDNS(config.get("pdns", "server"), config.getint("pdns", "port"))
+asn = AnnotateASN(config.get("ipasn", "server"), config.getint("ipasn", "port"))
 fd = sys.stdout
 if args.directory is not None:
     filename = None
     if args.read is None:
         if len(docs) > 0:
-            if ("filename" in docs[0]) == False:
+            if "filename" not in docs[0]:
                 sys.exit(0)
             filename = docs[0]["filename"]
         else:
-            #When no filename can be extracted abort
+            # When no filename can be extracted abort
             sys.exit(0)
     else:
         filename = args.read[0]
@@ -73,26 +71,25 @@ if args.directory is not None:
     fn = get_file_struct(args.directory[0], filename)
     t = fn.split('/')
     d = "/".join(t[0:-1])
-    #When processing in parallel the directory could have been created
-    #Between the directory test and makedirs
+    # When processing in parallel the directory could have been created
+    # Between the directory test and makedirs
     try:
-        if os.path.exists(d) == False:
+        if not os.path.exists(d):
             os.makedirs(d)
     except OSError as e:
         if e.errno != 17:
-            #Something else happened propagate exception
+            # Something else happened propagate exception
             raise OSError(e)
         potiron.infomsg("Someone else created the directory")
-    fd = open(fn,"w")
+    fd = open(fn, "w")
 newdocs = []
 for doc in docs:
-    #If the mandatory fields are not present the document should be left
-    #intact
+    # If the mandatory fields are not present the document should be left intact
     mod_doc = doc
     if 'type' in doc:
         if doc['type'] == potiron.TYPE_PACKET:
-            #Do all the annotations
-            #if obj.check_mandatory_fields(doc):
+            # Do all the annotations
+            # if obj.check_mandatory_fields(doc):
             #    mod_doc = obj.annoate_doc(doc)
             if pdns.check_mandatory_fields(doc):
                 mod_doc = pdns.annoate_doc(mod_doc)
@@ -101,12 +98,11 @@ for doc in docs:
             newdocs.append(mod_doc)
 
 pdns.compact_cache()
-#Add Caches
-#Do not add empty dictionaries
+# Add Caches
+# Do not add empty dictionaries
 if len(pdns.cache) > 1:
-    newdocs.insert(0,pdns.cache)
+    newdocs.insert(0, pdns.cache)
 if len(asn.cache) > 1:
-    newdocs.insert(0,asn.cache)
-json.dump(newdocs,fd)
+    newdocs.insert(0, asn.cache)
+json.dump(newdocs, fd)
 fd.close()
-

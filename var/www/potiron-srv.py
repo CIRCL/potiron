@@ -40,26 +40,27 @@ def check_fields():
     # There was an error
     return False
 
+
 def check_database():
-    if check_fields() == False:
+    if not check_fields():
         return "Mandatory fields are missing in the redis database."
-    #Take a random day, random field, that was ranked and check if the
-    #configured sensorname correspond to the ranked data
+    # Take a random day, random field, that was ranked and check if the
+    # configured sensorname correspond to the ranked data
 
     day = red.srandmember("DAYS")
     field = red.srandmember("FIELDS")
     key = sensorname + ":" + day + ":" + field
-    if red.exists(key) == False:
+    if not red.exists(key):
         return "The sensorname does not correspond to the data in redis."
 
-    #all checks are fine
+    # all checks are fine
     return None
 
 # FIXME to slow to compute at each time?
 
 
 def get_latest_day():
-    if red.exists("DAYS") == False:
+    if not red.exists("DAYS"):
         return None
     days = []
     for day in red.smembers("DAYS"):
@@ -82,7 +83,7 @@ def enum_last_days(today, period):
 
 
 def get_description(name):
-    k = "DS_"+name
+    k = "DS_" + name
     desc = red.get(k)
     if desc is not None:
         return desc
@@ -90,7 +91,7 @@ def get_description(name):
 
 
 def translate_key_human(name, key):
-    k = "TR_"+name
+    k = "TR_" + name
     disp_key = red.hget(k, key)
     if disp_key is not None:
         return disp_key
@@ -98,7 +99,7 @@ def translate_key_human(name, key):
 
 
 def translate_human_to_redis(name, key):
-    k = "RT_"+name
+    k = "RT_" + name
     disp_key = red.hget(k, key)
     if disp_key is not None:
         return disp_key
@@ -121,7 +122,7 @@ def get_recent_evolution(day, field, keys, period):
         i = 0
         for i in range(0, len(keys)):
             ky = keys[i]
-            k = sensorname + ":"+day+":"+field
+            k = sensorname + ":" + day + ":" + field
             score = red.zscore(k, ky)
             if score is not None:
                 scores[i] = str(score)
@@ -136,7 +137,7 @@ def create_legend(field, top3):
     htop3 = []
     for key in top3:
         htop3.append(translate_key_human(field, key))
-    return "Date,"+",".join(htop3)
+    return "Date," + ",".join(htop3)
 
 
 def get_top_10_per_day(day, fields):
@@ -195,6 +196,7 @@ def get_enabled_fields_num():
     x = red.scard("ENFIELDS")
     return x
 
+
 def check_user_day(day):
     try:
         if day is None:
@@ -206,12 +208,13 @@ def check_user_day(day):
         # the most recent date is used
         d = datetime.datetime.strptime(day, "%Y-%m-%d")
         day = d.strftime("%Y%m%d")
-        #Check if there is data for this day
+        # Check if there is data for this day
         if red.sismember("DAYS", day) == 1:
             return day
     except ValueError as error:
-        errormsg("check_user_day: "+str(error))
+        errormsg("check_user_day: " + str(error))
     return None
+
 
 @app.route('/', methods=['GET', 'POST'])
 def welcome():
@@ -221,23 +224,21 @@ def welcome():
         emsg = check_database()
         if emsg is not None:
             return render_template('content.html', desc=desc, params=params, emsg=emsg)
-        #By default use latest day
+        # By default use latest day
         day = get_latest_day()
         if request.method == 'POST':
             p = request.form.get('datepicker')
-            #JavaScript Library does also some checks. Do not trust the
-            #code running on client machines
+            # JavaScript Library does also some checks. Do not trust the
+            # code running on client machines
             day = check_user_day(p)
             if day is None:
                 return render_template('content.html', desc=desc,
-                                            params=params, emsg=
-                                           "Invalid date specified")
+                                       params=params, emsg="Invalid date specified")
         fields = []
         for field in red.smembers("ENFIELDS"):
             fields.append(field)
 
         topdata = get_top_10_per_day(day, fields)
-
 
         # Convert back the selected date
         d = datetime.datetime.strptime(day, "%Y%m%d")
@@ -248,18 +249,19 @@ def welcome():
             emsg = "No data fields are selected. Please select some fields in \
 the settings menu."
             return render_template('content.html', desc=desc, fields=fields,
-                                    topdata=topdata, params=build_params(),
-                                    seldate=selday, emsg=emsg)
+                                   topdata=topdata, params=build_params(),
+                                   seldate=selday, emsg=emsg)
 
         return render_template('content.html', desc=desc, fields=fields,
-                            topdata=topdata, params=build_params(),
-                            seldate=selday)
+                               topdata=topdata, params=build_params(),
+                               seldate=selday)
     except redis.ConnectionError as err:
-        errormsg("Could not connect to redis. "+str(err))
-        return render_template('offline.html',prefix=prefix)
+        errormsg("Could not connect to redis. " + str(err))
+        return render_template('offline.html', prefix=prefix)
 
-#Check if the date delivered by potiron in the overview screen  was not
-#tampered in the meantime
+
+# Check if the date delivered by potiron in the overview screen  was not
+# tampered in the meantime
 def check_date(date):
     try:
         if date is None:
@@ -268,14 +270,15 @@ def check_date(date):
         if len(date) > 20:
             errormsg("check_date: Date field is too large")
             return False
-        #Try to parse it. If it fails exception is thrown
+        # Try to parse it. If it fails exception is thrown
         datetime.datetime.strptime(date, "%Y%m%d")
         return True
     except ValueError as e:
-        errormsg("check_date: Wrong date format."+str(e))
+        errormsg("check_date: Wrong date format." + str(e))
     return False
 
-#FIXME Verify the field and key parameters too
+
+# FIXME Verify the field and key parameters too
 @app.route('/evolution/<date>/<field>/<key>/')
 @app.route('/evolution/<date>/<field>/<key>')
 def deliver_evolution(date, field, key):
@@ -283,7 +286,7 @@ def deliver_evolution(date, field, key):
         desc = create_program_meta()
         params = build_params()
         if check_date(date) is False:
-            emsg="Invalid date specified"
+            emsg = "Invalid date specified"
             return render_template('content.html', desc=desc, params=params,
                                    emsg=emsg)
         data = []
@@ -291,7 +294,7 @@ def deliver_evolution(date, field, key):
         rkey = translate_human_to_redis(field, key)
         for date in daterange:
             entry = dict()
-            k = sensorname+":"+date+":"+field
+            k = sensorname + ":" + date + ":" + field
             score = red.zscore(k, rkey)
             if (score is not None):
                 entry['date'] = date
@@ -304,8 +307,9 @@ def deliver_evolution(date, field, key):
         return render_template("evol.html", desc=desc, date=showdate, field=field,
                                key=key, data=data, params=params)
     except redis.ConnectionError as err:
-        errormsg("Cannot connect to redis "+str(err))
+        errormsg("Cannot connect to redis " + str(err))
         return render_template('offline.html', prefix=prefix)
+
 
 @app.route('/custom/', methods=['POST'])
 @app.route('/custom', methods=['POST'])
@@ -314,11 +318,11 @@ def deliver_custom():
         field = request.form.get("field")
         fieldname = request.form.get("fieldname")
         date = request.form.get("date")
-        if field == "" or fieldname == "" or date =="":
+        if field == "" or fieldname == "" or date == "":
             emsg = "An empty parameter was provided."
             errormsg(emsg)
             return render_template('content.html', desc=create_program_meta,
-                                    params=build_params(), emsg=emsg)
+                                   params=build_params(), emsg=emsg)
         # By default the latest day is used. When another date was specified
         # this one is used
         today = get_latest_day()
@@ -327,17 +331,18 @@ def deliver_custom():
                 d = datetime.datetime.strptime(date, "%Y-%m-%d")
                 today = d.strftime("%Y%m%d")
             except ValueError as e:
-                errormsg("deliver_custom: Invalid timestamp. "+str(e))
+                errormsg("deliver_custom: Invalid timestamp. " + str(e))
         if red.sismember("FIELDS", fieldname):
             return deliver_evolution(today, fieldname, field)
 
         emsg = "An invalid parameter was provided"
         return render_template('content.html', desc=create_program_meta,
-                                  params=build_params(), emsg=emsg)
+                               params=build_params(), emsg=emsg)
 
     except redis.ConnectionError as err:
-        errormsg("deliver_custom: Cannot connect to redis "+str(err))
+        errormsg("deliver_custom: Cannot connect to redis " + str(err))
         return render_template('offline.html', prefix=prefix)
+
 
 # Deliver all the files in static directory
 # TODO ../../../etc/passwd seems not to work
@@ -359,8 +364,9 @@ def load_selected_fields():
         fields.append(obj)
     return fields
 
-@app.route('/settings/',methods=['POST','GET'])
-@app.route('/settings',methods=['POST','GET'])
+
+@app.route('/settings/', methods=['POST', 'GET'])
+@app.route('/settings', methods=['POST', 'GET'])
 def send_settings():
     try:
         if request.method == 'POST':
@@ -382,13 +388,14 @@ def send_settings():
 
         fields = load_selected_fields()
         return render_template('settings.html', fields=fields,
-                                desc = create_program_meta(),
-                                params = build_params())
+                               desc=create_program_meta(),
+                               params=build_params())
     except redis.ConnectionError as err:
-        errormsg("Cannot connect to redis. "+str(err))
+        errormsg("Cannot connect to redis. " + str(err))
         return render_template('offline.html', prefix=prefix)
 
-if __name__=='__main__':
+
+if __name__ == '__main__':
 
     try:
         # Load config file
@@ -399,11 +406,10 @@ if __name__=='__main__':
  command line argument.\n")
             sys.exit(1)
         configfile = sys.argv[1]
-        if os.path.exists(configfile) == False:
+        if not os.path.exists(configfile):
             sys.stderr.write("[ERROR] Config file was not found.\n")
             sys.exit(1)
         conf.readfp(open(configfile))
-
 
         interface = conf.get("dashboard", "interface")
         port = conf.getint("dashboard", "port")

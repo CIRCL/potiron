@@ -20,13 +20,15 @@ import requests
 import json
 from Annotations import Annotate
 import potiron
+
+
 class AnnotatePDNS(Annotate):
 
-    def __init__(self,server, port):
+    def __init__(self, server, port):
         self.server = server
         self.port = port
-        self.url = "http://"+server+":"+str(port)+"/query/"
-        self.mfields = [ "ipsrc", "ipdst", "packet_id", "timestamp" ]
+        self.url = "http://{}:{}/query/".format(server, port)
+        self.mfields = ["ipsrc", "ipdst", "packet_id", "timestamp"]
         self.help = "NYI"
         self.cache = dict()
         self.cacheid = 0
@@ -37,40 +39,40 @@ class AnnotatePDNS(Annotate):
             return self.cache[ipaddress]
         names = []
         rrnames = dict()
-        r = requests.get(self.url  +  ipaddress)
+        r = requests.get(self.url + ipaddress)
         if r.status_code == 200:
             lines = r.content.split('\n')
             for sr in lines:
                 if sr != "":
                     obj = json.loads(sr)
                     if 'rrname' in obj:
-                         rrnames[obj['rrname']] = 1
+                        rrnames[obj['rrname']] = 1
             names = list(rrnames.keys())
             names.sort()
-        r =  ",".join(names)
+        r = ",".join(names)
         self.cacheid = self.cacheid + 1
         self.cache[ipaddress] = (self.cacheid, r)
         return (self.cacheid, r)
 
     def annoate_doc(self, doc):
-        if ('state' in doc) == False:
+        if 'state' not in doc:
             doc['state'] = 0
         if doc['state'] & potiron.STATE_PDNS_AN:
-            #The document was already annotated
+            # The document was already annotated
             return doc
         try:
-            (rid,name) = self.get_rrnames(doc["ipsrc"])
+            (rid, name) = self.get_rrnames(doc["ipsrc"])
             if name != "":
-                doc["a_"+str(potiron.TYPE_PDNS_DICT)+"_ipsrc"] = rid
-            (rid,name) = self.get_rrnames(doc["ipdst"])
+                doc["a_{}_ipsrc".format(potiron.TYPE_PDNS_DICT)] = rid
+            (rid, name) = self.get_rrnames(doc["ipdst"])
             if name != "":
-                doc["a_"+str(potiron.TYPE_PDNS_DICT)+"_ipdst"] = rid
+                doc["a_{}_ipdst".format(potiron.TYPE_PDNS_DICT)] = rid
             doc["state"] = doc["state"] | potiron.STATE_PDNS_AN
         except Exception as e:
-            potiron.errormsg("Failed to annotate with PDNS data. Cause="+str(e))
+            potiron.errormsg("Failed to annotate with PDNS data. Cause={}".format(e))
         return doc
 
-    #Remove all the IP addresses that had no PDNS results
+    # Remove all the IP addresses that had no PDNS results
     def compact_cache(self):
         for key in list(self.cache.keys()):
             if key is not "type":
@@ -79,6 +81,6 @@ class AnnotatePDNS(Annotate):
                     del self.cache[key]
 
 if __name__ == "__main__":
-    #FIXME put in config file
-    obj = AnnotatePDNS("127.0.0.1",8900)
+    # FIXME put in config file
+    obj = AnnotatePDNS("127.0.0.1", 8900)
     obj.handle_cli()

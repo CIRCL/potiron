@@ -16,27 +16,20 @@
 #    You should have received a copy of the GNU Affero General Public License
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
-import getopt
-import sys
-import json
-import pprint
-import GeoIP
-import datetime
-from unidecode import unidecode
 from Annotations import Annotate
 import potiron
-import redis
 import ipasn_redis as ipasn
-import configparser
+
+
 class AnnotateASN(Annotate):
 
     def __init__(self, server, port):
-        self.mfields = ["ipsrc" , "ipdst"]
+        self.mfields = ["ipsrc", "ipdst"]
         ipasn.hostname = server
         ipasn.port = port
         self.cache = dict()
         self.cacheid = 0
-        self.help=\
+        self.help = \
 """PotironAnASN [-h] [-r filename] [-d directory] [-k]
                                  [-c config] [-i index]
 
@@ -72,46 +65,47 @@ ip_13_ipdst   Pointer to the ASN annotation dictionary
 CREATED dictionary
 """
 
-    def get_asn(self, ipaddress,date):
+    def get_asn(self, ipaddress, date):
         if ipaddress in self.cache:
             return self.cache[ipaddress]
-        (asn,returndate) = ipasn.asn(ipaddress , date)
-        #FIXME Cache is common between all annotations
+        asn, returndate = ipasn.asn(ipaddress, date)
+        # FIXME Cache is common between all annotations
         self.cacheid = self.cacheid + 1
-        self.cache[ipaddress]  = (self.cacheid,asn)
+        self.cache[ipaddress] = (self.cacheid, asn)
         self.cache['type'] = potiron.TYPE_ASN_DICT
         if returndate != date:
-            #FIXME Not tested
-            potiron.errormsg("Date mismatch between ASN database and encountered timestamp in packet capture. IP="+ipaddress+". Date="+date+" "+"Return date= "+returndate)
+            # FIXME Not tested
+            potiron.errormsg("Date mismatch between ASN database and encountered timestamp in packet capture. IP={}. Date={} Return date= {}".format(ipaddress, date, returndate))
         return (self.cacheid, asn)
 
     def annoate_doc(self, doc):
         date = None
-        if ('state' in doc) == False:
+        if 'state' not in doc:
             doc['state'] = 0
-        #TODO test if already annoated
+        # TODO test if already annoated
         d = ""
-        #Extract timestamp
+        # Extract timestamp
         if 'timestamp' in doc:
-            (date,time) = doc['timestamp'].split(' ')
-            date=date.replace('-','')
+            date, time = doc['timestamp'].split(' ')
+            date = date.replace('-', '')
 
         srcasn = 0
         if doc['ipsrc'] in self.cache:
+            # FIXME: srcid isn't used
             srcid = self.cache[doc['ipsrc']]
         else:
             self.cacheid = self.cacheid + 1
-            (srcasn,d) = ipasn.asn(doc['ipsrc'] , date)
+            srcasn, d = ipasn.asn(doc['ipsrc'], date)
 
-        (aid, ip) = self.get_asn(doc["ipsrc"], date)
+        aid, ip = self.get_asn(doc["ipsrc"], date)
         if ip is not None:
-            doc['a_'+str(potiron.TYPE_ASN_DICT)+'+_ipsrc'] = aid
-        (aid, ip) = self.get_asn(doc["ipdst"], date)
+            doc['a_{}_ipsrc'.format(potiron.TYPE_ASN_DICT)] = aid
+        aid, ip = self.get_asn(doc["ipdst"], date)
         if aid is not None:
-            doc['a_'+str(potiron.TYPE_ASN_DICT)+'_ipdst'] =  aid
+            doc['a_{}_ipdst'.format(potiron.TYPE_ASN_DICT)] = aid
         doc["state"] = doc["state"] | potiron.STATE_ASN_AN
 
         return doc
 
-if __name__== "__main__":
+if __name__ == "__main__":
     pass

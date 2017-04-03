@@ -32,12 +32,9 @@ non_index = ['', 'filename', 'sensorname', 'timestamp', 'packet_id']
 
 parser = argparse.ArgumentParser(description='Import IPSumpdump json documents\
 into redis.')
-parser.add_argument('--filename', type=str, nargs=1, help='Filename of a \
-json document that should be imported.')
-parser.add_argument('--unix', type=str, nargs=1, help='Unix socket to connect to \
-redis-server.')
-parser.add_argument('--reverse', action='store_false',
-                    help = 'Create global reverse dictionaries')
+parser.add_argument('--filename', type=str, nargs=1, help='Filename of a json document that should be imported.')
+parser.add_argument('--unix', type=str, nargs=1, help='Unix socket to connect to redis-server.')
+parser.add_argument('--reverse', action='store_false', help='Create global reverse dictionaries')
 
 args = parser.parse_args()
 if args.unix is None:
@@ -48,7 +45,7 @@ usocket = args.unix[0]
 
 red = redis.Redis(unix_socket_path=usocket)
 
-if args.reverse == False:
+if not args.reverse:
     potiron.create_reverse_global_dicts(red)
     potiron.infomsg("Created global reverse annotation dictionaries")
     sys.exit(0)
@@ -62,7 +59,7 @@ filename = args.filename[0]
 # Check if file was already imported
 fn = os.path.basename(filename)
 if red.sismember("FILES", fn):
-    sys.stderr.write('[INFO] Filename ' +fn+' was already imported ... skip ...\n')
+    sys.stderr.write('[INFO] Filename ' + fn + ' was already imported ... skip ...\n')
     sys.exit(0)
 red.sadd("FILES", fn)
 
@@ -70,7 +67,7 @@ f = open(filename, 'r')
 doc = json.load(f)
 f.close()
 
-#Record local dictionaries
+# Record local dictionaries
 local_dicts = dict()
 rev_dics = dict()
 
@@ -87,10 +84,10 @@ for di in doc:
     if di["type"] > potiron.DICT_LOWER_BOUNDARY:
         local_dicts[di["type"]] = di
     if di["type"] == potiron.TYPE_PACKET:
-        if revcreated == False:
-            #FIXME if a json file was annotated twice the resulting json file
-            #includes two dictionaries of the same type
-            #Only the last one is considered
+        if not revcreated:
+            # FIXME if a json file was annotated twice the resulting json file
+            # includes two dictionaries of the same type
+            # Only the last one is considered
             rev_dics = potiron.create_reverse_local_dicts(local_dicts)
             revcreated = True
         timestamp = di['timestamp']
@@ -104,12 +101,12 @@ for di in doc:
                 feature = di[k]
                 if k.startswith(potiron.ANNOTATION_PREFIX):
                     feature = potiron.translate_dictionaries(rev_dics, red, k, di[k])
-                    #Create the links between annotations and theire objects
+                    # Create the links between annotations and theire objects
                     idn = potiron.get_dictionary_id(k)
-                    obj = potiron.get_annotation_origin(di,k)
+                    obj = potiron.get_annotation_origin(di, k)
                     if obj is not None and idn is not None:
-                        kn = "AR_"+str(idn)+"_"+obj
-                        p.set(kn,feature)
+                        kn = "AR_{}_{}".format(idn, obj)
+                        p.set(kn, feature)
                 keyname = sensorname + ":" + day + ":" + k
                 p.sadd("FIELDS", k)
                 p.zincrby(keyname, feature, 1)
