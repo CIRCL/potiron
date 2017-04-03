@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/env python3
 #    Potiron -  Normalize, Index, Enrich and Visualize Network Capture
 #    Copyright (C) 2014 Gerard Wagener
 #    Copyright (C) 2014 CIRCL Computer Incident Response Center Luxembourg (smile gie)
@@ -27,7 +27,7 @@ from Annotations import Annotate
 import potiron
 import redis
 import ipasn_redis as ipasn
-import ConfigParser
+import configparser
 class AnnotateASN(Annotate):
 
     def __init__(self, server, port):
@@ -38,7 +38,7 @@ class AnnotateASN(Annotate):
         self.cacheid = 0
         self.help=\
 """PotironAnASN [-h] [-r filename] [-d directory] [-k]
-                                 [-c config] [-i index] 
+                                 [-c config] [-i index]
 
     -h Shows this screen
     -d directory Specify the directory where the files should be stored
@@ -66,14 +66,14 @@ The following fields are added to the json document
 
 KEY           VALUE
 
-ip_13_ipsrc   Pointer to the ASN annotation dictionary 
+ip_13_ipsrc   Pointer to the ASN annotation dictionary
 ip_13_ipdst   Pointer to the ASN annotation dictionary
 
 CREATED dictionary
 """
 
     def get_asn(self, ipaddress,date):
-        if self.cache.has_key(ipaddress):
+        if ipaddress in self.cache:
             return self.cache[ipaddress]
         (asn,returndate) = ipasn.asn(ipaddress , date)
         #FIXME Cache is common between all annotations
@@ -87,25 +87,25 @@ CREATED dictionary
 
     def annoate_doc(self, doc):
         date = None
-        if doc.has_key('state') == False:
+        if ('state' in doc) == False:
             doc['state'] = 0
         #TODO test if already annoated
-        d = "" 
+        d = ""
         #Extract timestamp
-        if doc.has_key('timestamp'):
+        if 'timestamp' in doc:
             (date,time) = doc['timestamp'].split(' ')
             date=date.replace('-','')
 
         srcasn = 0
-        if self.cache.has_key(doc['ipsrc']):
+        if doc['ipsrc'] in self.cache:
             srcid = self.cache[doc['ipsrc']]
         else:
             self.cacheid = self.cacheid + 1
             (srcasn,d) = ipasn.asn(doc['ipsrc'] , date)
-            
+
         (aid, ip) = self.get_asn(doc["ipsrc"], date)
         if ip is not None:
-            doc['a_'+str(potiron.TYPE_ASN_DICT)+'+_ipsrc'] = aid 
+            doc['a_'+str(potiron.TYPE_ASN_DICT)+'+_ipsrc'] = aid
         (aid, ip) = self.get_asn(doc["ipdst"], date)
         if aid is not None:
             doc['a_'+str(potiron.TYPE_ASN_DICT)+'_ipdst'] =  aid

@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/env python3
 #    Potiron -  Normalize, Index, Enrich and Visualize Network Capture
 #    Copyright (C) 2015 Gerard Wagener
 #    Copyright (C) 2015 CIRCL Computer Incident Response Center Luxembourg (smile gie)
@@ -25,12 +25,12 @@ from PotironAnASN import *
 import pprint
 from potiron import get_file_struct
 from potiron import errormsg
-import ConfigParser
+import configparser
 
 parser = argparse.ArgumentParser(description="Do all potiron annotations")
 parser.add_argument("-r","--read", type=str, nargs=1,
 help ="Json document that should be annotated")
-parser.add_argument("-d","--directory", type=str, nargs=1, 
+parser.add_argument("-d","--directory", type=str, nargs=1,
 help="Directory containing the annotated files")
 parser.add_argument("-c", "--config", type=str, nargs=1,
 help="Config file")
@@ -40,7 +40,7 @@ if args.config is None:
     errormsg("A config file must be specified")
     sys.exit(1)
 #Load config file
-config = ConfigParser.ConfigParser()
+config = configparser.ConfigParser()
 config.readfp(open(args.config[0], 'r'))
 #Access the fields if not exits throw excpetion
 #FIXME implement cleaner error handling
@@ -61,7 +61,7 @@ if args.directory is not None:
     filename = None
     if args.read is None:
         if len(docs) > 0:
-            if docs[0].has_key("filename") == False:
+            if ("filename" in docs[0]) == False:
                 sys.exit(0)
             filename = docs[0]["filename"]
         else:
@@ -78,7 +78,7 @@ if args.directory is not None:
     try:
         if os.path.exists(d) == False:
             os.makedirs(d)
-    except OSError,e:
+    except OSError as e:
         if e.errno != 17:
             #Something else happened propagate exception
             raise OSError(e)
@@ -89,7 +89,7 @@ for doc in docs:
     #If the mandatory fields are not present the document should be left
     #intact
     mod_doc = doc
-    if doc.has_key('type'):
+    if 'type' in doc:
         if doc['type'] == potiron.TYPE_PACKET:
             #Do all the annotations
             #if obj.check_mandatory_fields(doc):

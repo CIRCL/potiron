@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/env python3
 #    Potiron -  Normalize, Index, Enrich and Visualize Network Capture
 #    Copyright (C) 2014 Gerard Wagener
 #    Copyright (C) 2014 CIRCL Computer Incident Response Center Luxembourg (smile gie)
@@ -71,7 +71,7 @@ def get_file_struct(rootdir, filename, suffix="json"):
         out = obj.strftime("%Y/%m/%d")
         result = rootdir + os.sep + out + os.sep +f + suffix
         return result
-    except ValueError,e:
+    except ValueError as e:
         errormsg("get_file_struct." + str(e) + "\n")
         raise OSError("Do not know where to store the file "+filename)
 
@@ -115,9 +115,9 @@ def check_program(program):
 
 def get_sensor_name(doc):
     for obj in doc:
-        if obj.has_key("type"):
+        if "type" in obj:
             if obj["type"] == TYPE_SOURCE:
-                if obj.has_key("sensorname"):
+                if "sensorname" in obj:
                     return obj["sensorname"]
     return None
 
@@ -127,8 +127,8 @@ def get_sensor_name(doc):
 #creates a dictionary to lookup an id in a local dictionary
 def create_reverse_local_dicts(dicts):
     rdicts = dict()
-    for typ in dicts.keys():
-        if rdicts.has_key(typ) == False:
+    for typ in list(dicts.keys()):
+        if (typ in rdicts) == False:
             rdicts[typ] = dict()
         for key in dicts[typ]:
             if key != "type":
@@ -152,9 +152,9 @@ def translate_dictionaries(rev_dicts, red ,key, localvalue):
         try:
             t = key.split('_')
             dt = int(t[1])
-            if rev_dicts.has_key(dt) == False:
+            if (dt in rev_dicts) == False:
                 raise KeyError("Dictionary type " +  str(dt) + " is not known")
-            if rev_dicts[dt].has_key(localvalue) == False:
+            if (localvalue in rev_dicts[dt]) == False:
                 raise KeyError("Local value in dictionary "+str(dt) +":"
                                 +str(localvalue) + "is unknown")
             new_value = rev_dicts[dt][localvalue]
@@ -178,9 +178,9 @@ def translate_dictionaries(rev_dicts, red ,key, localvalue):
                     #Someone else created already an id use this one
                     new_id = red.hget(k,new_value)
                 #TODO Create reverse keys
-        except IndexError,e:
+        except IndexError as e:
             errormsg("translate_dictionaries: Invalid key notation. key="+key)
-        except KeyError,e:
+        except KeyError as e:
             errormsg("translate_dictionaries: "+str(e))
 
     return new_id
@@ -192,7 +192,7 @@ def create_reverse_global_dicts(red):
     for k in red.smembers("RTK"):
         kr = k.replace("RT_a_", "TR_a_")
         di = red.hgetall(k)
-        for k in di.keys():
+        for k in list(di.keys()):
             v = di[k]
             red.hset(kr,v,k)
 
@@ -208,9 +208,9 @@ def get_annotation_origin(doc,k):
         t =  k.split("_")
         probe = t[2]
         return doc[probe]
-    except IndexError, e:
+    except IndexError as e:
         errormsg("Key is to incomplete "+ str(k) +"\n")
-    except KeyError,e:
+    except KeyError as e:
         errormsg("Corresponding key not found for "+str(k)+"\n")
     return None
 
@@ -219,9 +219,9 @@ def get_dictionary_id(k):
     try:
         t = k.split('_')
         return int(t[1])
-    except IndexError,e:
+    except IndexError as e:
         errormsg("Could not extract dictionary key from "+k)
-    except ValueError,e:
+    except ValueError as e:
         errormsg("Could not dictionary key from "+k)
     return None
 
@@ -231,7 +231,7 @@ def get_dictionary_id(k):
 def get_annotations(red, feature, name):
     out = []
     #Probe all the dictionaries
-    for i in xrange(DICT_LOWER_BOUNDARY,TYPE_UPPER_BOUNDARY):
+    for i in range(DICT_LOWER_BOUNDARY,TYPE_UPPER_BOUNDARY):
         k = "AR_"+str(i)+"_"+feature
         idn = red.get(k)
         if idn is not None:
@@ -244,5 +244,5 @@ def get_annotations(red, feature, name):
     return out
 
 if __name__ == "__main__":
-    print get_file_struct("/tmp","aaa")
+    print(get_file_struct("/tmp","aaa"))
 

@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/env python3
 #    Potiron -  Normalize, Index, Enrich and Visualize Network Capture
 #    Copyright (C) 2014 Gerard Wagener
 #    Copyright (C) 2014 CIRCL Computer Incident Response Center Luxembourg (smile gie)
@@ -99,7 +99,7 @@ for di in doc:
         if day != lastday:
             red.sadd("DAYS", day)
         p = red.pipeline()
-        for k in di.keys():
+        for k in list(di.keys()):
             if k not in non_index:
                 feature = di[k]
                 if k.startswith(potiron.ANNOTATION_PREFIX):

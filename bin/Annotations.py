@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/env python3
 #    Potiron -  Normalize, Index, Enrich and Visualize Network Capture
 #    Copyright (C) 2014 Gerard Wagener
 #    Copyright (C) 2014 CIRCL Computer Incident Response Center Luxembourg (smile gie)
@@ -29,11 +29,11 @@ from potiron import infomsg
 class Annotate(object):
 
     # The following attributes are needed
-    # - self.help contains the description of the program 
+    # - self.help contains the description of the program
     # - A list of mandatory fields (self.mfields)
 
     def usage(self):
-        print self.help
+        print(self.help)
 
     #This function should be overridden
     def annoate_doc(self, doc):
@@ -49,7 +49,7 @@ class Annotate(object):
 
     def handle_docs(self, docs):
         i = 0
-        newdocs = [] 
+        newdocs = []
         for doc in docs:
             i = i + 1
             if self.check_mandatory_fields(doc):
@@ -77,7 +77,7 @@ class Annotate(object):
             filename = None
             if len(docs) > 0:
                 item = docs[0]
-                if item.has_key("filename"):
+                if "filename" in item:
                     filename = item["filename"]
             if filename is None:
                 errormsg("Cannot store file as no filename was found")
@@ -97,7 +97,7 @@ class Annotate(object):
 
     def handle_cli(self):
         try:
-            opts, args = getopt.getopt(sys.argv[1:], "hr:d:kc:i", ["help", 
+            opts, args = getopt.getopt(sys.argv[1:], "hr:d:kc:i", ["help",
                              "read", "directory", "konsole","config", "index"])
             self.shouldIndex = False
             self.sourceFile = None
@@ -112,7 +112,7 @@ class Annotate(object):
                 if o in ("-d", "--directory"):
                     self.directory = a
                 if o in ("-r","--read"):
-                    self.sourceFile = a 
+                    self.sourceFile = a
                 if o in ("-c","--config"):
                     self.config = a
 
@@ -120,20 +120,20 @@ class Annotate(object):
                 raise OSError("No source file was specified, abort")
 
             if self.shouldIndex == True and self.config is None:
-                raise OSError("A config file must be specified to get the settings") 
+                raise OSError("A config file must be specified to get the settings")
 
-            self.process_file() 
-            
-        except getopt.GetoptError,p:
+            self.process_file()
+
+        except getopt.GetoptError as p:
             sys.stderr.write(str(p)+"\n")
             self.usage()
             sys.exit(1)
-        except OSError,e:
+        except OSError as e:
             sys.stderr.write(str(e)+"\n")
             sys.exit(1)
 
 if __name__=='__main__':
-    mfields = [ "ipsrc" , "ipdst", "packet_id", "timestamp", "sensorname", 
+    mfields = [ "ipsrc" , "ipdst", "packet_id", "timestamp", "sensorname",
                 "filename"]
     an = Annotate("config.cfg", mfields)
-    an.handle_cli() 
+    an.handle_cli()

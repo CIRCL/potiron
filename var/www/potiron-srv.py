@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/env python3
 #    Potiron -  Normalize, Index, Enrich and Visualize Network Capture
 #    Copyright (C) 2014 Gerard Wagener
 #    Copyright (C) 2014 CIRCL Computer Incident Response Center Luxembourg (smile gie)
@@ -25,7 +25,7 @@ import redis
 import time
 import sys
 import os
-import ConfigParser
+import configparser
 from potiron import get_annotations
 from potiron import errormsg
 app = Flask(__name__, static_folder='static', static_url_path='/static')
@@ -115,11 +115,11 @@ def get_recent_evolution(day, field, keys, period):
         # Initialize fixed size array to ensure that the
         # legend order matches the order of scores
         scores = []
-        for i in xrange(0, len(keys)):
+        for i in range(0, len(keys)):
             scores.append("0")
         entry = dict()
         i = 0
-        for i in xrange(0, len(keys)):
+        for i in range(0, len(keys)):
             ky = keys[i]
             k = sensorname + ":"+day+":"+field
             score = red.zscore(k, ky)
@@ -209,7 +209,7 @@ def check_user_day(day):
         #Check if there is data for this day
         if red.sismember("DAYS", day) == 1:
             return day
-    except ValueError, error:
+    except ValueError as error:
         errormsg("check_user_day: "+str(error))
     return None
 
@@ -254,7 +254,7 @@ the settings menu."
         return render_template('content.html', desc=desc, fields=fields,
                             topdata=topdata, params=build_params(),
                             seldate=selday)
-    except redis.ConnectionError,err:
+    except redis.ConnectionError as err:
         errormsg("Could not connect to redis. "+str(err))
         return render_template('offline.html',prefix=prefix)
 
@@ -271,7 +271,7 @@ def check_date(date):
         #Try to parse it. If it fails exception is thrown
         datetime.datetime.strptime(date, "%Y%m%d")
         return True
-    except ValueError,e:
+    except ValueError as e:
         errormsg("check_date: Wrong date format."+str(e))
     return False
 
@@ -303,7 +303,7 @@ def deliver_evolution(date, field, key):
         showdate = d.strftime("%Y-%m-%d")
         return render_template("evol.html", desc=desc, date=showdate, field=field,
                                key=key, data=data, params=params)
-    except redis.ConnectionError,err:
+    except redis.ConnectionError as err:
         errormsg("Cannot connect to redis "+str(err))
         return render_template('offline.html', prefix=prefix)
 
@@ -326,7 +326,7 @@ def deliver_custom():
             try:
                 d = datetime.datetime.strptime(date, "%Y-%m-%d")
                 today = d.strftime("%Y%m%d")
-            except ValueError,e:
+            except ValueError as e:
                 errormsg("deliver_custom: Invalid timestamp. "+str(e))
         if red.sismember("FIELDS", fieldname):
             return deliver_evolution(today, fieldname, field)
@@ -335,7 +335,7 @@ def deliver_custom():
         return render_template('content.html', desc=create_program_meta,
                                   params=build_params(), emsg=emsg)
 
-    except redis.ConnectionError,err:
+    except redis.ConnectionError as err:
         errormsg("deliver_custom: Cannot connect to redis "+str(err))
         return render_template('offline.html', prefix=prefix)
 
@@ -374,7 +374,7 @@ def send_settings():
                 # TODO log invalid fields
                 # Find checkboxes that were not set or unticketed and remove them
             for f in red.smembers('FIELDS'):
-                if vfields.has_key(f) is False:
+                if (f in vfields) is False:
                     # Found a field that was not selected but is marked as being set
                     # in a previous iteration
                     if red.sismember("ENFIELDS", f):
@@ -384,7 +384,7 @@ def send_settings():
         return render_template('settings.html', fields=fields,
                                 desc = create_program_meta(),
                                 params = build_params())
-    except redis.ConnectionError,err:
+    except redis.ConnectionError as err:
         errormsg("Cannot connect to redis. "+str(err))
         return render_template('offline.html', prefix=prefix)
 
@@ -393,7 +393,7 @@ if __name__=='__main__':
     try:
         # Load config file
         configfile = "potiron.cfg"
-        conf = ConfigParser.ConfigParser()
+        conf = configparser.ConfigParser()
         if len(sys.argv) != 2:
             sys.stderr.write("[ERROR] A config file must be specified as first\
  command line argument.\n")
@@ -419,12 +419,12 @@ if __name__=='__main__':
 
         app.debug = debug
         app.run(host=interface, port=port)
-    except ConfigParser.NoOptionError, e:
+    except configparser.NoOptionError as e:
         sys.stderr.write("[ERROR] Config corrupted. " + str(e) + "\n")
         sys.exit(1)
-    except ConfigParser.NoSectionError, f:
+    except configparser.NoSectionError as f:
         sys.stderr.write("[ERROR] Config corrupted. " + str(f) + "\n")
         sys.exit(1)
-    except ValueError, g:
+    except ValueError as g:
         sys.stderr.write("[ERROR] Config corrupted?. " + str(g) + "\n")
         sys.exit(1)

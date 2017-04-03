@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/env python3
 #    Potiron -  Normalize, Index, Enrich and Visualize Network Capture
 #    Copyright (C) 2015 Gerard Wagener
 #    Copyright (C) 2015 CIRCL Computer Incident Response Center Luxembourg (smile gie)
@@ -33,7 +33,7 @@ class AnnotatePDNS(Annotate):
         self.cache['type'] = potiron.TYPE_PDNS_DICT
 
     def get_rrnames(self, ipaddress):
-        if self.cache.has_key(ipaddress):
+        if ipaddress in self.cache:
             return self.cache[ipaddress]
         names = []
         rrnames = dict()
@@ -43,9 +43,9 @@ class AnnotatePDNS(Annotate):
             for sr in lines:
                 if sr != "":
                     obj = json.loads(sr)
-                    if obj.has_key('rrname'):
+                    if 'rrname' in obj:
                          rrnames[obj['rrname']] = 1
-            names = rrnames.keys()
+            names = list(rrnames.keys())
             names.sort()
         r =  ",".join(names)
         self.cacheid = self.cacheid + 1
@@ -53,7 +53,7 @@ class AnnotatePDNS(Annotate):
         return (self.cacheid, r)
 
     def annoate_doc(self, doc):
-        if doc.has_key('state') == False:
+        if ('state' in doc) == False:
             doc['state'] = 0
         if doc['state'] & potiron.STATE_PDNS_AN:
             #The document was already annotated
@@ -66,13 +66,13 @@ class AnnotatePDNS(Annotate):
             if name != "":
                 doc["a_"+str(potiron.TYPE_PDNS_DICT)+"_ipdst"] = rid
             doc["state"] = doc["state"] | potiron.STATE_PDNS_AN
-        except Exception,e:
+        except Exception as e:
             potiron.errormsg("Failed to annotate with PDNS data. Cause="+str(e))
         return doc
 
     #Remove all the IP addresses that had no PDNS results
     def compact_cache(self):
-        for key in self.cache.keys():
+        for key in list(self.cache.keys()):
             if key is not "type":
                 (rid, rrname) = self.cache[key]
                 if rrname is "":

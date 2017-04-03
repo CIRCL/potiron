@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/env python3
 #    Potiron -  Normalize, Index, Enrich and Visualize Network Capture
 #    Copyright (C) 2014 Gerard Wagener
 #    Copyright (C) 2014 CIRCL Computer Incident Response Center Luxembourg (smile gie)
@@ -30,7 +30,7 @@ from potiron import check_program
 import datetime
 
 def usage():
-    print """potiron-json-ipsumpdump.py [-h] [-r filename]  [-d directory] [-k]
+    print("""potiron-json-ipsumpdump.py [-h] [-r filename]  [-d directory] [-k]
 
     -h              Shows this screen
     -d directory    Specify the directory where the files should be stored
@@ -68,7 +68,7 @@ EXAMPLE
 
 If no DOCUMENT STORE directory is specified the json object is written
 on standard output
-"""
+""")
 
 def numerize_proto(pstr):
     if pstr=="I":
@@ -220,6 +220,6 @@ the json documents are stored")
         if args.directory is not None:
             rootdir = args.directory[0]
         process_file(rootdir, args.read[0])
-    except OSError,e:
+    except OSError as e:
         errormsg("A processing error happend."+str(e)+".\n")
         sys.exit(1)

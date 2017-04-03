@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/env python3
 #    Potiron -  Normalize, Index, Enrich and Visualize Network Capture
 #    Copyright (C) 2014 Gerard Wagener
 #    Copyright (C) 2014 CIRCL Computer Incident Response Center Luxembourg (smile gie)
@@ -36,7 +36,7 @@ class AnnotateGeo(Annotate):
 
         self.help=\
 """potiron-json-geo.py [-h] [-r filename] [-d directory] [-k]
-                                 [-c config] [-i index] 
+                                 [-c config] [-i index]
 
     -h Shows this screen
     -d directory Specify the directory where the files should be stored
@@ -71,7 +71,7 @@ dipcity       City of the Destination IP address
 """
         try:
             self.gi = GeoIP.open(self.database,GeoIP.GEOIP_STANDARD)
-        except Exception,e:
+        except Exception as e:
             potiron.errormsg("Failed to initialize GeoIP module. Cause="+str(e))
             self.gi = None
 
@@ -82,19 +82,19 @@ dipcity       City of the Destination IP address
         try:
             g = self.gi.record_by_addr(doc["ipdst"])
             if g is not None:
-                if g["city"] is not None and type(g["city"]) is unicode:
+                if g["city"] is not None and type(g["city"]) is str:
                     doc["dipcity"] = unidecode(g["city"])
-                if g["country_name"] is not None and type(g["country_name"]) is unicode:
+                if g["country_name"] is not None and type(g["country_name"]) is str:
                     doc["dipcountry"] = unidecode(g["country_name"])
 
             g = self.gi.record_by_addr(doc["ipsrc"])
             if g is not None:
-                if g["city"] is not None and type(g["city"]) is unicode:
+                if g["city"] is not None and type(g["city"]) is str:
                     doc["sipcity"] = unidecode(g["city"])
-                if g["country_name"] is not None and type(g["country_name"]) is unicode:
+                if g["country_name"] is not None and type(g["country_name"]) is str:
                     doc["sipcountry"] = unidecode(g["country_name"])
             doc['state'] = doc['state'] | potiron.STATE_GEO_AN
-        except Exception,e:
+        except Exception as e:
             errormsg("Geoip annotation failed. Cause=",str(e))
         return doc
 

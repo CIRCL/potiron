@@ -15,7 +15,7 @@ The current version potiron supports ipsumdump.
 Requirements
 ------------
 
-* Python 2.7
+* Python >=3.4
 * Flask
 * Redis
 * ipsumdump
