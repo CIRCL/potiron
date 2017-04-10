@@ -30,13 +30,13 @@ import datetime
 
 
 def usage():
-    print("""potiron-json-ipsumpdump.py [-h] [-r filename]  [-d directory] [-k]
+    print("""potiron-json-ipsumpdump.py [-h] [-r filename]  [-d directory] [-c]
 
     -h              Shows this screen
     -d directory    Specify the directory where the files should be stored
     -r filename     Specify the pcap filename that should be dissected by
                     ipsumdump
-    -k              Log data also sent to console and not only to syslog
+    -c              Log data also sent to console and not only to syslog
                     The filename is specified with the -r option
 
 FILENAME CONVENTION
@@ -133,7 +133,7 @@ def process_file(rootdir, filename):
                              "-f", potiron.bpffilter, "-r", filename], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     for line in proc.stdout.readlines():
         packet_id = packet_id + 1
-        line = line[:-1]
+        line = line[:-1].decode()
         timestamp, length, protocol, ipsrc, ipdst, ipop, ipttl, iptos, sport, dport, icmpcode, icmptype = line.split(' ')
         ilength = -1
         iipttl = -1
@@ -161,7 +161,6 @@ def process_file(rootdir, filename):
         dobj = datetime.datetime.fromtimestamp(float(a))
         stime = dobj.strftime("%Y-%m-%d %H:%M:%S")
         stime = stime + "." + b
-
         packet = {'timestamp': stime,
                   'length': ilength,
                   'protocol': numerize_proto(protocol),
