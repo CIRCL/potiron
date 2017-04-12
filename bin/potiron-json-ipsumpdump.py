@@ -129,17 +129,20 @@ def process_file(rootdir, filename):
     packet_id = 0
     proc = subprocess.Popen(["ipsumdump", "--no-headers", "--quiet", "--timestamp",
                              "--length", "--protocol", "--ip-src", "--ip-dst", "--ip-opt",
-                             "--ip-ttl", "--ip-tos", "--sport", "--dport", "--icmp-code", "--icmp-type",
-                             "-f", potiron.bpffilter, "-r", filename], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+                             "--ip-ttl", "--ip-tos", "--sport", "--dport", "--tcp-seq", 
+                             "--tcp-ack", "--icmp-code", "--icmp-type","-f", potiron.bpffilter, 
+                             "-r", filename], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     for line in proc.stdout.readlines():
         packet_id = packet_id + 1
         line = line[:-1].decode()
-        timestamp, length, protocol, ipsrc, ipdst, ipop, ipttl, iptos, sport, dport, icmpcode, icmptype = line.split(' ')
+        timestamp, length, protocol, ipsrc, ipdst, ipop, ipttl, iptos, sport, dport, tcpseq, tcpack, icmpcode, icmptype = line.split(' ')
         ilength = -1
         iipttl = -1
         iiptos = -1
         isport = -1
         idport = -1
+        itcpseq = -1
+        itcpack = -1
         iicmpcode = 255
         iicmptype = 255
         try:
@@ -148,14 +151,20 @@ def process_file(rootdir, filename):
             iiptos = int(iptos)
             isport = int(sport)
             idport = int(dport)
-            iicmpcode = int(iicmpcode)
-            iicmptype = int(iicmptype)
+            itcpseq = int(tcpseq)
+            itcpack = int(tcpack)
+            iicmpcode = int(icmpcode)
+            iicmptype = int(icmptype)
         except ValueError:
             pass
         if ipsrc == '-':
             ipsrc = None
         if ipdst == '-':
             ipdst = None
+        if itcpseq == '-':
+            itcpseq = None
+        if itcpack == '-':
+            itcpack = None
         # Convert timestamp
         a, b = timestamp.split('.')
         dobj = datetime.datetime.fromtimestamp(float(a))
@@ -171,6 +180,8 @@ def process_file(rootdir, filename):
                   'iptos': iiptos,
                   'sport': isport,
                   'dport': idport,
+                  'tcpseq': itcpseq,
+                  'tcpack': itcpack,
                   'icmpcode': iicmpcode,
                   'icmptype': iicmptype,
                   'packet_id': packet_id,
