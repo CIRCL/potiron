@@ -129,29 +129,59 @@ def process_file(rootdir, filename):
     packet_id = 0
     proc = subprocess.Popen(["ipsumdump", "--no-headers", "--quiet", "--timestamp",
                              "--length", "--protocol", "--ip-src", "--ip-dst", "--ip-opt",
-                             "--ip-ttl", "--ip-tos", "--sport", "--dport", "--icmp-code", "--icmp-type",
-                             "-f", potiron.bpffilter, "-r", filename], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+                             "--ip-ttl", "--ip-tos", "--sport", "--dport", "--tcp-seq", "--tcp-ack",
+                             "--icmp-code", "--icmp-type", "-f", potiron.bpffilter, "-r", filename], 
+                             stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     for line in proc.stdout.readlines():
         packet_id = packet_id + 1
         line = line[:-1].decode()
-        timestamp, length, protocol, ipsrc, ipdst, ipop, ipttl, iptos, sport, dport, icmpcode, icmptype = line.split(' ')
+        timestamp, length, protocol, ipsrc, ipdst, ipop, ipttl, iptos, sport, dport, tcpseq, tcpack, icmpcode, icmptype = line.split(' ')
         ilength = -1
         iipttl = -1
         iiptos = -1
         isport = -1
         idport = -1
+        itcpseq = -1
+        itcpack = -1
         iicmpcode = 255
         iicmptype = 255
         try:
             ilength = int(length)
-            iipttl = int(ipttl)
-            iiptos = int(iptos)
-            isport = int(sport)
-            idport = int(dport)
-            iicmpcode = int(iicmpcode)
-            iicmptype = int(iicmptype)
         except ValueError:
             pass
+        try:
+            iipttl = int(ipttl)
+        except ValueError:
+            pass
+        try:
+            iiptos = int(iptos)
+        except ValueError:
+            pass
+        try:
+            isport = int(sport)
+        except ValueError:
+            pass
+        try:
+            idport = int(dport)
+        except ValueError:
+            pass
+        try:
+            itcpseq = int(tcpseq)
+        except ValueError:
+            pass
+        try:
+            itcpack = int(tcpack)
+        except ValueError:
+            pass
+        try:
+            iicmpcode = int(icmpcode)
+        except ValueError:
+            pass
+        try:
+            iicmptype = int(icmptype)
+        except ValueError:
+            pass
+        
         if ipsrc == '-':
             ipsrc = None
         if ipdst == '-':
@@ -171,6 +201,8 @@ def process_file(rootdir, filename):
                   'iptos': iiptos,
                   'sport': isport,
                   'dport': idport,
+                  'tcpseq': itcpseq,
+                  'tcpack': itcpack,
                   'icmpcode': iicmpcode,
                   'icmptype': iicmptype,
                   'packet_id': packet_id,
