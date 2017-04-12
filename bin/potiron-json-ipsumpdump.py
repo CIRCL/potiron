@@ -129,9 +129,9 @@ def process_file(rootdir, filename):
     packet_id = 0
     proc = subprocess.Popen(["ipsumdump", "--no-headers", "--quiet", "--timestamp",
                              "--length", "--protocol", "--ip-src", "--ip-dst", "--ip-opt",
-                             "--ip-ttl", "--ip-tos", "--sport", "--dport", "--tcp-seq", 
-                             "--tcp-ack", "--icmp-code", "--icmp-type","-f", potiron.bpffilter, 
-                             "-r", filename], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+                             "--ip-ttl", "--ip-tos", "--sport", "--dport", "--tcp-seq", "--tcp-ack",
+                             "--icmp-code", "--icmp-type", "-f", potiron.bpffilter, "-r", filename], 
+                             stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     for line in proc.stdout.readlines():
         packet_id = packet_id + 1
         line = line[:-1].decode()
@@ -147,24 +147,45 @@ def process_file(rootdir, filename):
         iicmptype = 255
         try:
             ilength = int(length)
+        except ValueError:
+            pass
+        try:
             iipttl = int(ipttl)
+        except ValueError:
+            pass
+        try:
             iiptos = int(iptos)
+        except ValueError:
+            pass
+        try:
             isport = int(sport)
+        except ValueError:
+            pass
+        try:
             idport = int(dport)
+        except ValueError:
+            pass
+        try:
             itcpseq = int(tcpseq)
+        except ValueError:
+            pass
+        try:
             itcpack = int(tcpack)
+        except ValueError:
+            pass
+        try:
             iicmpcode = int(icmpcode)
+        except ValueError:
+            pass
+        try:
             iicmptype = int(icmptype)
         except ValueError:
             pass
+        
         if ipsrc == '-':
             ipsrc = None
         if ipdst == '-':
             ipdst = None
-        if itcpseq == '-':
-            itcpseq = None
-        if itcpack == '-':
-            itcpack = None
         # Convert timestamp
         a, b = timestamp.split('.')
         dobj = datetime.datetime.fromtimestamp(float(a))
