@@ -30,7 +30,7 @@ import potiron
 non_index = ['', 'filename', 'sensorname', 'timestamp', 'packet_id']
 
 
-parser = argparse.ArgumentParser(description='Import IPSumpdump json documents\
+parser = argparse.ArgumentParser(description='Import json documents\
 into redis.')
 parser.add_argument('--filename', type=str, nargs=1, help='Filename of a json document that should be imported.')
 parser.add_argument('--unix', type=str, nargs=1, help='Unix socket to connect to redis-server.')
