@@ -31,12 +31,22 @@ Usage
 -----
 
 First you need to define a root directory where all the JSON files will be exported. Then you need
-to proceed your network capture files to generate the JSON files:
+to proceed your network capture files to generate the JSON files :
 
-    ./potiron-json-ipsumpdump.py -c -r /tmp/test-honeypot-1-20140826000000.cap.gz -d ../out/
-    potiron[24989]: [INFO] Created filename ../out/2014/08/26/test-honeypot-1-20140826000000.json
+- with ipsumdump :
+
+	./potiron-json-ipsumpdump.py -c -r /tmp/test-honeypot-1-20140826000000.cap.gz -d ../out/
+	potiron[24989]: [INFO] Created filename ../out/2014/08/26/test-honeypot-1-20140826000000.json
+
+- or with tshark :
+
+	./potiron-json-tshark.py -c -r /tmp/test-honeypot-1-20140826000000.cap.gz -d ../out/
+	potiron[24989]: [INFO] Created filename ../out/2014/08/26/test-honeypot-1-20140826000000.json
 
 Then the JSON file can be imported into the Redis database:
 
-    ./potiron-redis.py --filename ../out/2014/08/26/test-honeypot-1-20140826000000.json --unix /tmp/redis.sock
+	./potiron-redis.py --filename ../out/2014/08/26/test-honeypot-1-20140826000000.json --unix /tmp/redis.sock
 
+Finally, some specific data fields can be represented into graphics :
+
+	./bokeh-export.py --field dport --value 22 --date 201703 --unix /tmp/redis.sock --dest ../out/
