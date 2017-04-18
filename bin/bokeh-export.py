@@ -2,6 +2,7 @@
 import redis
 import argparse
 import sys
+import os
 from bokeh.plotting import figure, output_file, show, ColumnDataSource
 from bokeh.models import HoverTool,PanTool, BoxZoomTool,ResetTool,SaveTool,WheelZoomTool
 
@@ -39,8 +40,10 @@ if args.value is None:
 fieldvalue = args.value
 
 if args.dest is None:
-    destpath = "."
+    destpath = "./"
 else:
+    if not os.path.exists(args.dest):
+        os.makedirs(args.dest)
     destpath = args.dest
 
 redisKeyMonth = "chp-5577-1:"+str(date)

@@ -47,3 +47,6 @@ Then the JSON file can be imported into the Redis database:
 
 	./potiron-redis.py --filename ../out/2014/08/26/test-honeypot-1-20140826000000.json --unix /tmp/redis.sock
 
+Finally, some specific data fields can be represented into graphics :
+
+	./bokeh-export.py --field dport --value 22 --date 201703 --unix /tmp/redis.sock --dest ../out/
