@@ -49,4 +49,4 @@ Then the JSON file can be imported into the Redis database:
 
 Finally, some specific data fields can be represented into graphics (multiple values can be specified after parameter '--value') :
 
-	./bokeh-export.py --source test-honeypot-1 --field dport --value 22 --date 201703 --unix /tmp/redis.sock --dest ../out/
+	./bokeh-export.py --source test-honeypot-1 --field dport --values 22 --date 201703 --unix /tmp/redis.sock --dest ../out/

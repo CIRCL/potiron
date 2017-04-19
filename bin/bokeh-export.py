@@ -3,13 +3,10 @@ import redis
 import argparse
 import sys
 import os
+import calendar
 from bokeh.plotting import figure, output_file, show, ColumnDataSource
 from bokeh.models import HoverTool,PanTool, BoxZoomTool,ResetTool,SaveTool,WheelZoomTool
 
-#FIXME use time functions
-days = ["01","02","03","04","05","06","07","08","09","10",
-        "11","12","13","14","15","16","17","18","19","20",
-        "21","22","23","24","25","26","27","28","29","30","31"]
 
 #FIXME put it in configuration file
 colors = ['blue','red','orange','green','purple','black','grey','yellow']
@@ -28,16 +25,17 @@ def process_graph(source, field, fieldvalues, date, dest):
     TOOLS = [HoverTool(tooltips=[("count","@count")]),PanTool(),BoxZoomTool(),WheelZoomTool(), SaveTool(), ResetTool()]
     p = figure(width=1500,height=750,tools=TOOLS)
     at_least_one = False
+    days = calendar.monthrange(int(date[0:4]),int(date[4:6]))[1]
     for v in range(len(fieldvalues)):
         score=[]
         dayValue=[]
         exists = False
-        for d in days:
-            redisKey = source + ":" + date + d + ":" + field
+        for d in range(1,days+1):
+            redisKey = source + ":" + date + format(d, '02d') + ":" + field
             if red.exists(redisKey):
                 countValue = red.zscore(redisKey, fieldvalues[v])
                 score.append(countValue if countValue is not None else 0)
-                dayValue.append(d)
+                dayValue.append(format(d, '02d'))
                 exists = True
         if exists:
             color = colors[v]
