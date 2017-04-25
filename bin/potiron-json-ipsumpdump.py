@@ -231,7 +231,7 @@ if __name__ == '__main__':
     potiron.logconsole = args.console
     if args.read is not None:
         if os.path.exists(args.read[0]) is False:
-            errormsg("The filename " + args.read[0] + " was not found")
+            errormsg("The filename {} was not found".format(args.read[0]))
             sys.exit(1)
 
     if args.directory is not None and os.path.isdir(args.directory[0]) is False:
