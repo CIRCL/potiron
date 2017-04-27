@@ -3,54 +3,49 @@ import redis
 import argparse
 import sys
 import os
-from bokeh.plotting import figure, output_file, show, ColumnDataSource
-from bokeh.models import HoverTool,PanTool, BoxZoomTool,ResetTool,SaveTool,WheelZoomTool
+import calendar
+from bokeh.plotting import figure, output_file, show
+from bokeh.models import HoverTool,PanTool, BoxZoomTool,ResetTool,SaveTool,WheelZoomTool,BasicTickFormatter
+from bokeh.palettes import Category10_10 as palette
 
-#FIXME use time functions
-days = ["01","02","03","04","05","06","07","08","09","10",
-        "11","12","13","14","15","16","17","18","19","20",
-        "21","22","23","24","25","26","27","28","29","30","31"]
-
-#FIXME put it in configuration file
-colors = ['blue','red','orange','green','purple','black','grey','yellow']
         
 #defines the name of the output file
 def output_name(source, field, fieldvalues, date, dest):
     value_str = ""
     for i in range(len(fieldvalues)):
         value_str = value_str + "_" + fieldvalues[i]
-    return str(dest+source+":"+date+"_"+field+value_str)
+    return "{}{}_{}_{}{}".format(dest,source,date,field,value_str)
     
-    
+
 def process_graph(source, field, fieldvalues, date, dest):
     namefile=output_name(source,field,fieldvalues,date,dest)
-    output_file(namefile+".html", title=namefile.split("/")[-1])
-    TOOLS = [HoverTool(tooltips=[("count","@count")]),PanTool(),BoxZoomTool(),WheelZoomTool(), SaveTool(), ResetTool()]
+    output_file("{}.html".format(namefile), title=namefile.split("/")[-1])
+    TOOLS = [HoverTool(tooltips=[("count","@y")]),PanTool(),BoxZoomTool(),WheelZoomTool(), SaveTool(), ResetTool()]
     p = figure(width=1500,height=750,tools=TOOLS)
     at_least_one = False
+    days = calendar.monthrange(int(date[0:4]),int(date[4:6]))[1]
     for v in range(len(fieldvalues)):
         score=[]
         dayValue=[]
         exists = False
-        for d in days:
-            redisKey = source + ":" + date + d + ":" + field
+        for d in range(1,days+1):
+            redisKey = "{}:{}{}:{}".format(source, date, format(d, '02d'), field)
             if red.exists(redisKey):
                 countValue = red.zscore(redisKey, fieldvalues[v])
                 score.append(countValue if countValue is not None else 0)
-                dayValue.append(d)
+                dayValue.append(format(d, '02d'))
                 exists = True
         if exists:
-            color = colors[v]
-            leg = field+":"+fieldvalues[v]
-            graphSource = ColumnDataSource(data=dict(count=score,days=dayValue))
-            p.circle('days','count',size=8,legend=leg,fill_color=color,line_color=color,source=graphSource)
-            p.line(dayValue,score,legend=leg,line_color=color)
+            color = palette[v%10]
+            leg = "{}:{}".format(field, fieldvalues[v])
+            p.line(dayValue,score,legend=leg,line_color=color,line_width=2)
             at_least_one = True
     if at_least_one:
-        p.title.text = str("Numbers of " + field + " " + str(fieldvalues) + " seen for each day on month " + date[4:6] + ", year " + date[0:4])
+        p.title.text = "Number of {} {} seen for each day on month {}, year {}".format(field, fieldvalues, date[4:6], date[0:4])
+        p.yaxis[0].formatter = BasicTickFormatter(use_scientific=False)
         show(p)
     else:
-        print ("There is no such value for the " + field + " you specified\n")
+        print ("There is no such value for the {} you specified\n".format(field))
 
     
 if __name__ == '__main__':
@@ -84,10 +79,10 @@ if __name__ == '__main__':
     members=members[:-2]
     
     if args.field is None:
-        sys.stderr.write('A field must be specified.\nChoose one of these : '+members+'.\n')
+        sys.stderr.write('A field must be specified.\nChoose one of these : {}.\n'.format(members))
         sys.exit(1)
     if args.field[0] not in tab_members:
-        sys.stderr.write('The field you chose does not exist.\nChoose one of these : '+members+'.\n')
+        sys.stderr.write('The field you chose does not exist.\nChoose one of these : {}.\n'.format(members))
         sys.exit(1)
     field = args.field[0]
         
@@ -98,9 +93,6 @@ if __name__ == '__main__':
     
     if args.values is None:
         sys.stderr.write('At least one value must be specified\n')
-        sys.exit(1)
-    if len(args.values)>8:
-        sys.stderr.write('This is a lot of information to display, you might choose less values in order to have more visibility in your graph.\n')
         sys.exit(1)
     fieldvalues = args.values
     
