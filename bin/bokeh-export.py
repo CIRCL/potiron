@@ -5,7 +5,7 @@ import sys
 import os
 import calendar
 from bokeh.plotting import figure, output_file, show
-from bokeh.models import HoverTool,PanTool, BoxZoomTool,ResetTool,SaveTool,WheelZoomTool,BasicTickFormatter
+from bokeh.models import OpenURL,TapTool,HoverTool,ColumnDataSource,BasicTickFormatter,PanTool, BoxZoomTool,ResetTool,SaveTool,WheelZoomTool
 from bokeh.palettes import Category10_10 as palette
 
         
@@ -20,7 +20,9 @@ def output_name(source, field, fieldvalues, date, dest):
 def process_graph(source, field, fieldvalues, date, dest):
     namefile=output_name(source,field,fieldvalues,date,dest)
     output_file("{}.html".format(namefile), title=namefile.split("/")[-1])
-    TOOLS = [HoverTool(tooltips=[("count","@y")]),PanTool(),BoxZoomTool(),WheelZoomTool(), SaveTool(), ResetTool()]
+    hover = HoverTool(tooltips = [('count','@y')])
+    taptool = TapTool()
+    TOOLS = [hover,PanTool(),BoxZoomTool(),WheelZoomTool(), taptool, SaveTool(), ResetTool()]
     p = figure(width=1500,height=750,tools=TOOLS)
     at_least_one = False
     days = calendar.monthrange(int(date[0:4]),int(date[4:6]))[1]
@@ -38,11 +40,16 @@ def process_graph(source, field, fieldvalues, date, dest):
         if exists:
             color = palette[v%10]
             leg = "{}:{}".format(field, fieldvalues[v])
-            p.line(dayValue,score,legend=leg,line_color=color,line_width=2)
+            dataSource = ColumnDataSource(data = dict(x=dayValue,y=score))
+            p.line('x','y',legend=leg,line_color=color,line_width=2,source=dataSource)
+            c = p.circle(dayValue,score,legend=leg,size=10,color=color,alpha=0.1)
+            taptool.renderers.append(c)         
             at_least_one = True
     if at_least_one:
         p.title.text = "Number of {} {} seen for each day on month {}, year {}".format(field, fieldvalues, date[4:6], date[0:4])
         p.yaxis[0].formatter = BasicTickFormatter(use_scientific=False)
+        day = "@x"
+        taptool.callback = OpenURL(url="{}_{}_{}{}.html".format(source,field,date,day))
         show(p)
     else:
         print ("There is no such value for the {} you specified\n".format(field))
@@ -50,12 +57,12 @@ def process_graph(source, field, fieldvalues, date, dest):
     
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Export redis values in a graph.')
-    parser.add_argument('--source', type=str, nargs=1, help='Data source')
-    parser.add_argument('--field', type=str, nargs=1, help='Field that should be displayed.')
-    parser.add_argument('--values', nargs='+', help='Specific values of the field to display')
-    parser.add_argument('--date', type=str, nargs=1, help='Date of the informations to display')
-    parser.add_argument('--unix', type=str, nargs=1, help='Unix socket to connect to redis-server.')
-    parser.add_argument('--dest', type=str, nargs=1, help='Destination path for the output file')
+    parser.add_argument('-s','--source', type=str, nargs=1, help='Data source')
+    parser.add_argument('-f','--field', type=str, nargs=1, help='Field that should be displayed.')
+    parser.add_argument('-v','--values', nargs='+', help='Specific values of the field to display')
+    parser.add_argument('-d','--date', type=str, nargs=1, help='Date of the informations to display')
+    parser.add_argument('-u','--unix', type=str, nargs=1, help='Unix socket to connect to redis-server.')
+    parser.add_argument('-o','--outputdir', type=str, nargs=1, default="./out/", help='Destination path for the output file')
     args = parser.parse_args()
     
     if args.source is None:
@@ -96,11 +103,8 @@ if __name__ == '__main__':
         sys.exit(1)
     fieldvalues = args.values
     
-    if args.dest is None:
-        destpath = "./"
-    else:
-        if not os.path.exists(args.dest[0]):
-            os.makedirs(args.dest[0])
-        destpath = args.dest[0]
+    if not os.path.exists(args.outputdir):
+        os.makedirs(args.outputdir)
+    destpath = args.outputdir
     
     process_graph(source, field, fieldvalues, date, destpath)
