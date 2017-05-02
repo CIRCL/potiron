@@ -62,7 +62,7 @@ if __name__ == '__main__':
     parser.add_argument('-v','--values', nargs='+', help='Specific values of the field to display')
     parser.add_argument('-d','--date', type=str, nargs=1, help='Date of the informations to display')
     parser.add_argument('-u','--unix', type=str, nargs=1, help='Unix socket to connect to redis-server.')
-    parser.add_argument('-o','--outputdir', type=str, nargs=1, default="./out/", help='Destination path for the output file')
+    parser.add_argument('-o','--outputdir', type=str, nargs=1, help='Destination path for the output file')
     args = parser.parse_args()
     
     if args.source is None:
@@ -103,8 +103,11 @@ if __name__ == '__main__':
         sys.exit(1)
     fieldvalues = args.values
     
-    if not os.path.exists(args.outputdir):
-        os.makedirs(args.outputdir)
-    destpath = args.outputdir
+    if args.outputdir is None:
+        outputdir = "./out/"
+    else:
+        outputdir = args.outputdir[0]
+    if not os.path.exists(outputdir):
+        os.makedirs(outputdir)
     
-    process_graph(source, field, fieldvalues, date, destpath)
+    process_graph(source, field, fieldvalues, date, outputdir)
