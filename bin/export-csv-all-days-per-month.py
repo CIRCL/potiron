@@ -50,15 +50,16 @@ r = redis.Redis(unix_socket_path=usocket)
 
 days = calendar.monthrange(int(date[0:4]),int(date[4:6]))[1]
 for d in range(1,days+1):
+    currentLimit = limit
     redisKey = "{}:{}{}:{}".format(args.source[0], date, format(d, '02d'), args.field[0])
     if r.exists(redisKey):
+        for v in r.zrevrangebyscore(redisKey,sys.maxsize,0)[:limit]:
+            val = v.decode()
+            if val in args.skip :
+                currentLimit+=1
         with open("{}.csv".format(output_name(args.source[0],args.field[0],outputdir,date,format(d, '02d'))),'w') as f:
             f.write("id,value\n")
-            for v in r.zrevrangebyscore(redisKey,sys.maxsize,0)[:limit]:
-                val = v.decode()
-                if val in args.skip :
-                    limit+=1
-            for v in r.zrevrangebyscore(redisKey,sys.maxsize,0)[:limit]:
+            for v in r.zrevrangebyscore(redisKey,sys.maxsize,0)[:currentLimit]:
                 val = v.decode()
                 if val in args.skip :
                     continue
