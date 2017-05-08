@@ -4,16 +4,11 @@ import argparse
 import sys
 import os
 import calendar
-from bokeh.document import Document
-from bokeh.embed import file_html
-from bokeh.plotting import figure
-from bokeh.models import Range1d,OpenURL,TapTool,HoverTool,ColumnDataSource,BasicTickFormatter,PanTool, BoxZoomTool,ResetTool,SaveTool,WheelZoomTool,Plot
-from bokeh.models.glyphs import ImageURL
+from bokeh.plotting import figure, show, output_file
+from bokeh.models import Range1d,OpenURL,TapTool,HoverTool,BasicTickFormatter,PanTool, BoxZoomTool,ResetTool,SaveTool,WheelZoomTool
 from bokeh.palettes import Category10_10 as palette
-from bokeh.util.browser import view
-from bokeh.resources import INLINE
 
-        
+
 #defines the name of the output file
 def output_name(source, field, fieldvalues, date, dest):
     value_str = ""
@@ -21,36 +16,18 @@ def output_name(source, field, fieldvalues, date, dest):
         value_str = value_str + "_" + fieldvalues[i]
     return "{}{}_{}_{}{}".format(dest,source,date,field,value_str)
 
-#add the CIRCL logo in the plot
-def display_logo():
-    dir_path = "{}/../doc/circl.png".format(os.path.dirname(os.path.realpath(__file__)))
-    source = ColumnDataSource(dict(
-        url = [dir_path],
-        x = [0],
-        y = [0],
-        w = [210],
-        h = [87],
-    ))
-
-    xdr = Range1d(start=0, end=210)
-    ydr = Range1d(start=0, end=87)
-
-    plot = Plot(x_range=xdr, y_range=ydr, plot_width=210, plot_height=87)
-
-    image1 = ImageURL(url="url", x="x", y="y", w="w", h="h", anchor="bottom_left")
-    plot.add_glyph(source, image1)
-    return plot
-    
 
 def process_graph(source, field, fieldvalues, date, dest):
     namefile=output_name(source,field,fieldvalues,date,dest)
-    #output_file("{}.html".format(namefile), title=namefile.split("/")[-1])
+    output_file("{}.html".format(namefile), title=namefile.split("/")[-1])
     hover = HoverTool(tooltips = [('count','@y')])
     taptool = TapTool()
     TOOLS = [hover,PanTool(),BoxZoomTool(),WheelZoomTool(), taptool, SaveTool(), ResetTool()]
     p = figure(width=1500,height=750,tools=TOOLS)
     at_least_one = False
     days = calendar.monthrange(int(date[0:4]),int(date[4:6]))[1]
+    maxVal = 0
+    minVal = sys.maxsize
     for v in range(len(fieldvalues)):
         score=[]
         dayValue=[]
@@ -65,25 +42,33 @@ def process_graph(source, field, fieldvalues, date, dest):
         if exists:
             color = palette[v%10]
             leg = "{}:{}".format(field, fieldvalues[v])
-            dataSource = ColumnDataSource(data = dict(x=dayValue,y=score))
-            p.line('x','y',legend=leg,line_color=color,line_width=2,source=dataSource)
-            c = p.circle(dayValue,score,legend=leg,size=10,color=color,alpha=0.1)
-            taptool.renderers.append(c)         
+            p.line(x=dayValue,y=score,legend=leg,line_color=color,line_width=2)
+            c = p.circle(x=dayValue,y=score,legend=leg,size=10,color=color,alpha=0.1)
+            taptool.renderers.append(c)
             at_least_one = True
+            maxScore = max(score)
+            if maxVal < maxScore:
+                maxVal = maxScore
+            minScore = min(score)
+            if minVal > minScore:
+                minVal = minScore
     if at_least_one:
         p.title.text = "Number of {} {} seen for each day on month {}, year {}".format(field, fieldvalues, date[4:6], date[0:4])
         p.yaxis[0].formatter = BasicTickFormatter(use_scientific=False)
         day = "@x"
         taptool.callback = OpenURL(url="{}_{}_{}{}.html".format(source,field,date,day))
-        p.legend.location = "top_right"
+        p.legend.location = "top_left"
         p.legend.click_policy = "hide"
-        doc = Document()
-        doc.add_root(p)
-        logo = display_logo()
-        doc.add_root(logo)
-        with open(namefile, "w") as f:
-            f.write(file_html(doc, INLINE, namefile.split("/")[-1]))
-        view(namefile)
+        xdr = days + 1
+        ydrmax = maxVal + maxVal * 10 / 100
+        ydrmin = minVal - maxVal * 5 / 100
+        p.x_range = Range1d(0,xdr)
+        p.y_range = Range1d(ydrmin,ydrmax)
+        dir_path = "{}/../doc/circl.png".format(os.path.dirname(os.path.realpath(__file__)))
+        width = xdr/9.5
+        height = (ydrmax-ydrmin)/11
+        p.image_url(url=[dir_path],x=[xdr],y=[ydrmax],w=[width],h=[height],anchor="top_right")
+        show(p)
     else:
         print ("There is no such value for the {} you specified\n".format(field))
 
