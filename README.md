@@ -33,12 +33,12 @@ Usage
 First you need to define a root directory where all the JSON files will be exported. Then you need
 to proceed your network capture files to generate the JSON files :
 
-- with ipsumdump :
+Process with ipsumdump :
 
 	./potiron-json-ipsumpdump.py -c -r /tmp/test-honeypot-1-20140826000000.cap.gz -d ../out/
 	potiron[24989]: [INFO] Created filename ../out/2014/08/26/test-honeypot-1-20140826000000.json
 
-- or with tshark :
+Or process with tshark :
 
 	./potiron-json-tshark.py -c -r /tmp/test-honeypot-1-20140826000000.cap.gz -d ../out/
 	potiron[24989]: [INFO] Created filename ../out/2014/08/26/test-honeypot-1-20140826000000.json
