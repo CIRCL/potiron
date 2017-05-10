@@ -31,12 +31,13 @@ Usage
 -----
 
 For all the following graphs, the parameters used are :
-        - -s, the honeypot source where the data come from
-        - -f, the field related to the informations you want to display
-        - -d, the date on which the informations have been collected
-        - -o, the output directory
-        - -u, the unix socket used open the redis client
-	- -r, the pcap files read in input
+
+* -s, the honeypot source where the data come from
+* -f, the field related to the informations you want to display
+* -d, the date on which the informations have been collected
+* -o, the output directory
+* -u, the unix socket used open the redis client
+* -r, the pcap files read in input
 
 First you need to define a root directory where all the JSON files will be exported. Then you need
 to proceed your network capture files to generate the JSON files :
