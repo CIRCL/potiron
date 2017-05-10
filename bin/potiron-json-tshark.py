@@ -156,7 +156,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description="Start the tool tshark and transform the output in a json document")
     parser.add_argument("-r", "--read", type=str, nargs=1, help="Compressed pcap file or pcap filename")
     parser.add_argument("-c", "--console", action='store_true', help="Log output also to console")
-    parser.add_argument("-d", "--directory", nargs=1, help="Result directory where the json documents are stored")
+    parser.add_argument("-o", "--directory", nargs=1, help="Output directory where the json documents are stored")
 
     args = parser.parse_args()
     potiron.logconsole = args.console
