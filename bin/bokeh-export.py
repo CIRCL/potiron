@@ -64,7 +64,7 @@ def process_graph(source, field, fieldvalues, date, dest,logo_file):
         ydrmin = minVal - maxVal * 5 / 100
         p.x_range = Range1d(0,xdr)
         p.y_range = Range1d(ydrmin,ydrmax)
-        dir_path = "{}/{}".format(os.path.dirname(os.path.realpath(__file__)),logo_file)
+        dir_path = logo_file
         width = xdr/9.5
         height = (ydrmax-ydrmin)/12
         p.image_url(url=[dir_path],x=[xdr],y=[ydrmax],w=[width],h=[height],anchor="top_right")
@@ -129,8 +129,12 @@ if __name__ == '__main__':
     if not os.path.exists(outputdir):
         os.makedirs(outputdir)
         
+    potiron_tab = os.path.dirname(os.path.realpath(__file__)).split("/")[1:-1]
+    potiron_path = ""
+    for i in potiron_tab:
+        potiron_path+="/{}".format(i)
     if args.logo is None:
-        logofile = "../doc/circl.png"
+        logofile = "{}/doc/circl.png".format(potiron_path)
     else:
         logofile = args.logo[0]
     
