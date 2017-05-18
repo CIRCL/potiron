@@ -16,62 +16,6 @@ def output_name(source, field, fieldvalues, date, dest):
         value_str = value_str + "_" + fieldvalues[i]
     return "{}{}_{}_{}{}".format(dest,source,date,field,value_str)
 
-
-def process_graph(source, field, fieldvalues, date, dest,logo_file):
-    namefile=output_name(source,field,fieldvalues,date,dest)
-    output_file("{}.html".format(namefile), title=namefile.split("/")[-1])
-    hover = HoverTool(tooltips = [('count','@y')])
-    taptool = TapTool()
-    TOOLS = [hover,PanTool(),BoxZoomTool(),WheelZoomTool(), taptool, SaveTool(), ResetTool()]
-    p = figure(width=1500,height=800,tools=TOOLS)
-    at_least_one = False
-    days = calendar.monthrange(int(date[0:4]),int(date[4:6]))[1]
-    maxVal = 0
-    minVal = sys.maxsize
-    for v in range(len(fieldvalues)):
-        score=[]
-        dayValue=[]
-        exists = False
-        for d in range(1,days+1):
-            redisKey = "{}:{}{}:{}".format(source, date, format(d, '02d'), field)
-            if red.exists(redisKey):
-                countValue = red.zscore(redisKey, fieldvalues[v])
-                score.append(countValue if countValue is not None else 0)
-                dayValue.append(format(d, '02d'))
-                exists = True
-        if exists:
-            color = palette[v%10]
-            leg = "{}:{}".format(field, fieldvalues[v])
-            p.line(x=dayValue,y=score,legend=leg,line_color=color,line_width=2)
-            c = p.circle(x=dayValue,y=score,legend=leg,size=10,color=color,alpha=0.1)
-            taptool.renderers.append(c)
-            at_least_one = True
-            maxScore = max(score)
-            if maxVal < maxScore:
-                maxVal = maxScore
-            minScore = min(score)
-            if minVal > minScore:
-                minVal = minScore
-    if at_least_one:
-        p.title.text = "Number of {} {} seen for each day on month {}, year {}".format(field, fieldvalues, date[4:6], date[0:4])
-        p.yaxis[0].formatter = BasicTickFormatter(use_scientific=False)
-        day = "@x"
-        taptool.callback = OpenURL(url="{}_{}_{}{}.html".format(source,field,date,day))
-        p.legend.location = "top_left"
-        p.legend.click_policy = "hide"
-        xdr = days + 1
-        ydrmax = maxVal + maxVal * 10 / 100
-        ydrmin = minVal - maxVal * 5 / 100
-        p.x_range = Range1d(0,xdr)
-        p.y_range = Range1d(ydrmin,ydrmax)
-        dir_path = logo_file
-        width = xdr/9.5
-        height = (ydrmax-ydrmin)/12
-        p.image_url(url=[dir_path],x=[xdr],y=[ydrmax],w=[width],h=[height],anchor="top_right")
-        show(p)
-    else:
-        print ("There is no such value for the {} you specified\n".format(field))
-
     
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Export redis values in a graph.')
@@ -138,4 +82,71 @@ if __name__ == '__main__':
     else:
         logofile = args.logo[0]
     
-    process_graph(source, field, fieldvalues, date, outputdir,logofile)
+    field_data = {}
+    leg = []
+    fieldvalues_string = ""  
+    if field == "protocol":
+        with open("{}/doc/protocols".format(potiron_path),'r') as p:
+            for line in p.readlines():
+                val,n,_,_ = line.split('\t')
+                field_data[n] = val
+            for v in fieldvalues:
+                fieldvalues_string += "{}, ".format(field_data[v])
+                leg.append(field_data[v])
+    else:
+        for v in fieldvalues:
+            fieldvalues_string += "{}, ".format(v)
+            leg.append(v)
+    
+    namefile=output_name(source,field,fieldvalues,date,outputdir)
+    output_file("{}.html".format(namefile), title=namefile.split("/")[-1])
+    hover = HoverTool(tooltips = [('count','@y')])
+    taptool = TapTool()
+    TOOLS = [hover,PanTool(),BoxZoomTool(),WheelZoomTool(), taptool, SaveTool(), ResetTool()]
+    p = figure(width=1500,height=800,tools=TOOLS)
+    at_least_one = False
+    days = calendar.monthrange(int(date[0:4]),int(date[4:6]))[1]
+    maxVal = 0
+    minVal = sys.maxsize
+    for v in range(len(fieldvalues)):
+        score=[]
+        dayValue=[]
+        exists = False
+        for d in range(1,days+1):
+            redisKey = "{}:{}{}:{}".format(source, date, format(d, '02d'), field)
+            if red.exists(redisKey):
+                countValue = red.zscore(redisKey, fieldvalues[v])
+                score.append(countValue if countValue is not None else 0)
+                dayValue.append(format(d, '02d'))
+                exists = True
+        if exists:
+            color = palette[v%10]
+            p.line(x=dayValue,y=score,legend=leg[v],line_color=color,line_width=2)
+            c = p.scatter(x=dayValue,y=score,legend=leg[v],size=10,color=color,alpha=0.1)
+            taptool.renderers.append(c)
+            at_least_one = True
+            maxScore = max(score)
+            if maxVal < maxScore:
+                maxVal = maxScore
+            minScore = min(score)
+            if minVal > minScore:
+                minVal = minScore
+    if at_least_one:
+        
+        p.title.text = "Number of {} {} seen for each day on month {}, year {}".format(field, fieldvalues_string, date[4:6], date[0:4])
+        p.yaxis[0].formatter = BasicTickFormatter(use_scientific=False)
+        day = "@x"
+        taptool.callback = OpenURL(url="{}_{}_{}{}.html".format(source,field,date,day))
+        p.legend.location = "top_left"
+        p.legend.click_policy = "hide"
+        xdr = days + 1
+        ydrmax = maxVal + maxVal * 10 / 100
+        ydrmin = minVal - maxVal * 5 / 100
+        p.x_range = Range1d(0,xdr)
+        p.y_range = Range1d(ydrmin,ydrmax)
+        width = xdr/9.5
+        height = (ydrmax-ydrmin)/12
+        p.image_url(url=[logofile],x=[xdr],y=[ydrmax],w=[width],h=[height],anchor="top_right")
+        show(p)
+    else:
+        print ("There is no such value for the {} you specified\n".format(field))
