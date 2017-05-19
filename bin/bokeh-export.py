@@ -7,6 +7,7 @@ import calendar
 from bokeh.plotting import figure, show, output_file
 from bokeh.models import Range1d,OpenURL,TapTool,HoverTool,BasicTickFormatter,PanTool, BoxZoomTool,ResetTool,SaveTool,WheelZoomTool
 from bokeh.palettes import Category10_10 as palette
+from potiron_graph_annotation import plot_annotation
 
 
 #defines the name of the output file
@@ -73,30 +74,13 @@ if __name__ == '__main__':
     if not os.path.exists(outputdir):
         os.makedirs(outputdir)
         
-    potiron_tab = os.path.dirname(os.path.realpath(__file__)).split("/")[1:-1]
-    potiron_path = ""
-    for i in potiron_tab:
-        potiron_path+="/{}".format(i)
+    potiron_path = os.path.dirname(os.path.realpath(__file__))[:-3]
     if args.logo is None:
-        logofile = "{}/doc/circl.png".format(potiron_path)
+        logofile = "{}doc/circl.png".format(potiron_path)
     else:
         logofile = args.logo[0]
     
-    field_data = {}
-    leg = []
-    fieldvalues_string = ""  
-    if field == "protocol":
-        with open("{}/doc/protocols".format(potiron_path),'r') as p:
-            for line in p.readlines():
-                val,n,_,_ = line.split('\t')
-                field_data[n] = val
-            for v in fieldvalues:
-                fieldvalues_string += "{}, ".format(field_data[v])
-                leg.append(field_data[v])
-    else:
-        for v in fieldvalues:
-            fieldvalues_string += "{}, ".format(v)
-            leg.append(v)
+    field_string, fieldvalues_string, leg = plot_annotation(field, fieldvalues, potiron_path)
     
     namefile=output_name(source,field,fieldvalues,date,outputdir)
     output_file("{}.html".format(namefile), title=namefile.split("/")[-1])
@@ -132,8 +116,7 @@ if __name__ == '__main__':
             if minVal > minScore:
                 minVal = minScore
     if at_least_one:
-        
-        p.title.text = "Number of {} {} seen for each day on month {}, year {}".format(field, fieldvalues_string, date[4:6], date[0:4])
+        p.title.text = "Number of {} {}seen for each day on month {}, year {}".format(field_string, fieldvalues_string, date[4:6], date[0:4])
         p.yaxis[0].formatter = BasicTickFormatter(use_scientific=False)
         day = "@x"
         taptool.callback = OpenURL(url="{}_{}_{}{}.html".format(source,field,date,day))
