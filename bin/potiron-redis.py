@@ -101,13 +101,13 @@ for di in doc:
                 feature = di[k]
                 if k.startswith(potiron.ANNOTATION_PREFIX):
                     feature = potiron.translate_dictionaries(rev_dics, red, k, di[k])
-                    # Create the links between annotations and theire objects
+                    # Create the links between annotations and their objects
                     idn = potiron.get_dictionary_id(k)
                     obj = potiron.get_annotation_origin(di, k)
                     if obj is not None and idn is not None:
                         kn = "AR_{}_{}".format(idn, obj)
                         p.set(kn, feature)
-                keyname = sensorname + ":" + day + ":" + k
+                keyname = "{}:{}:{}".format(sensorname,day,k)
                 p.sadd("FIELDS", k)
                 p.zincrby(keyname, feature, 1)
         # FIXME the pipe might be to big peridocially flush them
