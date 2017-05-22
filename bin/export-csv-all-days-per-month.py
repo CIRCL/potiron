@@ -5,9 +5,10 @@ import argparse
 import sys
 import os
 import calendar
+from potiron_graph_annotation import field2string,bubble_annotation
 
 def output_name(source, field, dest, yearmonth, day):
-    return "{}{}_{}_{}{}".format(dest,source,field,yearmonth,day)
+    return "{}{}_{}_{}-{}-{}".format(dest,source,field,yearmonth[0:4],yearmonth[4:6],day)
 
 parser = argparse.ArgumentParser(description='Export one month data from redis')
 parser.add_argument("-s","--source", type=str, nargs=1, help="Data source")
@@ -20,12 +21,19 @@ parser.add_argument("-u","--unix", type=str, nargs=1, help='Unix socket to conne
 args = parser.parse_args()
 
 if args.source is None:
-    args.source = ["potiron"]
+    source = "potiron"
+else:
+    source = args.source[0]
 
 if args.date is None:
-    sys.stderr.write('A date must be specified.\nThe format is : YYYYMM')
+    sys.stderr.write('A date must be specified.\nThe format is : YYYYMM\n')
     sys.exit(1)
 date = args.date[0]
+
+if args.field is None:
+    sys.stderr.write('A field must be specified.\n')
+    sys.exit(1)
+field = args.field[0]
 
 if args.limit is None:
     limit = 20
@@ -48,20 +56,26 @@ if args.unix is None:
 usocket = args.unix[0]
 r = redis.Redis(unix_socket_path=usocket)
 
+potiron_path = os.path.dirname(os.path.realpath(__file__))[:-3]
+
+field_string, field_in_file_name = field2string(field, potiron_path)
+
 days = calendar.monthrange(int(date[0:4]),int(date[4:6]))[1]
 for d in range(1,days+1):
-    currentLimit = limit
-    redisKey = "{}:{}{}:{}".format(args.source[0], date, format(d, '02d'), args.field[0])
+    redisKey = "{}:{}{}:{}".format(source, date, format(d, '02d'), field)
     if r.exists(redisKey):
-        for v in r.zrevrangebyscore(redisKey,sys.maxsize,0)[:limit]:
+        l = 0
+        values = []
+        for v in r.zrevrangebyscore(redisKey,sys.maxsize,0):
             val = v.decode()
-            if val in args.skip :
-                currentLimit+=1
-        with open("{}.csv".format(output_name(args.source[0],args.field[0],outputdir,date,format(d, '02d'))),'w') as f:
+            if val not in args.skip :
+                values.append(val)
+                l += 1
+            if l >= limit:
+                break
+        with open("{}.csv".format(output_name(source,field_in_file_name,outputdir,date,format(d, '02d'))),'w') as f:
             f.write("id,value\n")
-            for v in r.zrevrangebyscore(redisKey,sys.maxsize,0)[:currentLimit]:
-                val = v.decode()
-                if val in args.skip :
-                    continue
-                f.write("{},\n".format(val))
-                f.write("{},{}\n".format(val,r.zscore(redisKey,val)))
+            for v in values:
+                val = bubble_annotation(field,field_string,v,potiron_path)
+                f.write("{}{},\n".format(v,val))
+                f.write("{}{},{}\n".format(v,val,r.zscore(redisKey,v)))

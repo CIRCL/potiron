@@ -13,9 +13,9 @@ from potiron_graph_annotation import plot_annotation
 #defines the name of the output file
 def output_name(source, field, fieldvalues, date, dest):
     value_str = ""
-    for i in range(len(fieldvalues)):
-        value_str = value_str + "_" + fieldvalues[i]
-    return "{}{}_{}_{}{}".format(dest,source,date,field,value_str)
+    for i in sorted(fieldvalues):
+        value_str = value_str + "_" + i
+    return "{}{}_{}-{}_{}{}".format(dest,source,date[0:4],date[4:6],field,value_str)
 
     
 if __name__ == '__main__':
@@ -80,9 +80,9 @@ if __name__ == '__main__':
     else:
         logofile = args.logo[0]
     
-    field_string, fieldvalues_string, leg = plot_annotation(field, fieldvalues, potiron_path)
+    field_string, field_in_file_name, fieldvalues_string, leg = plot_annotation(field, fieldvalues, potiron_path)
     
-    namefile=output_name(source,field,fieldvalues,date,outputdir)
+    namefile=output_name(source,field_in_file_name,fieldvalues,date,outputdir)
     output_file("{}.html".format(namefile), title=namefile.split("/")[-1])
     hover = HoverTool(tooltips = [('count','@y')])
     taptool = TapTool()
@@ -119,7 +119,7 @@ if __name__ == '__main__':
         p.title.text = "Number of {} {}seen for each day on month {}, year {}".format(field_string, fieldvalues_string, date[4:6], date[0:4])
         p.yaxis[0].formatter = BasicTickFormatter(use_scientific=False)
         day = "@x"
-        taptool.callback = OpenURL(url="{}_{}_{}{}.html".format(source,field,date,day))
+        taptool.callback = OpenURL(url="{}_{}_{}-{}-{}.html".format(source,field_in_file_name,date[0:4],date[4:6],day))
         p.legend.location = "top_left"
         p.legend.click_policy = "hide"
         xdr = days + 1
