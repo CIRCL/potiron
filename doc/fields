@@ -1,0 +1,15 @@
+length	length
+protocol	protocol
+ipsrc	ip source
+ipdst	ip destination
+ipop	ip options
+ipttl	ip time-to-live
+iptos	type of service
+sport	source port
+dport	destination port
+tcpseq	sequence number
+tcpack	acknowledgement number
+icmpcode	icmp code
+icmptype	icmp type
+type	type
+state	state

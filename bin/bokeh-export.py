@@ -7,70 +7,15 @@ import calendar
 from bokeh.plotting import figure, show, output_file
 from bokeh.models import Range1d,OpenURL,TapTool,HoverTool,BasicTickFormatter,PanTool, BoxZoomTool,ResetTool,SaveTool,WheelZoomTool
 from bokeh.palettes import Category10_10 as palette
+from potiron_graph_annotation import plot_annotation
 
 
 #defines the name of the output file
 def output_name(source, field, fieldvalues, date, dest):
     value_str = ""
-    for i in range(len(fieldvalues)):
-        value_str = value_str + "_" + fieldvalues[i]
-    return "{}{}_{}_{}{}".format(dest,source,date,field,value_str)
-
-
-def process_graph(source, field, fieldvalues, date, dest,logo_file):
-    namefile=output_name(source,field,fieldvalues,date,dest)
-    output_file("{}.html".format(namefile), title=namefile.split("/")[-1])
-    hover = HoverTool(tooltips = [('count','@y')])
-    taptool = TapTool()
-    TOOLS = [hover,PanTool(),BoxZoomTool(),WheelZoomTool(), taptool, SaveTool(), ResetTool()]
-    p = figure(width=1500,height=800,tools=TOOLS)
-    at_least_one = False
-    days = calendar.monthrange(int(date[0:4]),int(date[4:6]))[1]
-    maxVal = 0
-    minVal = sys.maxsize
-    for v in range(len(fieldvalues)):
-        score=[]
-        dayValue=[]
-        exists = False
-        for d in range(1,days+1):
-            redisKey = "{}:{}{}:{}".format(source, date, format(d, '02d'), field)
-            if red.exists(redisKey):
-                countValue = red.zscore(redisKey, fieldvalues[v])
-                score.append(countValue if countValue is not None else 0)
-                dayValue.append(format(d, '02d'))
-                exists = True
-        if exists:
-            color = palette[v%10]
-            leg = "{}:{}".format(field, fieldvalues[v])
-            p.line(x=dayValue,y=score,legend=leg,line_color=color,line_width=2)
-            c = p.circle(x=dayValue,y=score,legend=leg,size=10,color=color,alpha=0.1)
-            taptool.renderers.append(c)
-            at_least_one = True
-            maxScore = max(score)
-            if maxVal < maxScore:
-                maxVal = maxScore
-            minScore = min(score)
-            if minVal > minScore:
-                minVal = minScore
-    if at_least_one:
-        p.title.text = "Number of {} {} seen for each day on month {}, year {}".format(field, fieldvalues, date[4:6], date[0:4])
-        p.yaxis[0].formatter = BasicTickFormatter(use_scientific=False)
-        day = "@x"
-        taptool.callback = OpenURL(url="{}_{}_{}{}.html".format(source,field,date,day))
-        p.legend.location = "top_left"
-        p.legend.click_policy = "hide"
-        xdr = days + 1
-        ydrmax = maxVal + maxVal * 10 / 100
-        ydrmin = minVal - maxVal * 5 / 100
-        p.x_range = Range1d(0,xdr)
-        p.y_range = Range1d(ydrmin,ydrmax)
-        dir_path = logo_file
-        width = xdr/9.5
-        height = (ydrmax-ydrmin)/12
-        p.image_url(url=[dir_path],x=[xdr],y=[ydrmax],w=[width],h=[height],anchor="top_right")
-        show(p)
-    else:
-        print ("There is no such value for the {} you specified\n".format(field))
+    for i in sorted(fieldvalues):
+        value_str = value_str + "_" + i
+    return "{}{}_{}-{}_{}{}".format(dest,source,date[0:4],date[4:6],field,value_str)
 
     
 if __name__ == '__main__':
@@ -129,13 +74,62 @@ if __name__ == '__main__':
     if not os.path.exists(outputdir):
         os.makedirs(outputdir)
         
-    potiron_tab = os.path.dirname(os.path.realpath(__file__)).split("/")[1:-1]
-    potiron_path = ""
-    for i in potiron_tab:
-        potiron_path+="/{}".format(i)
+    potiron_path = os.path.dirname(os.path.realpath(__file__))[:-3]
     if args.logo is None:
-        logofile = "{}/doc/circl.png".format(potiron_path)
+        logofile = "{}doc/circl.png".format(potiron_path)
     else:
         logofile = args.logo[0]
     
-    process_graph(source, field, fieldvalues, date, outputdir,logofile)
+    field_string, field_in_file_name, fieldvalues_string, leg = plot_annotation(field, fieldvalues, potiron_path)
+    
+    namefile=output_name(source,field_in_file_name,fieldvalues,date,outputdir)
+    output_file("{}.html".format(namefile), title=namefile.split("/")[-1])
+    hover = HoverTool(tooltips = [('count','@y')])
+    taptool = TapTool()
+    TOOLS = [hover,PanTool(),BoxZoomTool(),WheelZoomTool(), taptool, SaveTool(), ResetTool()]
+    p = figure(width=1500,height=800,tools=TOOLS)
+    at_least_one = False
+    days = calendar.monthrange(int(date[0:4]),int(date[4:6]))[1]
+    maxVal = 0
+    minVal = sys.maxsize
+    for v in range(len(fieldvalues)):
+        score=[]
+        dayValue=[]
+        exists = False
+        for d in range(1,days+1):
+            redisKey = "{}:{}{}:{}".format(source, date, format(d, '02d'), field)
+            if red.exists(redisKey):
+                countValue = red.zscore(redisKey, fieldvalues[v])
+                score.append(countValue if countValue is not None else 0)
+                dayValue.append(format(d, '02d'))
+                exists = True
+        if exists:
+            color = palette[v%10]
+            p.line(x=dayValue,y=score,legend=leg[v],line_color=color,line_width=2)
+            c = p.scatter(x=dayValue,y=score,legend=leg[v],size=10,color=color,alpha=0.1)
+            taptool.renderers.append(c)
+            at_least_one = True
+            maxScore = max(score)
+            if maxVal < maxScore:
+                maxVal = maxScore
+            minScore = min(score)
+            if minVal > minScore:
+                minVal = minScore
+    if at_least_one:
+        p.title.text = "Number of {} {}seen for each day on month {}, year {}".format(field_string, fieldvalues_string, date[4:6], date[0:4])
+        p.yaxis[0].formatter = BasicTickFormatter(use_scientific=False)
+        day = "@x"
+        taptool.callback = OpenURL(url="{}_{}_{}-{}-{}.html".format(source,field_in_file_name,date[0:4],date[4:6],day))
+        p.legend.location = "top_left"
+        p.legend.click_policy = "hide"
+        xdr = days + 1
+        ydrmax = maxVal + maxVal * 10 / 100
+        ydrmin = minVal - maxVal * 5 / 100
+        p.x_range = Range1d(0,xdr)
+        p.y_range = Range1d(ydrmin,ydrmax)
+        width = xdr/9.5
+        height = (ydrmax-ydrmin)/12
+        p.image_url(url=[logofile],x=[xdr],y=[ydrmax],w=[width],h=[height],anchor="top_right")
+        show(p)
+    else:
+        print ("There is no such value for the {} you specified\n".format(field))

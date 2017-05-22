@@ -9,6 +9,11 @@ var svg = d3.select("svg"),
 var format = d3.format(",d");
 var color = d3.scaleOrdinal(d3.schemeCategory20c);
 var info = "##NAME##".split("_");
+var field = info[1].split("-")
+var field_string = ""
+for (i=0; i<field.length; i++){
+	field_string += field[i] + " ";
+}
 var logoFile = "##LOGO##"
 var pack = d3.pack()
     .size([width, height])
@@ -46,7 +51,7 @@ d3.csv("##NAME##.csv", function(d) {
   node.append("title")
       .text(function(d) { return d.id + "\n" + format(d.value); });
   node.on("click", function(d) {
-      window.location.href="/home/student/git/potiron/bin/out/"+info[0]+"_"+info[2].slice(0,6)+"_"+info[1]+"_"+d.id+".html"});
+      window.location.href=info[0]+"_"+info[2].slice(0,7)+"_"+info[1]+"_"+d.id.split(" ")[0]+".html"});
 });
   var legend = svg.selectAll(".legend")
       .data(info)
@@ -55,12 +60,12 @@ d3.csv("##NAME##.csv", function(d) {
       .attr("class", "legend")
       .attr("transform", function(){
 	var x = 450
-        var y = 50
+        var y = 20
 	return "translate("+x+","+y+")";
       }) 
   legend.append("text")
       .attr("font-size", 15)
-      .text(function(d) { return "Most frequent occurrences of "+info[1]+" seen on source "+info[0]+" in month "+info[2].slice(4,6)+" of the year "+info[2].slice(0,4)});
+      .text(function(d) { return "Most frequent occurrences of "+field_string+"seen on source "+info[0]+" in month "+info[2].slice(5,7)+" of the year "+info[2].slice(0,4)});
   legend.append('svg:image')
       .attr("xlink:href", logoFile)
       .attr("width", 210)

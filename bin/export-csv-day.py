@@ -4,9 +4,10 @@ import redis
 import argparse
 import sys
 import os
+from potiron_graph_annotation import field2string,bubble_annotation
 
 def output_name(source, field, date, dest):
-    return "{}{}_{}_{}".format(dest,source,field,date)
+    return "{}{}_{}_{}-{}-{}".format(dest,source,field,date[0:4],date[4:6],date[6:8])
 
 parser = argparse.ArgumentParser(description='Export one day data from redis')
 parser.add_argument("-s","--source", type=str, nargs=1, help="Data source")
@@ -14,17 +15,24 @@ parser.add_argument("-d","--date", type=str, nargs=1, help='Date of the informat
 parser.add_argument("-f","--field", type=str, nargs=1, help="Field used")
 parser.add_argument("-l","--limit", type=int, nargs=1, help="Limit of values to export - default 20")
 parser.add_argument("--skip", type=str, default=None, action="append", help="Skip a specific value")
-parser.add_argument("-o","--outputdir", type=str, help="Output directory")
+parser.add_argument("-o","--outputdir", type=str, nargs=1, help="Output directory")
 parser.add_argument("-u","--unix", type=str, nargs=1, help='Unix socket to connect to redis-server.')
 args = parser.parse_args()
 
 if args.source is None:
-    args.source = ["potiron"]
+    source = "potiron"
+else:
+    source = args.source[0]
     
 if args.date is None:
     sys.stderr.write('A date must be specified.\nThe format is : YYYYMMDD')
     sys.exit(1)
 date = args.date[0]
+
+if args.field is None:
+    sys.stderr.write('A field must be specified.\n')
+    sys.exit(1)
+field = args.field[0]
 
 if args.limit is None:
     limit = 20
@@ -47,17 +55,24 @@ if args.unix is None:
 usocket = args.unix[0]
 r = redis.Redis(unix_socket_path=usocket)
 
-redisKey = "{}:{}:{}".format(args.source[0], date, args.field[0])
+potiron_path = os.path.dirname(os.path.realpath(__file__))[:-3]
+
+field_string, field_in_file_name = field2string(field, potiron_path)
+
+redisKey = "{}:{}:{}".format(source, date, field)
 if r.exists(redisKey):
-    with open("{}.csv".format(output_name(args.source[0],args.field[0],date,args.outputdir)),'w') as f:
+    l = 0
+    values = []
+    for v in r.zrevrangebyscore(redisKey,sys.maxsize,0):
+        val = v.decode()
+        if val not in args.skip :
+            values.append(val)
+            l += 1
+        if l >= limit:
+            break
+    with open("{}.csv".format(output_name(source,field_in_file_name,date,args.outputdir)),'w') as f:
         f.write("id,value\n")
-        for v in r.zrevrangebyscore(redisKey,sys.maxsize,0)[:limit]:
-            val = v.decode()
-            if val in args.skip :
-                limit+=1
-        for v in r.zrevrangebyscore(redisKey,sys.maxsize,0)[:limit]:
-            val = v.decode()
-            if val in args.skip :
-                continue
-            f.write("{},\n".format(val))
-            f.write("{},{}\n".format(val,r.zscore(redisKey,val)))
+        for v in values:
+            val = bubble_annotation(field,field_string,v,potiron_path)
+            f.write("{}{},\n".format(v,val))
+            f.write("{}{},{}\n".format(v,val,r.zscore(redisKey,v)))
