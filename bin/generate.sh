@@ -1,5 +1,5 @@
 #!/bin/bash
-for file in $1*.csv ; do
+for file in $( ls $1*.csv | grep -v parallel-coordinate)  ; do
 	name=$( echo ${file} | rev | cut -f1 -d/ | rev | cut -f1 -d.)
 	if [ -z "$2" ]
 	then
