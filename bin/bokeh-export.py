@@ -92,6 +92,7 @@ if __name__ == '__main__':
     days = calendar.monthrange(int(date[0:4]),int(date[4:6]))[1]
     maxVal = 0
     minVal = sys.maxsize
+    maxDay = 0
     for v in range(len(fieldvalues)):
         score=[]
         dayValue=[]
@@ -103,6 +104,8 @@ if __name__ == '__main__':
                 score.append(countValue if countValue is not None else 0)
                 dayValue.append(format(d, '02d'))
                 exists = True
+        if int(dayValue[-1]) > maxDay:
+            maxDay = int(dayValue[-1])
         if exists:
             color = palette[v%10]
             p.line(x=dayValue,y=score,legend=leg[v],line_color=color,line_width=2)
@@ -122,7 +125,7 @@ if __name__ == '__main__':
         taptool.callback = OpenURL(url="{}_{}_{}-{}-{}.html".format(source,field_in_file_name,date[0:4],date[4:6],day))
         p.legend.location = "top_left"
         p.legend.click_policy = "hide"
-        xdr = days + 1
+        xdr = maxDay + 1
         ydrmax = maxVal + maxVal * 10 / 100
         ydrmin = minVal - maxVal * 5 / 100
         p.x_range = Range1d(0,xdr)

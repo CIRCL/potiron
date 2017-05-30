@@ -1,5 +1,5 @@
 #!/bin/bash
-for file in $( ls $1*.csv | grep -v parallel-coordinate)  ; do
+for file in $1parallel-coordinate*.csv ; do
 	name=$( echo ${file} | rev | cut -f1 -d/ | rev | cut -f1 -d.)
 	if [ -z "$2" ]
 	then
@@ -7,6 +7,7 @@ for file in $( ls $1*.csv | grep -v parallel-coordinate)  ; do
 	else
 		logo=$2
 	fi
-	cat "template.html" | sed -e "s/##NAME##/${name}/g" | sed -e "s_##LOGO##_${logo}_g" >$1/${name}.html
+	echo ${name}
+	cat "template-pc.html" | sed -e "s/##NAME##/${name}/g" >$1/${name}.html
 done
 exit 0

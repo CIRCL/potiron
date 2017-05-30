@@ -70,12 +70,12 @@ def process_file(rootdir, filename):
             protocol = int(protocol)
         except ValueError:
             pass
-        if protocol == 17:
-            sport = usport
-            dport = udport
-        else:
+        if protocol == 6:
             sport = tsport
             dport = tdport
+        else:
+            sport = usport
+            dport = udport
         
         try:
             ilength = int(length)
@@ -142,7 +142,7 @@ def process_file(rootdir, filename):
                   }
         # FIXME might consume a lot of memory
         allpackets.append(packet)
-        
+
     # FIXME Implement polling because wait can last forever
     proc.wait()
 
