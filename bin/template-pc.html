@@ -41,6 +41,8 @@ svg {
 <script src="https://d3js.org/d3.v3.min.js"></script>
 <script>
 
+var info = '##NAME##'.split("_");
+
 var margin = {top: 30, right: 10, bottom: 10, left: 10},
     width = 2960 - margin.left - margin.right,
     height = 900 - margin.top - margin.bottom;
@@ -64,7 +66,7 @@ d3.csv("##NAME##.csv", function(error, cars) {
 
   // Extract the list of dimensions and create a scale for each.
   x.domain(dimensions = d3.keys(cars[0]).filter(function(d) {
-    return d != "ip" && (y[d] = d3.scale.linear()
+    return d != info[2] && (y[d] = d3.scale.linear()
         .domain(d3.extent(cars, function(p) { return +p[d]; }))
         .range([height, 0]));
   }));

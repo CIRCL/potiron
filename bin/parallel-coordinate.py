@@ -62,7 +62,7 @@ outputname = output_name(source,field_in_file_name,date,outputdir)
 if not os.path.exists(outputname):
     os.makedirs(outputname)
 f = open("{}.csv".format(outputname), 'w')
-days_string = "ip,"
+days_string = "{},".format(field_in_file_name)
 for day in range(1,days+1):
     d = format(day, '02d')
     days_string += "{}-{},".format(month,d)
