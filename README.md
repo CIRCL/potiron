@@ -84,3 +84,44 @@ These files contain the data which will be used as data source in the graphs. Th
 The script will simply generate all the .html files using template.html to build the graphs. 
 Having both generate.sh and template.html in the same path is recommanded.
 The first parameter used here is the location of the .csv files, and the .html output files will be created in the same directory. The second parameter is optionnal and is the absolute path of the logo file which will be displayed. If no argument is given, the default path is the same used for the bokeh graph, which is the CIRCL logo stored in the doc/ directory of potiron.
+
+
+Summary
+-------
+
+* Usual potiron functionalities :
+	- potiron-json-ipsumdump / potiron-json-tshark : create json files from pcap files
+		- input : pcap files
+		- output : corresponding json files
+	- potiron-redis : stores data from json files in redis
+		- input : json files
+		- output : redis
+	- bokeh-export : process graphs to display specific values of a field for a month
+		- input : redis data
+		- output : bokeh plot
+	- export-csv-* : process datafiles for the graphs of the most frequent values of a field, the period depends on the parameter specified in the * caracter's place
+		- input : redis data
+		- output : csv data files
+	- generate : creates graphs corresponding to the csv files, using template.html as the template of the graph
+		- input : csv data files
+		- output : d3.js bubble charts
+
+	- potiron_graph_annotation is used to put the real name of the fields / values displayed in the graphs, instead of their variable name, using dictionaries stored in "doc" directory
+
+* Additionnal functionalities :
+	- isn-pcap / isn-pcap-process-day : use pcap files to process graphs of the sequence and acknowledgement numbers over time, with the destination port indicated as the color of the dots
+		- input : pcap files
+		- output : ISN graphs
+	- potiron-isn-redis : stores data from json files in a time series redis structure in order to process ISN graphs directly from redis
+		- input : json files
+		- output : redis
+	- isn-redis / isn-redis-process-day : process ISN graphs with data from redis 
+		- input : redis data
+		- output : ISN graphs
+
+	- parallel-coordinate : process csv files containing data used to display parallel coordinates of the daily most frequent values of a field for a month
+		- input : redis data
+		- output : csv data files
+	- generate-pc : creates parallel coordinate graphs with the csv files, using template-pc.html as template
+		- input : csv data files
+		- output : d3.js parallel coordinate graphs
