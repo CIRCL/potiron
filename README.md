@@ -118,6 +118,9 @@ Summary
 	- isn-redis / isn-redis-process-day : process ISN graphs with data from redis 
 		- input : redis data
 		- output : ISN graphs
+	- preview : displays a preview of all the ISN graphs for a month as an index, with links to each original graph
+		- input : ISN graphs images
+		- output : index of all the previews
 
 	- parallel-coordinate : process csv files containing data used to display parallel coordinates of the daily most frequent values of a field for a month
 		- input : redis data
