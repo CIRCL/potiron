@@ -42,19 +42,20 @@ for day in sorted(os.listdir(monthdir)):
 #    day_tab=[]
     daydir = os.path.join(monthdir,day)
     if os.path.isdir(daydir):
-        f.write('<div class="row">\n<h3>{}</h4>\n'.format(day))
+        f.write('<div class="row">\n<h3>{}</h3>\n'.format(day))
         for hour in sorted(os.listdir(daydir)):  
             hourdir = os.path.join(daydir, hour)
             file = glob.glob(hourdir+'/*.png')
             f.write('\t<div class="col-md-4"><div class="thumbnail">\n')
+            graph = glob.glob(hourdir+'/*.html')
+            f.write('\t\t<a href="{}" target="_blank">\n\t\t\t<div class="caption">\
+                    \n\t\t\t\t<p>{}</p>\n\t\t\t</div>\n'.format(graph[0],hour))
             if file:
-                graph = glob.glob(hourdir+'/*.html')
-                f.write('\t\t<a href="{}" target="_blank">\n\t\t\t<div class="caption">\n\t\t\t\t<p>{}</p>\
-                        \n\t\t\t</div>\n\t\t\t<img src="{}" alt="Lights" width="304" height="278">\
-                        \n\t\t</a>\n'.format(graph[0],hour,file[0]))
+                f.write('\t\t\t<img src="{}" alt="Lights" width="304" height="278">\
+                        \n\t\t</a>\n'.format(file[0]))
             else:
-                f.write('\t\t<div class="caption">\n\t\t\t<p>{}</p>\n\t\t</div>\
-                        \n\t\t<img src="{}" alt="Lights" width="224" height="224">\n'.format(hour,error_picture))
+                f.write('\t\t\t<img src="{}" alt="Lights" width="224" height="224">\
+                        \n\t\t</a>\n'.format(error_picture))
             f.write('\t</div></div>\n')
         f.write('</div>\n')
 f.write('</div>\n</body>\n</html>\n')
