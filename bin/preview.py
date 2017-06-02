@@ -39,7 +39,6 @@ f.write('<!DOCTYPE html>\n<head>\n<title>Preview Index</title>\n<meta charset="u
         \n<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>\
         \n</head>\n<body>\n<div class="container">\n<h2>Preview Index</h2>\n')
 for day in sorted(os.listdir(monthdir)):
-#    day_tab=[]
     daydir = os.path.join(monthdir,day)
     if os.path.isdir(daydir):
         f.write('<div class="row">\n<h3>{}</h3>\n'.format(day))

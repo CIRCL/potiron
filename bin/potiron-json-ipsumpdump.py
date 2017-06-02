@@ -130,7 +130,7 @@ def process_file(rootdir, filename):
     proc = subprocess.Popen(["ipsumdump", "--no-headers", "--quiet", "--timestamp",
                              "--length", "--protocol", "--ip-src", "--ip-dst", "--ip-opt",
                              "--ip-ttl", "--ip-tos", "--sport", "--dport", "--tcp-seq", "--tcp-ack",
-                             "--icmp-code", "--icmp-type", "-f", potiron.bpffilter, "-r", filename], 
+                             "--icmp-code", "--icmp-type", "-f", potiron.bpf_filter, "-r", filename], 
                              stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     for line in proc.stdout.readlines():
         packet_id = packet_id + 1

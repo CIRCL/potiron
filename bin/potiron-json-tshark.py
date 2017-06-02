@@ -7,9 +7,7 @@ import json
 import sys
 import potiron
 import argparse
-from potiron import infomsg
-from potiron import errormsg
-from potiron import check_program
+from potiron import infomsg, errormsg, check_program
 import datetime
         
 
@@ -47,12 +45,11 @@ def process_file(rootdir, filename):
     # further aggregation with meta data.
     # Assumption: Each program process the pcap file the same way?
     packet_id = 0
-    proc = subprocess.Popen(["tshark", "-n", "-q", "-Tfields", "-e", "frame.time_epoch", "-e", "ip.len",
-                             "-e", "ip.proto", "-e", "ip.src", "-e", "ip.dst", "-e", "ip.ttl", "-e", "ip.dsfield",
-                             "-e", "tcp.srcport", "-e", "udp.srcport", "-e", "tcp.dstport", "-e", "udp.dstport", "-e", "tcp.seq",
-                             "-e", "tcp.ack", "-e", "icmp.code", "-e", "icmp.type", "-E", "header=n", "-E", "separator=/s",
-                             "-E", "occurrence=f", "-Y", potiron.tsharkfilter, "-r", filename,
-                             "-o", "tcp.relative_sequence_numbers:FALSE"], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    cmd = "tshark -n -q -Tfields "
+    for f in potiron.tshark_fields:
+        cmd += "-e {} ".format(f)
+    cmd += "-E header=n -E separator=/s -E occurrence=f -Y '{}' -r {} -o tcp.relative_sequence_numbers:FALSE".format(potiron.tshark_filter, filename)
+    proc = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     for line in proc.stdout.readlines():
         packet_id = packet_id + 1
         line = line[:-1].decode()
@@ -154,7 +151,7 @@ def process_file(rootdir, filename):
     
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description="Start the tool tshark and transform the output in a json document")
-    parser.add_argument("-r", "--read", type=str, nargs=1, help="Compressed pcap file or pcap filename")
+    parser.add_argument("-i", "--read", type=str, nargs=1, help="Compressed pcap file or pcap filename")
     parser.add_argument("-c", "--console", action='store_true', help="Log output also to console")
     parser.add_argument("-o", "--directory", nargs=1, help="Output directory where the json documents are stored")
 
@@ -180,4 +177,3 @@ if __name__ == '__main__':
     except OSError as e:
         errormsg("A processing error happend.{}.\n".format(e))
         sys.exit(1)
-        

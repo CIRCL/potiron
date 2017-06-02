@@ -24,8 +24,14 @@ import syslog
 
 # Generic filter for filtering out artefacts of honeypot operations
 # TODO put this in a config file
-bpffilter = "not net 239.0.0.0/8 and not host 255.255.255.255"
-tsharkfilter = "ip.dst ne 255.255.255.255"
+bpf_filter = "not net 239.0.0.0/8 and not host 255.255.255.255"
+tshark_filter = "ip.dst ne 255.255.255.255"
+tshark_fields = ['frame.time_epoch','ip.len','ip.proto','ip.src','ip.dst',
+                 'ip.ttl','ip.dsfield','tcp.srcport','udp.srcport','tcp.dstport',
+                 'udp.dstport','tcp.seq','tcp.ack','icmp.code','icmp.type']
+json_fields = ['timestamp','length','protocol','ipsrc','ipdst','ipttl','iptos',
+               'tsport','usport','tdport','udport','tcpseq','tcpack','icmpcode',
+               'icmptype']
 PROTO_ICMP = 1
 PROTO_UDP = 17
 PROTO_TCP = 6
