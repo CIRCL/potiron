@@ -7,9 +7,12 @@ import json
 import sys
 import potiron
 import argparse
-from potiron import infomsg, errormsg, check_program
+from potiron import infomsg, check_program
 import datetime
-        
+
+
+bpf_filter = potiron.tshark_filter
+
 
 def store_packet(rootdir, pcapfilename, obj):
     if rootdir is not None:
@@ -48,7 +51,7 @@ def process_file(rootdir, filename):
     cmd = "tshark -n -q -Tfields "
     for f in potiron.tshark_fields:
         cmd += "-e {} ".format(f)
-    cmd += "-E header=n -E separator=/s -E occurrence=f -Y '{}' -r {} -o tcp.relative_sequence_numbers:FALSE".format(potiron.tshark_filter, filename)
+    cmd += "-E header=n -E separator=/s -E occurrence=f -Y '{}' -r {} -o tcp.relative_sequence_numbers:FALSE".format(bpf_filter, filename)
     proc = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     for line in proc.stdout.readlines():
         packet_id = packet_id + 1
@@ -154,20 +157,29 @@ if __name__ == '__main__':
     parser.add_argument("-i", "--read", type=str, nargs=1, help="Compressed pcap file or pcap filename")
     parser.add_argument("-c", "--console", action='store_true', help="Log output also to console")
     parser.add_argument("-o", "--directory", nargs=1, help="Output directory where the json documents are stored")
+    parser.add_argument("-bf", "--bpffilter", type=str, nargs='+', help="BPF Filter")
 
     args = parser.parse_args()
     potiron.logconsole = args.console
     if args.read is not None:
         if os.path.exists(args.read[0]) is False:
-            errormsg("The filename {} was not found".format(args.read[0]))
+            sys.stderr.write("The filename {} was not found".format(args.read[0]))
             sys.exit(1)
 
     if args.directory is not None and os.path.isdir(args.directory[0]) is False:
-        errormsg("The root directory is not a directory")
+        sys.stderr.write("The root directory is not a directory")
         sys.exit(1)
+        
+    if args.bpffilter is not None:
+        if len(args.bpffilter) == 1:
+            bpffilter = args.bpffilter[0]
+            bpf_filter += " && {}".format(bpffilter)
+        else:
+            sys.stderr.write("Due to the possibility your filter contains '|' caracter, it should be defined between simple or double quotes.\n")
+            sys.exit(1)
 
     if args.read is None:
-        errormsg("At least a pcap file must be specified")
+        sys.stderr.write("At least a pcap file must be specified")
         sys.exit(1)
     try:
         rootdir = None
@@ -175,5 +187,5 @@ if __name__ == '__main__':
             rootdir = args.directory[0]
         process_file(rootdir, args.read[0])
     except OSError as e:
-        errormsg("A processing error happend.{}.\n".format(e))
+        sys.stderr.write("A processing error happend.{}.\n".format(e))
         sys.exit(1)
