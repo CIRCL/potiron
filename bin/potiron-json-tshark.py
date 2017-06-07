@@ -9,7 +9,7 @@ import potiron
 import argparse
 from potiron import infomsg, check_program
 import datetime
-
+        
 
 bpf_filter = potiron.tshark_filter
 
@@ -29,15 +29,14 @@ def create_dirs(rootdir, pcapfilename):
     d = os.path.dirname(jsonfilename)
     if not os.path.exists(d):
         os.makedirs(d)
-        
 
-def process_file(rootdir, filename):
+
+def process_file(rootdir, filename, fieldfilter):
     if not check_program("tshark"):
         raise OSError("The program tshark is not installed")
     # FIXME Put in config file
     if rootdir is not None:
         create_dirs(rootdir, filename)
-    packet = {}
     sensorname = potiron.derive_sensor_name(filename)
     allpackets = []
     # Describe the source
@@ -48,98 +47,133 @@ def process_file(rootdir, filename):
     # further aggregation with meta data.
     # Assumption: Each program process the pcap file the same way?
     packet_id = 0
+    tshark_fields = potiron.tshark_fields
     cmd = "tshark -n -q -Tfields "
-    for f in potiron.tshark_fields:
-        cmd += "-e {} ".format(f)
+    if fieldfilter:
+        if 'frame.time_epoch' not in fieldfilter:
+            fieldfilter.insert(0, 'frame.time_epoch')
+        for p in fieldfilter:
+            cmd += "-e {} ".format(p)
+    else:
+        for f in tshark_fields:
+            cmd += "-e {} ".format(f)
     cmd += "-E header=n -E separator=/s -E occurrence=f -Y '{}' -r {} -o tcp.relative_sequence_numbers:FALSE".format(bpf_filter, filename)
     proc = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    json_fields = potiron.json_fields     
     for line in proc.stdout.readlines():
         packet_id = packet_id + 1
         line = line[:-1].decode()
-        timestamp, length, protocol, ipsrc, ipdst, ipttl, iptos, tsport, usport, tdport, udport, tcpseq, tcpack, icmpcode, icmptype = line.split(' ')
-        ilength = -1
-        iipttl = -1
-        iiptos = -1
-        isport = -1
-        idport = -1
-        itcpseq = -1
-        itcpack = -1
-        iicmpcode = 255
-        iicmptype = 255
-        try:
-            protocol = int(protocol)
-        except ValueError:
-            pass
-        if protocol == 6:
-            sport = tsport
-            dport = tdport
-        else:
-            sport = usport
-            dport = udport
-        
-        try:
-            ilength = int(length)
-        except ValueError:
-            pass
-        try:
-            iipttl = int(ipttl)
-        except ValueError:
-            pass
-        try:
-            iiptos = int(iptos, 0)
-        except ValueError:
-            pass
-        try:
-            isport = int(sport)
-        except ValueError:
-            pass
-        try:
-            idport = int(dport)
-        except ValueError:
-            pass
-        try:
-            itcpseq = int(tcpseq)
-        except ValueError:
-            pass
-        try:
-            itcpack = int(tcpack)
-        except ValueError:
-            pass
-        try:
-            iicmpcode = int(icmpcode)
-        except ValueError:
-            pass
-        try:
-            iicmptype = int(icmptype)
-        except ValueError:
-            pass
-        
-        if ipsrc == '-':
-            ipsrc = None
-        if ipdst == '-':
-            ipdst = None
-        # Convert timestamp
-        a, b = timestamp.split('.')
+        packet = {}
+        tab_line = line.split(' ')
+        for i in range(len(tab_line)):
+            if fieldfilter:
+                val = json_fields[tshark_fields.index(fieldfilter[i])]
+            else:
+                val = json_fields[i]
+            packet[val] = tab_line[i]
+        a, b = packet['timestamp'].split('.')
         dobj = datetime.datetime.fromtimestamp(float(a))
         stime = dobj.strftime("%Y-%m-%d %H:%M:%S")
         stime = stime + "." + b[:-3]
-        packet = {'timestamp': stime,
-                  'length': ilength,
-                  'protocol': protocol,
-                  'ipsrc': ipsrc,
-                  'ipdst': ipdst,
-                  'ipttl': iipttl,
-                  'iptos': iiptos,
-                  'sport': isport,
-                  'dport': idport,
-                  'tcpseq': itcpseq,
-                  'tcpack': itcpack,
-                  'icmpcode': iicmpcode,
-                  'icmptype': iicmptype,
-                  'packet_id': packet_id,
-                  'type': potiron.TYPE_PACKET,
-                  'state': potiron.STATE_NOT_ANNOATE
-                  }
+        packet['timestamp'] = stime
+        if 'length' in packet:
+            ilength = -1
+            try:
+                ilength = int(packet['length'])
+            except ValueError:
+                pass
+            packet['length'] = ilength
+        if 'protocol' in packet:
+            try:
+                protocol = int(packet['protocol'])
+                packet['protocol'] = protocol
+            except ValueError:
+                pass
+            isport = -1
+            sport = -1
+            if 'tsport' in packet:
+                if packet['protocol'] == 6:
+                    sport = packet['tsport'] 
+            if 'usport' in packet:
+                if packet['protocol'] != 6:
+                    sport = packet['usport']
+            if ('tsport' in packet) or ('usport' in packet):
+                try:
+                    isport = int(sport)
+                except ValueError:
+                    pass
+                packet['sport'] = isport
+            idport = -1
+            dport = -1
+            if 'tdport' in packet:
+                if packet['protocol'] == 6:
+                    dport = packet['tdport']
+            if 'udport' in packet:
+                if packet['protocol'] != 6:
+                    dport = packet['udport']
+            if ('tdport' in packet) or ('udport' in packet):
+                try:
+                    idport = int(dport)
+                except ValueError:
+                    pass
+                packet['dport'] = idport
+            if 'tsport' in packet:
+                del packet['tsport']
+            if 'usport' in packet:
+                del packet['usport']
+            if 'tdport' in packet:
+                del packet['tdport']
+            if 'udport' in packet:
+                del packet['udport']
+        if 'ipsrc' in packet and packet['ipsrc'] == '-':
+            packet['ipsrc'] = None
+        if 'ipdst' in packet and packet['ipdst'] == '-':
+            packet['ipdst'] = None
+        if 'ipttl' in packet:
+            iipttl = -1
+            try:
+                iipttl = int(packet['ipttl'])
+            except ValueError:
+                pass
+            packet['ipttl'] = iipttl
+        if 'iptos' in packet:
+            iiptos = -1
+            try:
+                iiptos = int(packet['iptos'], 0)
+            except ValueError:
+                pass
+            packet['iptos'] = iiptos
+        if 'tcpseq' in packet:
+            itcpseq = -1
+            try:
+                itcpseq = int(packet['tcpseq'])
+            except ValueError:
+                pass
+            packet['tcpseq'] = itcpseq
+        if 'tcpack' in packet:
+            itcpack = -1
+            try:
+                itcpack = int(packet['tcpack'])
+            except ValueError:
+                pass
+            packet['tcpack'] = itcpack
+        if 'icmpcode' in packet:
+            iicmpcode = 255
+            try:
+                iicmpcode = int(packet['icmpcode'])
+            except ValueError:
+                pass
+            packet['icmpcode'] = iicmpcode
+        if 'icmptype' in packet:
+            iicmptype = 255
+            try:
+                iicmptype = int(packet['icmptype'])
+            except ValueError:
+                pass
+            packet['icmptype'] = iicmptype
+        packet['packet_id'] = packet_id
+        packet['type'] = potiron.TYPE_PACKET
+        packet['state'] = potiron.STATE_NOT_ANNOATE
         # FIXME might consume a lot of memory
         allpackets.append(packet)
 
@@ -156,6 +190,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description="Start the tool tshark and transform the output in a json document")
     parser.add_argument("-i", "--read", type=str, nargs=1, help="Compressed pcap file or pcap filename")
     parser.add_argument("-c", "--console", action='store_true', help="Log output also to console")
+    parser.add_argument("-ff", "--fieldfilter", nargs='+',help="Parameters to filter fields to display")
     parser.add_argument("-o", "--directory", nargs=1, help="Output directory where the json documents are stored")
     parser.add_argument("-bf", "--bpffilter", type=str, nargs='+', help="BPF Filter")
 
@@ -163,11 +198,19 @@ if __name__ == '__main__':
     potiron.logconsole = args.console
     if args.read is not None:
         if os.path.exists(args.read[0]) is False:
-            sys.stderr.write("The filename {} was not found".format(args.read[0]))
+            sys.stderr.write("The filename {} was not found\n".format(args.read[0]))
             sys.exit(1)
+    
+    if args.fieldfilter is None:
+        fieldfilter = []
+    else:
+        fieldfilter = args.fieldfilter
+    if ('tcp.srcport' in fieldfilter or 'tcp.dstport' in fieldfilter or 'udp.srcport'  in fieldfilter or 'udp.dstport' in fieldfilter) and 'ip.proto' not in fieldfilter :
+        sys.stderr.write('The protocol informations are required if you want to display a source or destination port\n')
+        sys.exit(1)
 
     if args.directory is not None and os.path.isdir(args.directory[0]) is False:
-        sys.stderr.write("The root directory is not a directory")
+        sys.stderr.write("The root directory is not a directory\n")
         sys.exit(1)
         
     if args.bpffilter is not None:
@@ -179,13 +222,13 @@ if __name__ == '__main__':
             sys.exit(1)
 
     if args.read is None:
-        sys.stderr.write("At least a pcap file must be specified")
+        sys.stderr.write("At least a pcap file must be specified\n")
         sys.exit(1)
     try:
         rootdir = None
         if args.directory is not None:
             rootdir = args.directory[0]
-        process_file(rootdir, args.read[0])
+        process_file(rootdir, args.read[0], fieldfilter)
     except OSError as e:
         sys.stderr.write("A processing error happend.{}.\n".format(e))
         sys.exit(1)
