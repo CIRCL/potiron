@@ -31,6 +31,109 @@ def create_dirs(rootdir, pcapfilename):
         os.makedirs(d)
 
 
+def fill_packet(packet):
+    a, b = packet['timestamp'].split('.')
+    dobj = datetime.datetime.fromtimestamp(float(a))
+    stime = dobj.strftime("%Y-%m-%d %H:%M:%S")
+    stime = stime + "." + b[:-3]
+    packet['timestamp'] = stime
+    if 'length' in packet:
+        ilength = -1
+        try:
+            ilength = int(packet['length'])
+        except ValueError:
+            pass
+        packet['length'] = ilength
+    if 'protocol' in packet:
+        try:
+            protocol = int(packet['protocol'])
+            packet['protocol'] = protocol
+        except ValueError:
+            pass
+        isport = -1
+        sport = -1
+        if 'tsport' in packet:
+            if packet['protocol'] == 6:
+                sport = packet['tsport'] 
+        if 'usport' in packet:
+            if packet['protocol'] != 6:
+                sport = packet['usport']
+        if ('tsport' in packet) or ('usport' in packet):
+            try:
+                isport = int(sport)
+            except ValueError:
+                pass
+            packet['sport'] = isport
+        idport = -1
+        dport = -1
+        if 'tdport' in packet:
+            if packet['protocol'] == 6:
+                dport = packet['tdport']
+        if 'udport' in packet:
+            if packet['protocol'] != 6:
+                dport = packet['udport']
+        if ('tdport' in packet) or ('udport' in packet):
+            try:
+                idport = int(dport)
+            except ValueError:
+                pass
+            packet['dport'] = idport
+        if 'tsport' in packet:
+            del packet['tsport']
+        if 'usport' in packet:
+            del packet['usport']
+        if 'tdport' in packet:
+            del packet['tdport']
+        if 'udport' in packet:
+            del packet['udport']
+    if 'ipsrc' in packet and packet['ipsrc'] == '-':
+        packet['ipsrc'] = None
+    if 'ipdst' in packet and packet['ipdst'] == '-':
+        packet['ipdst'] = None
+    if 'ipttl' in packet:
+        iipttl = -1
+        try:
+            iipttl = int(packet['ipttl'])
+        except ValueError:
+            pass
+        packet['ipttl'] = iipttl
+    if 'iptos' in packet:
+        iiptos = -1
+        try:
+            iiptos = int(packet['iptos'], 0)
+        except ValueError:
+            pass
+        packet['iptos'] = iiptos
+    if 'tcpseq' in packet:
+        itcpseq = -1
+        try:
+            itcpseq = int(packet['tcpseq'])
+        except ValueError:
+            pass
+        packet['tcpseq'] = itcpseq
+    if 'tcpack' in packet:
+        itcpack = -1
+        try:
+            itcpack = int(packet['tcpack'])
+        except ValueError:
+            pass
+        packet['tcpack'] = itcpack
+    if 'icmpcode' in packet:
+        iicmpcode = 255
+        try:
+            iicmpcode = int(packet['icmpcode'])
+        except ValueError:
+            pass
+        packet['icmpcode'] = iicmpcode
+    if 'icmptype' in packet:
+        iicmptype = 255
+        try:
+            iicmptype = int(packet['icmptype'])
+        except ValueError:
+            pass
+        packet['icmptype'] = iicmptype
+
+
 def process_file(rootdir, filename, fieldfilter):
     if not check_program("tshark"):
         raise OSError("The program tshark is not installed")
@@ -71,106 +174,7 @@ def process_file(rootdir, filename, fieldfilter):
             else:
                 val = json_fields[i]
             packet[val] = tab_line[i]
-        a, b = packet['timestamp'].split('.')
-        dobj = datetime.datetime.fromtimestamp(float(a))
-        stime = dobj.strftime("%Y-%m-%d %H:%M:%S")
-        stime = stime + "." + b[:-3]
-        packet['timestamp'] = stime
-        if 'length' in packet:
-            ilength = -1
-            try:
-                ilength = int(packet['length'])
-            except ValueError:
-                pass
-            packet['length'] = ilength
-        if 'protocol' in packet:
-            try:
-                protocol = int(packet['protocol'])
-                packet['protocol'] = protocol
-            except ValueError:
-                pass
-            isport = -1
-            sport = -1
-            if 'tsport' in packet:
-                if packet['protocol'] == 6:
-                    sport = packet['tsport'] 
-            if 'usport' in packet:
-                if packet['protocol'] != 6:
-                    sport = packet['usport']
-            if ('tsport' in packet) or ('usport' in packet):
-                try:
-                    isport = int(sport)
-                except ValueError:
-                    pass
-                packet['sport'] = isport
-            idport = -1
-            dport = -1
-            if 'tdport' in packet:
-                if packet['protocol'] == 6:
-                    dport = packet['tdport']
-            if 'udport' in packet:
-                if packet['protocol'] != 6:
-                    dport = packet['udport']
-            if ('tdport' in packet) or ('udport' in packet):
-                try:
-                    idport = int(dport)
-                except ValueError:
-                    pass
-                packet['dport'] = idport
-            if 'tsport' in packet:
-                del packet['tsport']
-            if 'usport' in packet:
-                del packet['usport']
-            if 'tdport' in packet:
-                del packet['tdport']
-            if 'udport' in packet:
-                del packet['udport']
-        if 'ipsrc' in packet and packet['ipsrc'] == '-':
-            packet['ipsrc'] = None
-        if 'ipdst' in packet and packet['ipdst'] == '-':
-            packet['ipdst'] = None
-        if 'ipttl' in packet:
-            iipttl = -1
-            try:
-                iipttl = int(packet['ipttl'])
-            except ValueError:
-                pass
-            packet['ipttl'] = iipttl
-        if 'iptos' in packet:
-            iiptos = -1
-            try:
-                iiptos = int(packet['iptos'], 0)
-            except ValueError:
-                pass
-            packet['iptos'] = iiptos
-        if 'tcpseq' in packet:
-            itcpseq = -1
-            try:
-                itcpseq = int(packet['tcpseq'])
-            except ValueError:
-                pass
-            packet['tcpseq'] = itcpseq
-        if 'tcpack' in packet:
-            itcpack = -1
-            try:
-                itcpack = int(packet['tcpack'])
-            except ValueError:
-                pass
-            packet['tcpack'] = itcpack
-        if 'icmpcode' in packet:
-            iicmpcode = 255
-            try:
-                iicmpcode = int(packet['icmpcode'])
-            except ValueError:
-                pass
-            packet['icmpcode'] = iicmpcode
-        if 'icmptype' in packet:
-            iicmptype = 255
-            try:
-                iicmptype = int(packet['icmptype'])
-            except ValueError:
-                pass
-            packet['icmptype'] = iicmptype
+        fill_packet(packet)
         packet['packet_id'] = packet_id
         packet['type'] = potiron.TYPE_PACKET
         packet['state'] = potiron.STATE_NOT_ANNOATE
