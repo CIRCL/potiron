@@ -69,6 +69,9 @@ if __name__ == '__main__':
     TOOLS = "hover,crosshair,pan,wheel_zoom,zoom_in,zoom_out,box_zoom,undo,redo,reset,tap,save,box_select,poly_select,lasso_select,"
     for hours in range(0,24):
         h = format(hours, '02d')
+        key = "{}_{}_{}".format(source,date,h)
+        if len(red.keys("{}*".format(key))) == 0:
+            continue
         minutes = 0
         for nb in range(1,int(occurrence_num_hour+1)):
             w_input = []
@@ -78,8 +81,8 @@ if __name__ == '__main__':
             start_min = format(minutes, '02d')
             while minutes < (timeline * nb):
                 m = format(minutes, '02d')
-                key = "{}_{}_{}:{}*".format(source,date,h,m)
-                for line in red.keys(key):
+                keys = "{}:{}*".format(key,m)
+                for line in red.keys(keys):
                     line = line.decode()
                     y_input.append(red.hget(line,'tcpseq').decode())
                     w_input.append(red.hget(line,'tcpack').decode())
@@ -90,41 +93,42 @@ if __name__ == '__main__':
                     x_input.append("{} {}".format(line.split("_")[1],line.split("_")[2]))
                 minutes += 1
             end_min = format(minutes, '02d')
-            x = np.array(x_input, dtype=np.datetime64)
-            z = np.array(z_input)
-            y = np.array(y_input)
-            w = np.array(w_input)
-            colors = [
-                "#%02x%02x%02x" % (int(r), int(g), 150) for r, g in zip(50+z*2, 30+z*2)
-            ]
-            start_hour, end_hour = string_timeline(h, start_min, end_min)
-            title = " {} collected on {} between {} and {}".format(source, date, start_hour, end_hour)
-            p_seq = figure(width=1500,height=700,tools=TOOLS, x_axis_type="datetime", title="TCP sequence values in Honeypot {}".format(title))
-            hoverseq = p_seq.select(dict(type=HoverTool))
-            hoverseq.tooltips = [
-                    ("index", "$index"),
-                    ("timestamp", "@x{0,0}"),
-                    ("number", "@y{0,0}")
-                    ]
-            p_seq.xaxis.axis_label = "Time"
-            p_seq.yaxis[0].formatter = BasicTickFormatter(use_scientific=False)
-            p_seq.scatter(x, y, color=colors, legend="seq values", alpha=0.5, )
-            p_ack = figure(width=1500,height=700,tools=TOOLS, x_axis_type="datetime", title="TCP acknowledgement values in Honeypot {}".format(title))
-            hoverack = p_ack.select(dict(type=HoverTool))
-            hoverack.tooltips = [
-                    ("index", "$index"),
-                    ("timestamp", "@x{0,0}"),
-                    ("number", "@y{0,0}")
-                    ]
-            p_ack.xaxis.axis_label = "Time"
-            p_ack.yaxis[0].formatter = BasicTickFormatter(use_scientific=False)
-            p_ack.scatter(x, w, color=colors, legend="ack values", alpha=0.5, )
-            output_name = "color_scatter_{}_{}_{}-{}_syn+ack".format(source,date,start_hour,end_hour)
-            output_dir = "{}{}/{}/{}/{}".format(output,date.split('-')[0],date.split('-')[1],date.split('-')[2],h)
-            if not os.path.exists(output_dir):
-                os.makedirs(output_dir)
-            output_file("{}/{}.html".format(output_dir,output_name),
-                        title="TCP ISN values in Honeypot", mode='inline')
-            save(column(p_seq,p_ack))
-            print("{} - {}".format(start_hour,end_hour))
-            os.system("/usr/bin/phantomjs /usr/share/doc/phantomjs/examples/rasterize.js {0}/{1}.html {0}/{1}.png".format(output_dir,output_name))
+            if len(x_input) > 0:
+                x = np.array(x_input, dtype=np.datetime64)
+                z = np.array(z_input)
+                y = np.array(y_input)
+                w = np.array(w_input)
+                colors = [
+                    "#%02x%02x%02x" % (int(r), int(g), 150) for r, g in zip(50+z*2, 30+z*2)
+                ]
+                start_hour, end_hour = string_timeline(h, start_min, end_min)
+                title = " {} collected on {} between {} and {}".format(source, date, start_hour, end_hour)
+                p_seq = figure(width=1500,height=700,tools=TOOLS, x_axis_type="datetime", title="TCP sequence values in Honeypot {}".format(title))
+                hoverseq = p_seq.select(dict(type=HoverTool))
+                hoverseq.tooltips = [
+                        ("index", "$index"),
+                        ("timestamp", "@x{0,0}"),
+                        ("number", "@y{0,0}")
+                        ]
+                p_seq.xaxis.axis_label = "Time"
+                p_seq.yaxis[0].formatter = BasicTickFormatter(use_scientific=False)
+                p_seq.scatter(x, y, color=colors, legend="seq values", alpha=0.5, )
+                p_ack = figure(width=1500,height=700,tools=TOOLS, x_axis_type="datetime", title="TCP acknowledgement values in Honeypot {}".format(title))
+                hoverack = p_ack.select(dict(type=HoverTool))
+                hoverack.tooltips = [
+                        ("index", "$index"),
+                        ("timestamp", "@x{0,0}"),
+                        ("number", "@y{0,0}")
+                        ]
+                p_ack.xaxis.axis_label = "Time"
+                p_ack.yaxis[0].formatter = BasicTickFormatter(use_scientific=False)
+                p_ack.scatter(x, w, color=colors, legend="ack values", alpha=0.5, )
+                output_name = "color_scatter_{}_{}_{}-{}_syn+ack".format(source,date,start_hour,end_hour)
+                output_dir = "{}{}/{}/{}/{}".format(output,date.split('-')[0],date.split('-')[1],date.split('-')[2],h)
+                if not os.path.exists(output_dir):
+                    os.makedirs(output_dir)
+                output_file("{}/{}.html".format(output_dir,output_name),
+                            title="TCP ISN values in Honeypot", mode='inline')
+                save(column(p_seq,p_ack))
+                print("{} - {}".format(start_hour,end_hour))
+                os.system("/usr/bin/phantomjs /usr/share/doc/phantomjs/examples/rasterize.js {0}/{1}.html {0}/{1}.png".format(output_dir,output_name))
