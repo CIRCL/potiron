@@ -22,7 +22,7 @@ def string_timeline(h,s,e):
     h2 = h
     if e == '60':
         e = format(0, '02d')
-        h2 = int(h)+1 if int(h)+1!=24 else e
+        h2 = int(h)+1 if int(h)+1!=24 else 0
         h2 = format(h2, '02d')
     sh = "{}:{}".format(h,s)
     eh = "{}:{}".format(h2,e)
@@ -63,7 +63,7 @@ if __name__ == '__main__':
     else:
         timeline = args.timeline[0]
         if 60 % timeline != 0:
-            sys.stderr.write('Please choose a number which devides 60 whithout any rest (1, 2, 3, 4, 5, 6, 10, 12, 15, 20, 30 or 60)\n')
+            sys.stderr.write('Please choose a number which devides 60 whithout any rest.\n')
             sys.exit(1)
     occurrence_num_hour = 60 / timeline
     TOOLS = "hover,crosshair,pan,wheel_zoom,zoom_in,zoom_out,box_zoom,undo,redo,reset,tap,save,box_select,poly_select,lasso_select,"

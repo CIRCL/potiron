@@ -153,17 +153,18 @@ if __name__ == '__main__':
     if args.bpffilter is not None:
         if len(args.bpffilter) == 1:
             bpffilter = args.bpffilter[0]
-            bpf_filter += " && {}".format(bpffilter)
         else:
-            sys.stderr.write("Due to the possibility your filter contains '|' caracter, it should be defined between simple or double quotes.\n")
-            sys.exit(1)
+            bpffilter = ""
+            for f in args.bpffilter:
+                bpffilter += "{} ".format(f)
+        bpf_filter += " && {}".format(bpffilter)
     
-#    # Check if file was already imported
-#    fn = os.path.basename(filename)
-#    if red.sismember("FILES", fn):
-#        sys.stderr.write('[INFO] Filename {} was already imported ... skip ...\n'.format(fn))
-#        sys.exit(0)
-#    red.sadd("FILES", fn)
+    # Check if file was already imported
+    fn = os.path.basename(filename)
+    if red.sismember("FILES", fn):
+        sys.stderr.write('[INFO] Filename {} was already imported ... skip ...\n'.format(fn))
+        sys.exit(0)
+    red.sadd("FILES", fn)
     
     if args.output is not None and os.path.isdir(args.output[0]) is False:
         if not os.path.exists(args.output[0]):
