@@ -7,8 +7,10 @@ import json
 import sys
 import potiron
 import argparse
+import redis
 from potiron import infomsg, check_program
 import datetime
+import potiron_redis
         
 
 bpf_filter = potiron.tshark_filter
@@ -20,6 +22,7 @@ def store_packet(rootdir, pcapfilename, obj):
         with open(jsonfilename, "w") as f:
             f.write(obj)
         infomsg("Created filename " + jsonfilename)
+        return jsonfilename
     else:
         sys.stdout.write(obj)
         
@@ -37,47 +40,28 @@ def fill_packet(packet):
     stime = dobj.strftime("%Y-%m-%d %H:%M:%S")
     stime = stime + "." + b[:-3]
     packet['timestamp'] = stime
-    if 'length' in packet:
-        ilength = -1
-        try:
-            ilength = int(packet['length'])
-        except ValueError:
-            pass
-        packet['length'] = ilength
     if 'protocol' in packet:
         try:
             protocol = int(packet['protocol'])
             packet['protocol'] = protocol
         except ValueError:
             pass
-        isport = -1
         sport = -1
-        if 'tsport' in packet:
-            if packet['protocol'] == 6:
-                sport = packet['tsport'] 
-        if 'usport' in packet:
-            if packet['protocol'] != 6:
-                sport = packet['usport']
-        if ('tsport' in packet) or ('usport' in packet):
-            try:
-                isport = int(sport)
-            except ValueError:
-                pass
-            packet['sport'] = isport
-        idport = -1
         dport = -1
-        if 'tdport' in packet:
-            if packet['protocol'] == 6:
+        if packet['protocol'] == 6:
+            if 'tsport' in packet:
+                sport = packet['tsport']
+            if 'tdport' in packet:
                 dport = packet['tdport']
-        if 'udport' in packet:
-            if packet['protocol'] != 6:
+        else:
+            if 'usport' in packet:
+                sport = packet['usport']
+            if 'udport' in packet:
                 dport = packet['udport']
+        if ('tsport' in packet) or ('usport' in packet):
+            packet['sport'] = sport
         if ('tdport' in packet) or ('udport' in packet):
-            try:
-                idport = int(dport)
-            except ValueError:
-                pass
-            packet['dport'] = idport
+            packet['dport'] = dport
         if 'tsport' in packet:
             del packet['tsport']
         if 'usport' in packet:
@@ -90,51 +74,9 @@ def fill_packet(packet):
         packet['ipsrc'] = None
     if 'ipdst' in packet and packet['ipdst'] == '-':
         packet['ipdst'] = None
-    if 'ipttl' in packet:
-        iipttl = -1
-        try:
-            iipttl = int(packet['ipttl'])
-        except ValueError:
-            pass
-        packet['ipttl'] = iipttl
-    if 'iptos' in packet:
-        iiptos = -1
-        try:
-            iiptos = int(packet['iptos'], 0)
-        except ValueError:
-            pass
-        packet['iptos'] = iiptos
-    if 'tcpseq' in packet:
-        itcpseq = -1
-        try:
-            itcpseq = int(packet['tcpseq'])
-        except ValueError:
-            pass
-        packet['tcpseq'] = itcpseq
-    if 'tcpack' in packet:
-        itcpack = -1
-        try:
-            itcpack = int(packet['tcpack'])
-        except ValueError:
-            pass
-        packet['tcpack'] = itcpack
-    if 'icmpcode' in packet:
-        iicmpcode = 255
-        try:
-            iicmpcode = int(packet['icmpcode'])
-        except ValueError:
-            pass
-        packet['icmpcode'] = iicmpcode
-    if 'icmptype' in packet:
-        iicmptype = 255
-        try:
-            iicmptype = int(packet['icmptype'])
-        except ValueError:
-            pass
-        packet['icmptype'] = iicmptype
 
 
-def process_file(rootdir, filename, fieldfilter):
+def process_file(rootdir, filename, fieldfilter, b_redis):
     if not check_program("tshark"):
         raise OSError("The program tshark is not installed")
     # FIXME Put in config file
@@ -162,7 +104,8 @@ def process_file(rootdir, filename, fieldfilter):
             cmd += "-e {} ".format(f)
     cmd += "-E header=n -E separator=/s -E occurrence=f -Y '{}' -r {} -o tcp.relative_sequence_numbers:FALSE".format(bpf_filter, filename)
     proc = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-    json_fields = potiron.json_fields     
+    json_fields = potiron.json_fields
+    special_fields = {'length': -1, 'ipttl': -1, 'iptos': 0, 'tcpseq': -1, 'tcpack': -1, 'icmpcode': 255, 'icmptype': 255}
     for line in proc.stdout.readlines():
         packet_id = packet_id + 1
         line = line[:-1].decode()
@@ -170,14 +113,22 @@ def process_file(rootdir, filename, fieldfilter):
         tab_line = line.split(' ')
         for i in range(len(tab_line)):
             if fieldfilter:
-                val = json_fields[tshark_fields.index(fieldfilter[i])]
+                valname = json_fields[tshark_fields.index(fieldfilter[i])]
             else:
-                val = json_fields[i]
-            packet[val] = tab_line[i]
+                valname = json_fields[i]
+            if valname in special_fields:
+                v = special_fields[valname]
+                try:
+                    v = int(tab_line[i])
+                except ValueError:
+                    pass
+                packet[valname] = v
+            else:
+                packet[valname] = tab_line[i]
         fill_packet(packet)
         packet['packet_id'] = packet_id
         packet['type'] = potiron.TYPE_PACKET
-        packet['state'] = potiron.STATE_NOT_ANNOATE
+        packet['state'] = potiron.STATE_NOT_ANNOTATE
         # FIXME might consume a lot of memory
         allpackets.append(packet)
 
@@ -187,7 +138,9 @@ def process_file(rootdir, filename, fieldfilter):
     if proc.returncode != 0:
         errmsg = b"".join(proc.stderr.readlines())
         raise OSError("tshark failed. Return code {}. {}".format(proc.returncode, errmsg))
-    store_packet(rootdir, filename, json.dumps(allpackets))
+    jsonfilename = store_packet(rootdir, filename, json.dumps(allpackets))
+    if b_redis:
+        potiron_redis.process_storage(jsonfilename, red)
     
     
 if __name__ == '__main__':
@@ -197,7 +150,8 @@ if __name__ == '__main__':
     parser.add_argument("-ff", "--fieldfilter", nargs='+',help="Parameters to filter fields to display")
     parser.add_argument("-o", "--directory", nargs=1, help="Output directory where the json documents are stored")
     parser.add_argument("-bf", "--bpffilter", type=str, nargs='+', help="BPF Filter")
-
+    parser.add_argument("-r", "--redis", action='store_true', help="Store data directly in redis")
+    parser.add_argument('-u','--unix', type=str, nargs=1, help='Unix socket to connect to redis-server.')
     args = parser.parse_args()
     potiron.logconsole = args.console
     if args.read is not None:
@@ -220,10 +174,19 @@ if __name__ == '__main__':
     if args.bpffilter is not None:
         if len(args.bpffilter) == 1:
             bpffilter = args.bpffilter[0]
-            bpf_filter += " && {}".format(bpffilter)
         else:
-            sys.stderr.write("Due to the possibility your filter contains '|' caracter, it should be defined between simple or double quotes.\n")
+            bpffilter = ""
+            for f in args.bpffilter:
+                bpffilter += "{} ".format(f)
+        bpf_filter += " && {}".format(bpffilter)
+
+    b_redis = args.redis
+    if b_redis:
+        if args.unix is None:
+            sys.stderr.write('A Unix socket must be specified.\n')
             sys.exit(1)
+        usocket = args.unix[0]
+        red = redis.Redis(unix_socket_path=usocket)
 
     if args.read is None:
         sys.stderr.write("At least a pcap file must be specified\n")
@@ -232,7 +195,7 @@ if __name__ == '__main__':
         rootdir = None
         if args.directory is not None:
             rootdir = args.directory[0]
-        process_file(rootdir, args.read[0], fieldfilter)
+        process_file(rootdir, args.read[0], fieldfilter, b_redis)
     except OSError as e:
         sys.stderr.write("A processing error happend.{}.\n".format(e))
         sys.exit(1)
