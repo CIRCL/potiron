@@ -12,12 +12,14 @@ from bokeh.layouts import column
 import syslog
 
 
+# Display error message in case of error in the program execution
 def errormsg(msg):
     syslog.openlog("isn-pcap", syslog.LOG_PID | syslog.LOG_PERROR,
                    syslog.LOG_INFO)
     syslog.syslog("[INFO] " + msg)
     
 
+# Definition of the timeline part of the legend and title of the plot
 def string_timeline(h,s,e):
     h2 = h
     if e == '60':
@@ -30,6 +32,7 @@ def string_timeline(h,s,e):
     
     
 if __name__ == '__main__':
+    # Parameters parser
     parser = argparse.ArgumentParser(description="Show ISN values")
     parser.add_argument("-d", "--date", type=str, nargs=1, help="Date of the files to process")
     parser.add_argument("-s", "--source", type=str, nargs=1, help="Honeypot data source")
@@ -65,20 +68,25 @@ if __name__ == '__main__':
         if 60 % timeline != 0:
             sys.stderr.write('Please choose a number which devides 60 whithout any rest.\n')
             sys.exit(1)
+    # Number of occurrences per hour with the defined timeline
     occurrence_num_hour = 60 / timeline
     TOOLS = "hover,crosshair,pan,wheel_zoom,zoom_in,zoom_out,box_zoom,undo,redo,reset,tap,save,box_select,poly_select,lasso_select,"
+    # For each hour of the day
     for hours in range(0,24):
         h = format(hours, '02d')
         key = "{}_{}_{}".format(source,date,h)
+        # If there is no key corresponding to a precise hour, go directly is the next hour
         if len(red.keys("{}*".format(key))) == 0:
             continue
         minutes = 0
+        # For each period of time corresponding to the timeline
         for nb in range(1,int(occurrence_num_hour+1)):
             w_input = []
             x_input = []
             y_input = []
             z_input = []
             start_min = format(minutes, '02d')
+            # For each minute in the timeline
             while minutes < (timeline * nb):
                 m = format(minutes, '02d')
                 keys = "{}:{}*".format(key,m)
@@ -93,6 +101,7 @@ if __name__ == '__main__':
                     x_input.append("{} {}".format(line.split("_")[1],line.split("_")[2]))
                 minutes += 1
             end_min = format(minutes, '02d')
+            # If there is at least one occurrence found in the current timeline, draw the plot
             if len(x_input) > 0:
                 x = np.array(x_input, dtype=np.datetime64)
                 z = np.array(z_input)
@@ -103,6 +112,7 @@ if __name__ == '__main__':
                 ]
                 start_hour, end_hour = string_timeline(h, start_min, end_min)
                 title = " {} collected on {} between {} and {}".format(source, date, start_hour, end_hour)
+                # Definition of the sequence numbers plot
                 p_seq = figure(width=1500,height=700,tools=TOOLS, x_axis_type="datetime", title="TCP sequence values in Honeypot {}".format(title))
                 hoverseq = p_seq.select(dict(type=HoverTool))
                 hoverseq.tooltips = [
@@ -113,6 +123,7 @@ if __name__ == '__main__':
                 p_seq.xaxis.axis_label = "Time"
                 p_seq.yaxis[0].formatter = BasicTickFormatter(use_scientific=False)
                 p_seq.scatter(x, y, color=colors, legend="seq values", alpha=0.5, )
+                # Definition of the aclnowledgement numbers plot
                 p_ack = figure(width=1500,height=700,tools=TOOLS, x_axis_type="datetime", title="TCP acknowledgement values in Honeypot {}".format(title))
                 hoverack = p_ack.select(dict(type=HoverTool))
                 hoverack.tooltips = [
@@ -129,6 +140,8 @@ if __name__ == '__main__':
                     os.makedirs(output_dir)
                 output_file("{}/{}.html".format(output_dir,output_name),
                             title="TCP ISN values in Honeypot", mode='inline')
+                # Write the html file and save it 
                 save(column(p_seq,p_ack))
                 print("{} - {}".format(start_hour,end_hour))
+                # Export the plot into a png file
                 os.system("/usr/bin/phantomjs /usr/share/doc/phantomjs/examples/rasterize.js {0}/{1}.html {0}/{1}.png".format(output_dir,output_name))

@@ -14,17 +14,18 @@ non_index = ['', 'timestamp', 'state', 'type']
 bpf_filter = potiron.isn_tshark_filter
 
 
+# Save the output json file 
 def store_packet(rootdir, pcapfilename, obj):
     if rootdir is not None:
         jsonfilename = potiron.get_file_struct(rootdir, pcapfilename)
         with open(jsonfilename, "w") as f:
             f.write(obj)
         potiron.infomsg("Created filename " + jsonfilename)
-        return jsonfilename
     else:
         sys.stdout.write(obj)
 
 
+# Create the output directory and file if it does not exist
 def create_dirs(rootdir, pcapfilename):
     jsonfilename = potiron.get_file_struct(rootdir, pcapfilename)
     d = os.path.dirname(jsonfilename)
@@ -32,9 +33,12 @@ def create_dirs(rootdir, pcapfilename):
         os.makedirs(d)
 
 
+# Process data saving into json file and storage into redis
 def process_file(outputdir, filename):
+    # If tshark is not installed, exit and raise the error
     if not potiron.check_program("tshark"):
         raise OSError("The program tshark is not installed")
+    # Name of the honeypot
     sensorname = potiron.derive_sensor_name(filename)
     revcreated = False
     lastday = None
@@ -101,6 +105,7 @@ def process_file(outputdir, filename):
         day = day.replace('-', '')
         if day != lastday:
             red.sadd("DAYS", day)
+        # Store data into redis
         p = red.pipeline()
         for k in packet:
             if k not in non_index:
@@ -120,6 +125,7 @@ def process_file(outputdir, filename):
     if proc.returncode != 0:
         errmsg = b"".join(proc.stderr.readlines())
         raise OSError("tshark failed. Return code {}. {}".format(proc.returncode, errmsg))
+    # Write data into the json output file
     store_packet(outputdir, filename, json.dumps(allpackets))
         
 
