@@ -16,6 +16,7 @@ import potiron_redis
 bpf_filter = potiron.tshark_filter
 
 
+# Save the output json file 
 def store_packet(rootdir, pcapfilename, obj):
     if rootdir is not None:
         jsonfilename = potiron.get_file_struct(rootdir, pcapfilename)
@@ -26,7 +27,8 @@ def store_packet(rootdir, pcapfilename, obj):
     else:
         sys.stdout.write(obj)
         
-        
+
+# Create the output directory and file if it does not exist        
 def create_dirs(rootdir, pcapfilename):
     jsonfilename = potiron.get_file_struct(rootdir, pcapfilename)
     d = os.path.dirname(jsonfilename)
@@ -34,7 +36,9 @@ def create_dirs(rootdir, pcapfilename):
         os.makedirs(d)
 
 
+# Complete the packet with values that need some verifications
 def fill_packet(packet):
+    # Convert timestamp
     a, b = packet['timestamp'].split('.')
     dobj = datetime.datetime.fromtimestamp(float(a))
     stime = dobj.strftime("%Y-%m-%d %H:%M:%S")
@@ -76,12 +80,13 @@ def fill_packet(packet):
         packet['ipdst'] = None
 
 
+# Process data saving into json file and storage into redis
 def process_file(rootdir, filename, fieldfilter, b_redis):
+    # If tshark is not installed, exit and raise the error
     if not check_program("tshark"):
         raise OSError("The program tshark is not installed")
     # FIXME Put in config file
-    if rootdir is not None:
-        create_dirs(rootdir, filename)
+    # Name of the honeypot
     sensorname = potiron.derive_sensor_name(filename)
     allpackets = []
     # Describe the source
@@ -138,12 +143,15 @@ def process_file(rootdir, filename, fieldfilter, b_redis):
     if proc.returncode != 0:
         errmsg = b"".join(proc.stderr.readlines())
         raise OSError("tshark failed. Return code {}. {}".format(proc.returncode, errmsg))
+    # Write and save the json file
     jsonfilename = store_packet(rootdir, filename, json.dumps(allpackets))
     if b_redis:
+        # If redis option, store data into redis
         potiron_redis.process_storage(jsonfilename, red)
     
     
 if __name__ == '__main__':
+    # Parameters parser
     parser = argparse.ArgumentParser(description="Start the tool tshark and transform the output in a json document")
     parser.add_argument("-i", "--read", type=str, nargs=1, help="Compressed pcap file or pcap filename")
     parser.add_argument("-c", "--console", action='store_true', help="Log output also to console")
@@ -158,7 +166,7 @@ if __name__ == '__main__':
         if os.path.exists(args.read[0]) is False:
             sys.stderr.write("The filename {} was not found\n".format(args.read[0]))
             sys.exit(1)
-    
+        inputfile = args.read[0]
     if args.fieldfilter is None:
         fieldfilter = []
     else:
@@ -168,8 +176,11 @@ if __name__ == '__main__':
         sys.exit(1)
 
     if args.directory is not None and os.path.isdir(args.directory[0]) is False:
-        sys.stderr.write("The root directory is not a directory\n")
-        sys.exit(1)
+        if not os.path.exists(args.directory[0]):
+            create_dirs(args.directory[0], inputfile)
+        else:
+            sys.stderr.write("The root directory is not a directory\n")
+            sys.exit(1)
         
     if args.bpffilter is not None:
         if len(args.bpffilter) == 1:
@@ -195,7 +206,7 @@ if __name__ == '__main__':
         rootdir = None
         if args.directory is not None:
             rootdir = args.directory[0]
-        process_file(rootdir, args.read[0], fieldfilter, b_redis)
+        process_file(rootdir, inputfile, fieldfilter, b_redis)
     except OSError as e:
         sys.stderr.write("A processing error happend.{}.\n".format(e))
         sys.exit(1)
