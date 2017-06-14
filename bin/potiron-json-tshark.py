@@ -175,13 +175,6 @@ if __name__ == '__main__':
         sys.stderr.write('The protocol informations are required if you want to display a source or destination port\n')
         sys.exit(1)
 
-    if args.directory is not None and os.path.isdir(args.directory[0]) is False:
-        if not os.path.exists(args.directory[0]):
-            create_dirs(args.directory[0], inputfile)
-        else:
-            sys.stderr.write("The root directory is not a directory\n")
-            sys.exit(1)
-        
     if args.bpffilter is not None:
         if len(args.bpffilter) == 1:
             bpffilter = args.bpffilter[0]
@@ -206,6 +199,10 @@ if __name__ == '__main__':
         rootdir = None
         if args.directory is not None:
             rootdir = args.directory[0]
+            create_dirs(rootdir, inputfile)
+            if os.path.isdir(rootdir) is False:
+                sys.stderr.write("The root directory is not a directory\n")
+                sys.exit(1)
         process_file(rootdir, inputfile, fieldfilter, b_redis)
     except OSError as e:
         sys.stderr.write("A processing error happend.{}.\n".format(e))

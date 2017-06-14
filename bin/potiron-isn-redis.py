@@ -170,14 +170,7 @@ if __name__ == '__main__':
     if red.sismember("FILES", fn):
         sys.stderr.write('[INFO] Filename {} was already imported ... skip ...\n'.format(fn))
         sys.exit(0)
-    red.sadd("FILES", fn)
-    
-    if args.output is not None and os.path.isdir(args.output[0]) is False:
-        if not os.path.exists(args.output[0]):
-            create_dirs(args.output[0], filename)
-        else:
-            sys.stderr.write("The output you specified is not a directory\n")
-            sys.exit(1)
+    red.sadd("FILES", fn)     
     
     try:
         outputdir = None
@@ -185,6 +178,10 @@ if __name__ == '__main__':
             sys.stderr.write('An output directory must be specified\n')
         else:
             outputdir = args.output[0]
+            create_dirs(outputdir, filename)
+            if os.path.isdir(outputdir) is False:
+                sys.stderr.write("The root directory is not a directory\n")
+                sys.exit(1)
         process_file(outputdir, filename)
     except OSError as e:
         sys.stderr.write("A processing error happend.{}.\n".format(e))
