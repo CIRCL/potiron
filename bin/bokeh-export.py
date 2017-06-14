@@ -4,10 +4,16 @@ import argparse
 import sys
 import os
 import calendar
-from bokeh.plotting import figure, show, output_file
+from bokeh.plotting import figure, show, output_file, save
 from bokeh.models import Range1d,OpenURL,TapTool,HoverTool,BasicTickFormatter,PanTool, BoxZoomTool,ResetTool,SaveTool,WheelZoomTool
 from bokeh.palettes import Category10_10 as palette
 from potiron_graph_annotation import plot_annotation
+from PIL import Image
+
+
+plot_width = 1500
+plot_height = 800
+logo_y_scale = 12
 
 
 # Define the name of the output file
@@ -99,7 +105,7 @@ if __name__ == '__main__':
     hover = HoverTool(tooltips = [('count','@y')])
     taptool = TapTool()
     TOOLS = [hover,PanTool(),BoxZoomTool(),WheelZoomTool(), taptool, SaveTool(), ResetTool()]
-    p = figure(width=1500,height=800,tools=TOOLS)
+    p = figure(width=plot_width,height=plot_height,tools=TOOLS)
     # Definition of some variables which will be used and modified with the iterations
     at_least_one = False
     days = calendar.monthrange(int(date[0:4]),int(date[4:6]))[1]
@@ -147,15 +153,17 @@ if __name__ == '__main__':
         p.legend.location = "top_left"
         p.legend.click_policy = "hide"
         # Definition of some parameters for the logo
+        with Image.open(logofile) as im :
+            im_width, im_height = im.size
         xdr = maxDay + 1
         ydrmax = maxVal + maxVal * 10 / 100
         ydrmin = minVal - maxVal * 5 / 100
         p.x_range = Range1d(0,xdr)
         p.y_range = Range1d(ydrmin,ydrmax)
-        width = xdr/9.5
-        height = (ydrmax-ydrmin)/12
+        height = (ydrmax - ydrmin) / logo_y_scale
+        width = xdr / ((logo_y_scale * im_height * plot_width) / (im_width * plot_height))
         p.image_url(url=[logofile],x=[xdr],y=[ydrmax],w=[width],h=[height],anchor="top_right")
         # Process and display the graph
-        show(p)
+        save(p)
     else:
         print ("There is no such value for the {} you specified\n".format(field))
