@@ -32,8 +32,12 @@ def store_packet(rootdir, pcapfilename, obj):
 def create_dirs(rootdir, pcapfilename):
     jsonfilename = potiron.get_file_struct(rootdir, pcapfilename)
     d = os.path.dirname(jsonfilename)
-    if not os.path.exists(d):
-        os.makedirs(d)
+    try:
+        if not os.path.exists(d):
+            os.makedirs(d)
+    except OSError:
+        sys.stderr.write("Directory already exists.\n")
+        pass
 
 
 # Complete the packet with values that need some verifications
@@ -195,15 +199,14 @@ if __name__ == '__main__':
     if args.read is None:
         sys.stderr.write("At least a pcap file must be specified\n")
         sys.exit(1)
-    try:
-        rootdir = None
-        if args.directory is not None:
-            rootdir = args.directory[0]
-            create_dirs(rootdir, inputfile)
-            if os.path.isdir(rootdir) is False:
-                sys.stderr.write("The root directory is not a directory\n")
-                sys.exit(1)
-        process_file(rootdir, inputfile, fieldfilter, b_redis)
-    except OSError as e:
-        sys.stderr.write("A processing error happend.{}.\n".format(e))
+        
+    if args.directory is None:
+        sys.stderr.write("You should specify an output directory.\n")
         sys.exit(1)
+    else:
+        rootdir = args.directory[0]
+        create_dirs(rootdir, inputfile)
+        if os.path.isdir(rootdir) is False:
+            sys.stderr.write("The root directory is not a directory\n")
+            sys.exit(1)
+    process_file(rootdir, inputfile, fieldfilter, b_redis)

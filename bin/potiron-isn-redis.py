@@ -29,8 +29,12 @@ def store_packet(rootdir, pcapfilename, obj):
 def create_dirs(rootdir, pcapfilename):
     jsonfilename = potiron.get_file_struct(rootdir, pcapfilename)
     d = os.path.dirname(jsonfilename)
-    if not os.path.exists(d):
-        os.makedirs(d)
+    try:
+        if not os.path.exists(d):
+            os.makedirs(d)
+    except OSError:
+        sys.stderr.write("Directory already exists.\n")
+        pass
 
 
 # Process data saving into json file and storage into redis
@@ -172,18 +176,13 @@ if __name__ == '__main__':
         sys.exit(0)
     red.sadd("FILES", fn)     
     
-    try:
-        outputdir = None
-        if args.output is None:
-            sys.stderr.write('An output directory must be specified\n')
-        else:
-            outputdir = args.output[0]
-            create_dirs(outputdir, filename)
-            if os.path.isdir(outputdir) is False:
-                sys.stderr.write("The root directory is not a directory\n")
-                sys.exit(1)
-        process_file(outputdir, filename)
-    except OSError as e:
-        sys.stderr.write("A processing error happend.{}.\n".format(e))
-        sys.exit(1)
+    if args.output is None:
+        sys.stderr.write('An output directory must be specified\n')
+    else:
+        outputdir = args.output[0]
+        create_dirs(outputdir, filename)
+        if os.path.isdir(outputdir) is False:
+            sys.stderr.write("The root directory is not a directory\n")
+            sys.exit(1)
+    process_file(outputdir, filename)
                 
