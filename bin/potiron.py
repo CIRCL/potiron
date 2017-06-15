@@ -24,8 +24,15 @@ import syslog
 
 # Generic filter for filtering out artefacts of honeypot operations
 # TODO put this in a config file
-bpffilter = "not net 239.0.0.0/8 and not host 255.255.255.255"
-tsharkfilter = "ip.dst ne 255.255.255.255"
+bpf_filter = "not net 239.0.0.0/8 and not host 255.255.255.255"
+tshark_filter = "ip.dst ne 255.255.255.255"
+isn_tshark_filter = "{} && ip.proto eq 6".format(tshark_filter)
+tshark_fields = ['frame.time_epoch','ip.len','ip.proto','ip.src','ip.dst',
+                 'ip.ttl','ip.dsfield','tcp.srcport','udp.srcport','tcp.dstport',
+                 'udp.dstport','tcp.seq','tcp.ack','icmp.code','icmp.type']
+json_fields = ['timestamp','length','protocol','ipsrc','ipdst','ipttl','iptos',
+               'tsport','usport','tdport','udport','tcpseq','tcpack','icmpcode',
+               'icmptype']
 PROTO_ICMP = 1
 PROTO_UDP = 17
 PROTO_TCP = 6
@@ -47,7 +54,7 @@ TYPE_ASN_DICT = 13
 TYPE_UPPER_BOUNDARY = 13
 
 # Object states that can be merged using OR
-STATE_NOT_ANNOATE = 0
+STATE_NOT_ANNOTATE = 0
 STATE_TO_ANNOTATE = 1
 STATE_GEO_AN = 2
 STATE_PDNS_AN = 4

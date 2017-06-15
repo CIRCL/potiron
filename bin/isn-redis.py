@@ -12,12 +12,14 @@ from bokeh.layouts import column
 import syslog
 
 
+# Display error message in case of error in the program execution
 def errormsg(msg):
     syslog.openlog("isn-pcap", syslog.LOG_PID | syslog.LOG_PERROR,
                    syslog.LOG_INFO)
     syslog.syslog("[INFO] " + msg)
     
 
+# Define the part of the legend which contains the hours scale
 def time_space(hour):
     if len(hour) == 2:
         return "between {} and {}".format(hour,format((int(hour)+1)%24,'02d'))
@@ -31,6 +33,7 @@ def time_space(hour):
 
 
 if __name__ == '__main__':
+    # Parameters parser
     parser = argparse.ArgumentParser(description="Show ISN values")
     parser.add_argument("-d", "--date", type=str, nargs=1, help="Date of the files to process")
     parser.add_argument("-s", "--source", type=str, nargs=1, help="Honeypot data source")
@@ -49,20 +52,24 @@ if __name__ == '__main__':
         source = "potiron"
     else:
         source = args.source[0]
+    # If no timeline is defined, options of graphs for the whole day
     if args.hour is None:
         hour = None
         print("ISNs for the complete day will be displayed.")
         width = 3600
         outputname = "color_scatter_{}_{}".format(source,date)
         title = " {} collected on {}/{}/{}".format(source,string_date[0:4],string_date[4:6],string_date[6:8])
+    # Options of graphs for the defined timeline
     else:
         hour = args.hour[0]
         width = 1500
         outputname = "color_scatter_{}_{}_h{}".format(source,date,hour)
         title = " {} collected on {}/{}/{} {}".format(source,string_date[0:4],string_date[4:6],string_date[6:8],time_space(hour))
+    # If no type of plot to process is given, simply process both two types (seq & ack)
     if args.type is None:
         seq = True
         ack = True
+    # On the other case, obviously only the specified type of plot will be processed
     else:
         if args.type[0] == "seq":
             seq = True
@@ -107,6 +114,7 @@ if __name__ == '__main__':
         "#%02x%02x%02x" % (int(r), int(g), 150) for r, g in zip(50+z*2, 30+z*2)
     ]
     type_string = ""
+    # Definition of the sequence numbers plot
     if seq:
         type_string+="_seq"
         y = np.array(y_input)
@@ -121,6 +129,7 @@ if __name__ == '__main__':
         p_seq.yaxis[0].formatter = BasicTickFormatter(use_scientific=False)
         p_seq.scatter(x, y, color=colors, legend="seq values", alpha=0.5, )
         p = p_seq
+    # Definition of the acknowledgement numbers plot
     if ack:
         type_string+="_ack"
         w = np.array(w_input)
@@ -138,8 +147,11 @@ if __name__ == '__main__':
     output_file_name = "{}{}{}".format(output,outputname,type_string)
     output_file("{}.html".format(output_file_name),
             title="TCP ISN values in Honeypot", mode='inline')
+    # Draw two plots
     if seq and ack:
         save(column(p_seq,p_ack))
+    # Draw the selected plot
     else:
         save(p)
+    # Export the plot as .png
     os.system("/usr/bin/phantomjs /usr/share/doc/phantomjs/examples/rasterize.js {0}.html {0}.png".format(output_file_name))

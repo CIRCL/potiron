@@ -9,17 +9,19 @@ import argparse
 from bokeh.plotting import figure, show, output_file, save
 from bokeh.models import BasicTickFormatter, HoverTool
 from bokeh.layouts import column
-from bokeh.io import export
+#from bokeh.io import export_png
 import syslog
 import datetime
 
 
+# Display error message in case of error in the program execution
 def errormsg(msg):
     syslog.openlog("isn-pcap", syslog.LOG_PID | syslog.LOG_PERROR,
                    syslog.LOG_INFO)
     syslog.syslog("[INFO] " + msg)
 
 
+# Define the part of the legend which contains the hours scale
 def time_space(hour):
     if len(hour) == 2:
         return "between {} and {}".format(hour,format((int(hour)+1)%24,'02d'))
@@ -35,6 +37,7 @@ def time_space(hour):
 #                        (format((int(hour[2:])+10)%60,'02d') if ((int(hour[:2])+1)%24)!=0 else "{} (the day after)".format(format((int(hour[2:])+10)%60,'02d'))))
 
 
+# Process the ISN graphs directly from pcap files
 def process_isn(src_dir,source,hour,outputdir,seq,ack):
     w_input = []
     x_input = []
@@ -43,6 +46,7 @@ def process_isn(src_dir,source,hour,outputdir,seq,ack):
     braces = "{}"
     date = src_dir.split('/')[-4:-1]
     TOOLS="hover,crosshair,pan,wheel_zoom,zoom_in,zoom_out,box_zoom,undo,redo,reset,tap,save,box_select,poly_select,lasso_select,"
+    # Command used to display an entire day of ISN values
     if hour is None:
         src_file = "{}{}".format(src_dir,braces)
         cmd = "ls {} | parallel --line-buffer --gnu tshark -n -q -Tfields -e frame.time_epoch -e tcp.seq -e tcp.ack \
@@ -50,6 +54,7 @@ def process_isn(src_dir,source,hour,outputdir,seq,ack):
         width = 3600
         outputname = "color_scatter_{}_{}{}{}".format(source,date[0],date[1],date[2])
         title = " {} collected on {}/{}/{}".format(source, date[0],date[1],date[2])
+    # Command used to display ISN values for the defined timeline
     else:
         filename = "{}-{}{}{}{}*".format(source,date[0],date[1],date[2],hour)
         cmd = "ls {}{} | parallel --line-buffer --gnu tshark -n -q -Tfields -e frame.time_epoch -e tcp.seq -e tcp.ack \
@@ -84,6 +89,7 @@ def process_isn(src_dir,source,hour,outputdir,seq,ack):
     ]
     type_string = ""
 
+    # Definition of the sequence numbers plot
     if seq:
         type_string+="_seq"
         y = np.array(y_input)
@@ -99,6 +105,7 @@ def process_isn(src_dir,source,hour,outputdir,seq,ack):
         p_seq.scatter(x, y, color=colors, legend="seq values", alpha=0.5, )
         p = p_seq
 
+    # Definition of the acknowledgement numbers plot
     if ack:
         type_string+="_ack"
         w = np.array(w_input)
@@ -123,10 +130,11 @@ def process_isn(src_dir,source,hour,outputdir,seq,ack):
     if seq and ack:
         p = column(p_seq,p_ack)
     show(p)
-#    export(p, "{}.png".format(output_file_name))
+#    export_png(p, "{}.png".format(output_file_name))
     os.system("/usr/bin/phantomjs /usr/share/doc/phantomjs/examples/rasterize.js {0}.html {0}.png".format(output_file_name))
 
 if __name__ == '__main__':
+    # Parameters parser
     parser = argparse.ArgumentParser(description="Show ISN values")
     parser.add_argument("-i", "--input", type=str, nargs=1, help="Source directory for the files to process")
     parser.add_argument("-s", "--source", type=str, nargs=1, help="Honeypot data source")
