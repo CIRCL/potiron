@@ -23,7 +23,7 @@ def output_name(source, field, fieldvalues, date, dest):
         value_str = value_str + "_" + i
     return "{}{}_{}-{}_{}{}".format(dest,source,date[0:4],date[4:6],field,value_str)
 
-    
+
 if __name__ == '__main__':
     # Parameters parser
     parser = argparse.ArgumentParser(description='Export redis values in a graph.')
@@ -33,22 +33,23 @@ if __name__ == '__main__':
     parser.add_argument('-d','--date', type=str, nargs=1, help='Date of the informations to display')
     parser.add_argument('-u','--unix', type=str, nargs=1, help='Unix socket to connect to redis-server.')
     parser.add_argument('-o','--outputdir', type=str, nargs=1, help='Destination path for the output file')
+    parser.add_argument('-ck', '--combined_keys', action='store_true', help='In case of combined redis keys')
     parser.add_argument('--logo', type=str, nargs=1, help='Path of the logo file to display')
     args = parser.parse_args()
-    
+
     # Source sensor
     if args.source is None:
         source = "potiron"
     else:
         source = args.source[0]
-    
+
     # Unix socket to connect to redis-server
     if args.unix is None:
         sys.stderr.write('A Unix socket must be specified.\n')
         sys.exit(1)
     usocket = args.unix[0]
     red = redis.Redis(unix_socket_path=usocket)
-    
+
     # Define the fields available in redis
     members=""
     tab_members=[]
@@ -57,7 +58,7 @@ if __name__ == '__main__':
         members = members + val + ", "
         tab_members.append(val)
     members=members[:-2]
-    
+
     # If no field is given in parameter, or if the field given is not in the fields in redis, the module stops
     if args.field is None:
         sys.stderr.write('A field must be specified.\nChoose one of these : {}.\n'.format(members))
@@ -66,39 +67,38 @@ if __name__ == '__main__':
         sys.stderr.write('The field you chose does not exist.\nChoose one of these : {}.\n'.format(members))
         sys.exit(1)
     field = args.field[0]
-        
+
     # Define the date of the data to select
     if args.date is None:
         sys.stderr.write('A date must be specified.\nThe format is : YYYYMM')
         sys.exit(1)
     date = args.date[0]
-    
+
     # Define the occurrences to select for the given field
     if args.values is None:
         sys.stderr.write('At least one value must be specified\n')
         sys.exit(1)
     fieldvalues = args.values
-    
+
     # Destination directory for the output file
     if args.outputdir is None:
         outputdir = "./out/"
     else:
         outputdir = args.outputdir[0]
-        
-    # If output directory does not exist, we create it
-    if not os.path.exists(outputdir):
-        os.makedirs(outputdir)
-        
+
+    # In case of combined redis keys
+    ck = args.combined_keys
+
     # Define path of circl logo, based on potiron path
     potiron_path = os.path.dirname(os.path.realpath(__file__))[:-3]
     if args.logo is None:
         logofile = "{}doc/circl.png".format(potiron_path)
     else:
         logofile = args.logo[0]
-    
+
     # Define the strings used for legends, titles, etc.
     field_string, field_in_file_name, fieldvalues_string, leg = plot_annotation(field, fieldvalues, potiron_path)
-    
+
     # Creation of the figure and the tools used on it
     namefile=output_name(source,field_in_file_name,fieldvalues,date,outputdir)
     output_file("{}.html".format(namefile), title=namefile.split("/")[-1])
@@ -117,15 +117,35 @@ if __name__ == '__main__':
         score=[]
         dayValue=[]
         exists = False
+        value = fieldvalues[v].split('-')
         # For each day with data stored in redis
         for d in range(1,days+1):
-            redisKey = "{}:{}{}:{}".format(source, date, format(d, '02d'), field)
-            if red.exists(redisKey):
-                # If the key exists, we find in redis the score of the fieldvalue we want and put it in the list of scores
-                countValue = red.zscore(redisKey, fieldvalues[v])
+            day = False
+            if ck:
+                if len(value) == 2:
+                    redisKey = "{}:{}{}:{}:{}".format(source, date, format(d, '02d'), field, value[1])
+                    if red.exists(redisKey):
+                        # If the key exists, we find in redis the score of the fieldvalue we want and put it in the list of scores
+                        countValue = red.zscore(redisKey, value[0])
+                        day = True
+                else:
+                    countValue = 0
+                    for po in ["tcp","udp"]:
+                        redisKey = "{}:{}{}:{}:{}".format(source,date,format(d,'02d'), field, po)
+                        if red.exists(redisKey):
+                            tmp = red.zscore(redisKey, fieldvalues[v])
+                            if tmp is not None:
+                                countValue += tmp
+                            day = True
+            else:
+                redisKey = "{}:{}{}:{}".format(source, date,format(d,'02d'),field)
+                if red.exists(redisKey):
+                    countValue = red.zscore(redisKey, fieldvalues[v])
+                    day = True
+            if day:
+                exists = True
                 score.append(countValue if countValue is not None else 0)
                 dayValue.append(format(d, '02d'))
-                exists = True
         # Definition of the last day for which there is data to display
         if int(dayValue[-1]) > maxDay:
             maxDay = int(dayValue[-1])

@@ -34,19 +34,37 @@ def plot_annotation(field, fieldvalues, potiron_path):
                 fieldvalues_string += "{}(unknown protocol), ".format(v)
                 leg.append("{}(unknown protocol)".format(v))
     elif field == "dport" or field == "sport":
-        with open("{}doc/ports".format(potiron_path),'r') as p:
+        with open("{}doc/ports-ck".format(potiron_path),'r') as p:
             for line in p.readlines():
-                n,val = line.split('\t')
-                nb = n.split('-')
+                port,proto,info = line.split('\t')
+                nb = port.split('-')
                 if len(nb) == 2 :
-                    for i in range(int(nb[0]),int(nb[1])):
-                        field_data[i] = val[:-1]
+                    for i in range(int(nb[0]),int(nb[1])+1):
+                        if i not in field_data:
+                            field_data[i] = {}
+                        if not proto:
+                            field_data[i]["no_proto"] = info
+                        else:
+                            field_data[i][proto] = info
                 else:
-                    field_data[n] = val[:-1]
+                    if port not in field_data:
+                        field_data[port] = {}
+                    if not proto:
+                        field_data[port]["no_proto"] = info
+                    else:
+                        field_data[port][proto] = info
         for v in fieldvalues:
-            if v in field_data:
-                fieldvalues_string += "{} ({}), ".format(v,field_data[v])
-                leg.append("{} ({})".format(v,field_data[v]))
+            value = v.split('-')
+            prot = "no_proto"
+            portvalue = value[0]
+            if portvalue in field_data:
+                if len(value) == 2:
+                    prot = value[1]
+                else:
+                    if 'no_proto' not in field_data[portvalue]:
+                        prot = 'tcp'
+                fieldvalues_string += "{} ({}), ".format(v,field_data[portvalue][prot])
+                leg.append("{} ({})".format(v,field_data[portvalue][prot]))
             else:
                 fieldvalues_string += "{} (unknown {}), ".format(v,field_string)
                 leg.append("{} (unknown {})".format(v,field_string))
