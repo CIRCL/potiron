@@ -11,12 +11,12 @@ import redis
 from potiron import infomsg, check_program
 import datetime
 import potiron_redis
-        
+
 
 bpf_filter = potiron.tshark_filter
 
 
-# Save the output json file 
+# Save the output json file
 def store_packet(rootdir, pcapfilename, obj):
     if rootdir is not None:
         jsonfilename = potiron.get_file_struct(rootdir, pcapfilename)
@@ -26,9 +26,9 @@ def store_packet(rootdir, pcapfilename, obj):
         return jsonfilename
     else:
         sys.stdout.write(obj)
-        
 
-# Create the output directory and file if it does not exist        
+
+# Create the output directory and file if it does not exist
 def create_dirs(rootdir, pcapfilename):
     jsonfilename = potiron.get_file_struct(rootdir, pcapfilename)
     d = os.path.dirname(jsonfilename)
@@ -48,36 +48,35 @@ def fill_packet(packet):
     stime = dobj.strftime("%Y-%m-%d %H:%M:%S")
     stime = stime + "." + b[:-3]
     packet['timestamp'] = stime
-    if 'protocol' in packet:
-        try:
-            protocol = int(packet['protocol'])
-            packet['protocol'] = protocol
-        except ValueError:
-            pass
-        sport = -1
-        dport = -1
-        if packet['protocol'] == 6:
-            if 'tsport' in packet:
-                sport = packet['tsport']
-            if 'tdport' in packet:
-                dport = packet['tdport']
-        else:
-            if 'usport' in packet:
-                sport = packet['usport']
-            if 'udport' in packet:
-                dport = packet['udport']
-        if ('tsport' in packet) or ('usport' in packet):
-            packet['sport'] = sport
-        if ('tdport' in packet) or ('udport' in packet):
-            packet['dport'] = dport
+    try:
+        protocol = int(packet['protocol'])
+        packet['protocol'] = protocol
+    except ValueError:
+        pass
+    sport = -1
+    dport = -1
+    if packet['protocol'] == 6:
         if 'tsport' in packet:
-            del packet['tsport']
-        if 'usport' in packet:
-            del packet['usport']
+            sport = packet['tsport']
         if 'tdport' in packet:
-            del packet['tdport']
+            dport = packet['tdport']
+    else:
+        if 'usport' in packet:
+            sport = packet['usport']
         if 'udport' in packet:
-            del packet['udport']
+            dport = packet['udport']
+    if ('tsport' in packet) or ('usport' in packet):
+        packet['sport'] = sport
+    if ('tdport' in packet) or ('udport' in packet):
+        packet['dport'] = dport
+    if 'tsport' in packet:
+        del packet['tsport']
+    if 'usport' in packet:
+        del packet['usport']
+    if 'tdport' in packet:
+        del packet['tdport']
+    if 'udport' in packet:
+        del packet['udport']
     if 'ipsrc' in packet and packet['ipsrc'] == '-':
         packet['ipsrc'] = None
     if 'ipdst' in packet and packet['ipdst'] == '-':
@@ -106,6 +105,8 @@ def process_file(rootdir, filename, fieldfilter, b_redis):
     if fieldfilter:
         if 'frame.time_epoch' not in fieldfilter:
             fieldfilter.insert(0, 'frame.time_epoch')
+        if 'ip.proto' not in fieldfilter:
+            fieldfilter.insert(1, 'ip.proto')
         for p in fieldfilter:
             cmd += "-e {} ".format(p)
     else:
@@ -152,8 +153,8 @@ def process_file(rootdir, filename, fieldfilter, b_redis):
     if b_redis:
         # If redis option, store data into redis
         potiron_redis.process_storage(jsonfilename, red)
-    
-    
+
+
 if __name__ == '__main__':
     # Parameters parser
     parser = argparse.ArgumentParser(description="Start the tool tshark and transform the output in a json document")
@@ -164,6 +165,7 @@ if __name__ == '__main__':
     parser.add_argument("-bf", "--bpffilter", type=str, nargs='+', help="BPF Filter")
     parser.add_argument("-r", "--redis", action='store_true', help="Store data directly in redis")
     parser.add_argument('-u','--unix', type=str, nargs=1, help='Unix socket to connect to redis-server.')
+    parser.add_argument('-ck', '--combined_keys', help='Set if combined keys should be used')
     args = parser.parse_args()
     potiron.logconsole = args.console
     if args.read is not None:
@@ -175,9 +177,6 @@ if __name__ == '__main__':
         fieldfilter = []
     else:
         fieldfilter = args.fieldfilter
-    if ('tcp.srcport' in fieldfilter or 'tcp.dstport' in fieldfilter or 'udp.srcport'  in fieldfilter or 'udp.dstport' in fieldfilter) and 'ip.proto' not in fieldfilter :
-        sys.stderr.write('The protocol informations are required if you want to display a source or destination port\n')
-        sys.exit(1)
 
     if args.bpffilter is not None:
         if len(args.bpffilter) == 1:
@@ -199,7 +198,7 @@ if __name__ == '__main__':
     if args.read is None:
         sys.stderr.write("At least a pcap file must be specified\n")
         sys.exit(1)
-        
+
     if args.directory is None:
         sys.stderr.write("You should specify an output directory.\n")
         sys.exit(1)
