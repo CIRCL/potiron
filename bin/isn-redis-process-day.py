@@ -9,6 +9,8 @@ import redis
 from bokeh.plotting import figure, show, output_file, save
 from bokeh.models import BasicTickFormatter, HoverTool
 from bokeh.layouts import column
+from bokeh.io import export_png
+from bokeh.palettes import Category20_20 as palette
 import syslog
 
 
@@ -17,7 +19,7 @@ def errormsg(msg):
     syslog.openlog("isn-pcap", syslog.LOG_PID | syslog.LOG_PERROR,
                    syslog.LOG_INFO)
     syslog.syslog("[INFO] " + msg)
-    
+
 
 # Definition of the timeline part of the legend and title of the plot
 def string_timeline(h,s,e):
@@ -29,8 +31,8 @@ def string_timeline(h,s,e):
     sh = "{}:{}".format(h,s)
     eh = "{}:{}".format(h2,e)
     return sh, eh
-    
-    
+
+
 if __name__ == '__main__':
     # Parameters parser
     parser = argparse.ArgumentParser(description="Show ISN values")
@@ -39,6 +41,7 @@ if __name__ == '__main__':
     parser.add_argument("-o", "--outputdir", type=str, nargs=1, help="Destination path for the output file")
     parser.add_argument("-u", "--unix", type=str, nargs =1, help="Unix socket to connect to redis-server")
     parser.add_argument("-t", "--timeline", type=int, nargs=1, help="Timeline used to split data in graphs")
+    parser.add_argument("-pf", "--port_filter", nargs='+', help="Filter the ports you want to display")
     args = parser.parse_args()
 
     if args.date is None:
@@ -74,43 +77,96 @@ if __name__ == '__main__':
     # For each hour of the day
     for hours in range(0,24):
         h = format(hours, '02d')
-        key = "{}_{}_{}".format(source,date,h)
-        # If there is no key corresponding to a precise hour, go directly is the next hour
-        if len(red.keys("{}*".format(key))) == 0:
-            continue
-        minutes = 0
-        # For each period of time corresponding to the timeline
-        for nb in range(1,int(occurrence_num_hour+1)):
-            w_input = []
-            x_input = []
-            y_input = []
-            z_input = []
-            start_min = format(minutes, '02d')
-            # For each minute in the timeline
-            while minutes < (timeline * nb):
-                m = format(minutes, '02d')
-                keys = "{}:{}*".format(key,m)
-                for line in red.keys(keys):
-                    line = line.decode()
-                    y_input.append(red.hget(line,'tcpseq').decode())
-                    w_input.append(red.hget(line,'tcpack').decode())
-                    dport = red.hget(line,'dport').decode()
-                    if dport == '':
-                        dport = 0
-                    z_input.append(int(dport))
-                    x_input.append("{} {}".format(line.split("_")[1],line.split("_")[2]))
-                minutes += 1
-            end_min = format(minutes, '02d')
-            # If there is at least one occurrence found in the current timeline, draw the plot
-            if len(x_input) > 0:
-                x = np.array(x_input, dtype=np.datetime64)
-                z = np.array(z_input)
-                y = np.array(y_input)
-                w = np.array(w_input)
-                colors = [
-                    "#%02x%02x%02x" % (int(r), int(g), 150) for r, g in zip(50+z*2, 30+z*2)
-                ]
-                start_hour, end_hour = string_timeline(h, start_min, end_min)
+        if args.port_filter is None:
+            key = "{}*{}_{}".format(source,date,h)
+            # If there is no key corresponding to a precise hour, go directly is the next hour
+            if len(red.keys("{}*".format(key))) == 0:
+                continue
+            minutes = 0
+            # For each period of time corresponding to the timeline
+            for nb in range(1,int(occurrence_num_hour+1)):
+                w_input = []
+                x_input = []
+                y_input = []
+                zseq_input = []
+                zack_input = []
+                start_min = format(minutes, '02d')
+                # For each minute in the timeline
+                while minutes < (timeline * nb):
+                    m = format(minutes, '02d')
+                    keys = "{}:{}*".format(key,m)
+                    for line in red.keys(keys):
+                        line = line.decode()
+                        y_input.append(red.hget(line,'tcpseq').decode())
+                        w_input.append(red.hget(line,'tcpack').decode())
+                        sport = line.split('_')[1][3:]
+                        dport = line.split('_')[2][3:]
+                        if sport == '':
+                            sport = 0
+                        if dport == '':
+                            dport = 0
+                        zseq_input.append(int(dport))
+                        zack_input.append(int(sport))
+                        x_input.append("{} {}".format(line.split("_")[3],line.split("_")[4]))
+                    minutes += 1
+                end_min = format(minutes, '02d')
+                # If there is at least one occurrence found in the current timeline, draw the plot
+                if len(x_input) > 0:
+                    x = np.array(x_input, dtype=np.datetime64)
+                    z_seq = np.array(zseq_input)
+                    z_ack = np.array(zack_input)
+                    y = np.array(y_input)
+                    w = np.array(w_input)
+                    colorseq = [
+                        "#%02x%02x%02x" % (int(r), int(g), 150) for r, g in zip(50+z_seq*2, 30+z_seq*2)
+                    ]
+                    colorsack = [
+                        "#%02x%02x%02x" % (int(r), int(g), 150) for r, g in zip(50+z_ack*2, 30+z_ack*2)
+                    ]
+                    start_hour, end_hour = string_timeline(h, start_min, end_min)
+                    title = " {} collected on {} between {} and {}".format(source, date, start_hour, end_hour)
+                    # Definition of the sequence numbers plot
+                    p_seq = figure(width=1500,height=700,tools=TOOLS, x_axis_type="datetime", title="TCP sequence values in Honeypot {}".format(title))
+                    hoverseq = p_seq.select(dict(type=HoverTool))
+                    hoverseq.tooltips = [
+                            ("index", "$index"),
+                            ("timestamp", "@x{0,0}"),
+                            ("number", "@y{0,0}")
+                            ]
+                    p_seq.xaxis.axis_label = "Time"
+                    p_seq.yaxis[0].formatter = BasicTickFormatter(use_scientific=False)
+                    p_seq.scatter(x, y, color=colorseq, legend="seq values", alpha=0.5, )
+                    # Definition of the aclnowledgement numbers plot
+                    p_ack = figure(width=1500,height=700,tools=TOOLS, x_axis_type="datetime", title="TCP acknowledgement values in Honeypot {}".format(title))
+                    hoverack = p_ack.select(dict(type=HoverTool))
+                    hoverack.tooltips = [
+                            ("index", "$index"),
+                            ("timestamp", "@x{0,0}"),
+                            ("number", "@y{0,0}")
+                            ]
+                    p_ack.xaxis.axis_label = "Time"
+                    p_ack.yaxis[0].formatter = BasicTickFormatter(use_scientific=False)
+                    p_ack.scatter(x, w, color=colorsack, legend="ack values", alpha=0.5, )
+                    output_name = "color_scatter_{}_{}_{}-{}_syn+ack".format(source,date,start_hour,end_hour)
+                    output_dir = "{}{}/{}/{}/{}".format(output,date.split('-')[0],date.split('-')[1],date.split('-')[2],h)
+                    if not os.path.exists(output_dir):
+                        os.makedirs(output_dir)
+                    output_file("{}/{}.html".format(output_dir,output_name),
+                                title="TCP ISN values in Honeypot", mode='inline')
+                    # Write the html file and save it
+                    p = column(p_seq,p_ack)
+                    save(p)
+                    print("{} - {}".format(start_hour,end_hour))
+                    # Export the plot into a png file
+                    export_png(p, filename = "{}/{}.png".format(output_dir,output_name))
+        else:
+            ports = args.port_filter
+            minutes = 0
+            # For each period of time corresponding to the timeline
+            for nb in range(1,int(occurrence_num_hour+1)):
+                start_min = format(minutes, '02d')
+                it_minutes = minutes
+                start_hour, end_hour = string_timeline(h, start_min, format((minutes+timeline),'02d'))
                 title = " {} collected on {} between {} and {}".format(source, date, start_hour, end_hour)
                 # Definition of the sequence numbers plot
                 p_seq = figure(width=1500,height=700,tools=TOOLS, x_axis_type="datetime", title="TCP sequence values in Honeypot {}".format(title))
@@ -122,7 +178,6 @@ if __name__ == '__main__':
                         ]
                 p_seq.xaxis.axis_label = "Time"
                 p_seq.yaxis[0].formatter = BasicTickFormatter(use_scientific=False)
-                p_seq.scatter(x, y, color=colors, legend="seq values", alpha=0.5, )
                 # Definition of the aclnowledgement numbers plot
                 p_ack = figure(width=1500,height=700,tools=TOOLS, x_axis_type="datetime", title="TCP acknowledgement values in Honeypot {}".format(title))
                 hoverack = p_ack.select(dict(type=HoverTool))
@@ -133,15 +188,43 @@ if __name__ == '__main__':
                         ]
                 p_ack.xaxis.axis_label = "Time"
                 p_ack.yaxis[0].formatter = BasicTickFormatter(use_scientific=False)
-                p_ack.scatter(x, w, color=colors, legend="ack values", alpha=0.5, )
+                for port in ports:
+                    minutes = it_minutes
+                    key = "{}*dst{}_{}_{}".format(source,port,date,h)
+                    # If there is no key corresponding to a precise hour, go directly is the next hour
+                    if len(red.keys("{}*".format(key))) == 0:
+                        continue
+                    w_input = []
+                    x_input = []
+                    y_input = []
+                    # For each minute in the timeline
+                    while minutes < (timeline * nb):
+                        m = format(minutes, '02d')
+                        keys = "{}:{}*".format(key,m)
+                        for line in red.keys(keys):
+                            line = line.decode()
+                            y_input.append(red.hget(line,'tcpseq').decode())
+                            w_input.append(red.hget(line,'tcpack').decode())
+                            x_input.append("{} {}".format(line.split("_")[3],line.split("_")[4]))
+                        minutes += 1
+                    x = np.array(x_input, dtype=np.datetime64)
+                    y = np.array(y_input)
+                    w = np.array(w_input)
+                    color = palette[ports.index(port)%20]
+                    p_seq.scatter(x, y, color=color, legend="seq values - port {}".format(port), alpha=0.5)
+                    p_ack.scatter(x, w, color=color, legend="ack values - port {}".format(port), alpha=0.5)
+                p_seq.legend.click_policy = "hide"
+                p_ack.legend.click_policy = "hide"
                 output_name = "color_scatter_{}_{}_{}-{}_syn+ack".format(source,date,start_hour,end_hour)
                 output_dir = "{}{}/{}/{}/{}".format(output,date.split('-')[0],date.split('-')[1],date.split('-')[2],h)
                 if not os.path.exists(output_dir):
                     os.makedirs(output_dir)
                 output_file("{}/{}.html".format(output_dir,output_name),
                             title="TCP ISN values in Honeypot", mode='inline')
-                # Write the html file and save it 
-                save(column(p_seq,p_ack))
+                # Write the html file and save it
+                p = column(p_seq,p_ack)
+                save(p)
                 print("{} - {}".format(start_hour,end_hour))
                 # Export the plot into a png file
-                os.system("/usr/bin/phantomjs /usr/share/doc/phantomjs/examples/rasterize.js {0}/{1}.html {0}/{1}.png".format(output_dir,output_name))
+                export_png(p, filename = "{}/{}.png".format(output_dir,output_name))
+                
