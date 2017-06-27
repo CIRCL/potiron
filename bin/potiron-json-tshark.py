@@ -84,7 +84,7 @@ def fill_packet(packet):
 
 
 # Process data saving into json file and storage into redis
-def process_file(rootdir, filename, fieldfilter, b_redis):
+def process_file(rootdir, filename, fieldfilter, b_redis, ck):
     # If tshark is not installed, exit and raise the error
     if not check_program("tshark"):
         raise OSError("The program tshark is not installed")
@@ -113,6 +113,7 @@ def process_file(rootdir, filename, fieldfilter, b_redis):
         for f in tshark_fields:
             cmd += "-e {} ".format(f)
     cmd += "-E header=n -E separator=/s -E occurrence=f -Y '{}' -r {} -o tcp.relative_sequence_numbers:FALSE".format(bpf_filter, filename)
+
     proc = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     json_fields = potiron.json_fields
     special_fields = {'length': -1, 'ipttl': -1, 'iptos': 0, 'tcpseq': -1, 'tcpack': -1, 'icmpcode': 255, 'icmptype': 255}
@@ -152,7 +153,7 @@ def process_file(rootdir, filename, fieldfilter, b_redis):
     jsonfilename = store_packet(rootdir, filename, json.dumps(allpackets))
     if b_redis:
         # If redis option, store data into redis
-        potiron_redis.process_storage(jsonfilename, red)
+        potiron_redis.process_storage(jsonfilename, red, ck)
 
 
 if __name__ == '__main__':
@@ -165,7 +166,7 @@ if __name__ == '__main__':
     parser.add_argument("-bf", "--bpffilter", type=str, nargs='+', help="BPF Filter")
     parser.add_argument("-r", "--redis", action='store_true', help="Store data directly in redis")
     parser.add_argument('-u','--unix', type=str, nargs=1, help='Unix socket to connect to redis-server.')
-    parser.add_argument('-ck', '--combined_keys', help='Set if combined keys should be used')
+    parser.add_argument('-ck', '--combined_keys', action='store_true', help='Set if combined keys should be used')
     args = parser.parse_args()
     potiron.logconsole = args.console
     if args.read is not None:
@@ -188,6 +189,7 @@ if __name__ == '__main__':
         bpf_filter += " && {}".format(bpffilter)
 
     b_redis = args.redis
+
     if b_redis:
         if args.unix is None:
             sys.stderr.write('A Unix socket must be specified.\n')
@@ -199,6 +201,8 @@ if __name__ == '__main__':
         sys.stderr.write("At least a pcap file must be specified\n")
         sys.exit(1)
 
+    ck = args.combined_keys
+
     if args.directory is None:
         sys.stderr.write("You should specify an output directory.\n")
         sys.exit(1)
@@ -208,4 +212,4 @@ if __name__ == '__main__':
         if os.path.isdir(rootdir) is False:
             sys.stderr.write("The root directory is not a directory\n")
             sys.exit(1)
-    process_file(rootdir, inputfile, fieldfilter, b_redis)
+    process_file(rootdir, inputfile, fieldfilter, b_redis, ck)
