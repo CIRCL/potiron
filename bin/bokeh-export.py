@@ -85,6 +85,8 @@ if __name__ == '__main__':
         outputdir = "./out/"
     else:
         outputdir = args.outputdir[0]
+    if not os.path.exists(outputdir):
+        os.makedirs(outputdir)
 
     # In case of combined redis keys
     ck = args.combined_keys
