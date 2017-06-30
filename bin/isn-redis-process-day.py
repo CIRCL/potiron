@@ -37,6 +37,7 @@ if __name__ == '__main__':
     # Parameters parser
     parser = argparse.ArgumentParser(description="Show ISN values")
     parser.add_argument("-d", "--date", type=str, nargs=1, help="Date of the files to process")
+    parser.add_argument("--hour", type=str, nargs=1, help="Hour of the informations wanted in the day selected")
     parser.add_argument("-s", "--source", type=str, nargs=1, help="Honeypot data source")
     parser.add_argument("-o", "--outputdir", type=str, nargs=1, help="Destination path for the output file")
     parser.add_argument("-u", "--unix", type=str, nargs =1, help="Unix socket to connect to redis-server")
@@ -49,6 +50,17 @@ if __name__ == '__main__':
         sys.exit(1)
     date = args.date[0]
     string_date = date.replace("-","")
+    if args.hour is None:
+        sh = 0
+        eh = 24
+    else:
+        hh = args.hour[0].split('-')
+        sh = int(hh[0])
+        eh = sh + 1
+        if len(hh) > 1:
+            eh = int(hh[1])
+            if eh > 24 or eh < sh:
+                eh = 24
     if args.source is None:
         source = "potiron"
     else:
@@ -75,7 +87,7 @@ if __name__ == '__main__':
     occurrence_num_hour = 60 / timeline
     TOOLS = "hover,crosshair,pan,wheel_zoom,zoom_in,zoom_out,box_zoom,undo,redo,reset,tap,save,box_select,poly_select,lasso_select,"
     # For each hour of the day
-    for hours in range(0,24):
+    for hours in range(sh,eh):
         h = format(hours, '02d')
         if args.port_filter is None:
             key = "{}*{}_{}".format(source,date,h)
@@ -227,4 +239,3 @@ if __name__ == '__main__':
                 print("{} - {}".format(start_hour,end_hour))
                 # Export the plot into a png file
                 export_png(p, filename = "{}/{}.png".format(output_dir,output_name))
-                
