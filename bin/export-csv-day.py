@@ -23,7 +23,7 @@ if args.source is None:
     source = "potiron"
 else:
     source = args.source[0]
-    
+
 if args.date is None:
     sys.stderr.write('A date must be specified.\nThe format is : YYYYMMDD')
     sys.exit(1)
@@ -41,14 +41,14 @@ else:
 
 if args.skip is None:
     args.skip = ['']
-    
+
 if args.outputdir is None:
     outputdir = "./out/"
 else:
     outputdir = args.outputdir[0]
 if not os.path.exists(outputdir):
     os.makedirs(outputdir)
-    
+
 if args.unix is None:
     sys.stderr.write('A Unix socket must be specified.\n')
     sys.exit(1)
@@ -70,7 +70,7 @@ if r.exists(redisKey):
             l += 1
         if l >= limit:
             break
-    with open("{}.csv".format(output_name(source,field_in_file_name,date,args.outputdir)),'w') as f:
+    with open("{}.csv".format(output_name(source,field_in_file_name,date,outputdir)),'w') as f:
         f.write("id,value\n")
         for v in values:
             val = bubble_annotation(field,field_string,v,potiron_path)

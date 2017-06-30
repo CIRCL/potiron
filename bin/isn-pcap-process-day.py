@@ -9,6 +9,7 @@ import argparse
 from bokeh.plotting import figure, save, output_file
 from bokeh.models import BasicTickFormatter, HoverTool
 from bokeh.layouts import column
+from bokeh.io import export_png
 import syslog
 import datetime
 
@@ -93,8 +94,10 @@ def process_isn(src_dir,source,output):
                 os.makedirs(output_dir)
             output_file("{}/{}.html".format(output_dir,output_name),
                         title="TCP ISN values in Honeypot", mode='inline')
-            save(column(p_seq,p_ack))
+            p = column(p_seq,p_ack)
+            save(p)
             print("{}:{}0".format(h,minutes))
+            export_png(p, filename="{}/{}.png".format(output_dir, output_name))
 #            os.system("/usr/bin/phantomjs /usr/share/doc/phantomjs/examples/rasterize.js {0}/{1}.html {0}/{1}.png".format(output_dir,output_name))
 
 

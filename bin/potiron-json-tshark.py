@@ -11,12 +11,12 @@ import redis
 from potiron import infomsg, check_program
 import datetime
 import potiron_redis
-        
+
 
 bpf_filter = potiron.tshark_filter
 
 
-# Save the output json file 
+# Save the output json file
 def store_packet(rootdir, pcapfilename, obj):
     if rootdir is not None:
         jsonfilename = potiron.get_file_struct(rootdir, pcapfilename)
@@ -26,14 +26,18 @@ def store_packet(rootdir, pcapfilename, obj):
         return jsonfilename
     else:
         sys.stdout.write(obj)
-        
 
-# Create the output directory and file if it does not exist        
+
+# Create the output directory and file if it does not exist
 def create_dirs(rootdir, pcapfilename):
     jsonfilename = potiron.get_file_struct(rootdir, pcapfilename)
     d = os.path.dirname(jsonfilename)
-    if not os.path.exists(d):
-        os.makedirs(d)
+    try:
+        if not os.path.exists(d):
+            os.makedirs(d)
+    except OSError:
+        sys.stderr.write("Directory already exists.\n")
+        pass
 
 
 # Complete the packet with values that need some verifications
@@ -44,36 +48,35 @@ def fill_packet(packet):
     stime = dobj.strftime("%Y-%m-%d %H:%M:%S")
     stime = stime + "." + b[:-3]
     packet['timestamp'] = stime
-    if 'protocol' in packet:
-        try:
-            protocol = int(packet['protocol'])
-            packet['protocol'] = protocol
-        except ValueError:
-            pass
-        sport = -1
-        dport = -1
-        if packet['protocol'] == 6:
-            if 'tsport' in packet:
-                sport = packet['tsport']
-            if 'tdport' in packet:
-                dport = packet['tdport']
-        else:
-            if 'usport' in packet:
-                sport = packet['usport']
-            if 'udport' in packet:
-                dport = packet['udport']
-        if ('tsport' in packet) or ('usport' in packet):
-            packet['sport'] = sport
-        if ('tdport' in packet) or ('udport' in packet):
-            packet['dport'] = dport
+    try:
+        protocol = int(packet['protocol'])
+        packet['protocol'] = protocol
+    except ValueError:
+        pass
+    sport = -1
+    dport = -1
+    if packet['protocol'] == 6:
         if 'tsport' in packet:
-            del packet['tsport']
-        if 'usport' in packet:
-            del packet['usport']
+            sport = packet['tsport']
         if 'tdport' in packet:
-            del packet['tdport']
+            dport = packet['tdport']
+    else:
+        if 'usport' in packet:
+            sport = packet['usport']
         if 'udport' in packet:
-            del packet['udport']
+            dport = packet['udport']
+    if ('tsport' in packet) or ('usport' in packet):
+        packet['sport'] = sport
+    if ('tdport' in packet) or ('udport' in packet):
+        packet['dport'] = dport
+    if 'tsport' in packet:
+        del packet['tsport']
+    if 'usport' in packet:
+        del packet['usport']
+    if 'tdport' in packet:
+        del packet['tdport']
+    if 'udport' in packet:
+        del packet['udport']
     if 'ipsrc' in packet and packet['ipsrc'] == '-':
         packet['ipsrc'] = None
     if 'ipdst' in packet and packet['ipdst'] == '-':
@@ -81,7 +84,7 @@ def fill_packet(packet):
 
 
 # Process data saving into json file and storage into redis
-def process_file(rootdir, filename, fieldfilter, b_redis):
+def process_file(rootdir, filename, fieldfilter, b_redis, ck):
     # If tshark is not installed, exit and raise the error
     if not check_program("tshark"):
         raise OSError("The program tshark is not installed")
@@ -102,12 +105,15 @@ def process_file(rootdir, filename, fieldfilter, b_redis):
     if fieldfilter:
         if 'frame.time_epoch' not in fieldfilter:
             fieldfilter.insert(0, 'frame.time_epoch')
+        if 'ip.proto' not in fieldfilter:
+            fieldfilter.insert(1, 'ip.proto')
         for p in fieldfilter:
             cmd += "-e {} ".format(p)
     else:
         for f in tshark_fields:
             cmd += "-e {} ".format(f)
     cmd += "-E header=n -E separator=/s -E occurrence=f -Y '{}' -r {} -o tcp.relative_sequence_numbers:FALSE".format(bpf_filter, filename)
+
     proc = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     json_fields = potiron.json_fields
     special_fields = {'length': -1, 'ipttl': -1, 'iptos': 0, 'tcpseq': -1, 'tcpack': -1, 'icmpcode': 255, 'icmptype': 255}
@@ -147,9 +153,9 @@ def process_file(rootdir, filename, fieldfilter, b_redis):
     jsonfilename = store_packet(rootdir, filename, json.dumps(allpackets))
     if b_redis:
         # If redis option, store data into redis
-        potiron_redis.process_storage(jsonfilename, red)
-    
-    
+        potiron_redis.process_storage(jsonfilename, red, ck)
+
+
 if __name__ == '__main__':
     # Parameters parser
     parser = argparse.ArgumentParser(description="Start the tool tshark and transform the output in a json document")
@@ -160,6 +166,7 @@ if __name__ == '__main__':
     parser.add_argument("-bf", "--bpffilter", type=str, nargs='+', help="BPF Filter")
     parser.add_argument("-r", "--redis", action='store_true', help="Store data directly in redis")
     parser.add_argument('-u','--unix', type=str, nargs=1, help='Unix socket to connect to redis-server.')
+    parser.add_argument('-ck', '--combined_keys', action='store_true', help='Set if combined keys should be used')
     args = parser.parse_args()
     potiron.logconsole = args.console
     if args.read is not None:
@@ -171,9 +178,6 @@ if __name__ == '__main__':
         fieldfilter = []
     else:
         fieldfilter = args.fieldfilter
-    if ('tcp.srcport' in fieldfilter or 'tcp.dstport' in fieldfilter or 'udp.srcport'  in fieldfilter or 'udp.dstport' in fieldfilter) and 'ip.proto' not in fieldfilter :
-        sys.stderr.write('The protocol informations are required if you want to display a source or destination port\n')
-        sys.exit(1)
 
     if args.bpffilter is not None:
         if len(args.bpffilter) == 1:
@@ -185,6 +189,7 @@ if __name__ == '__main__':
         bpf_filter += " && {}".format(bpffilter)
 
     b_redis = args.redis
+
     if b_redis:
         if args.unix is None:
             sys.stderr.write('A Unix socket must be specified.\n')
@@ -195,15 +200,16 @@ if __name__ == '__main__':
     if args.read is None:
         sys.stderr.write("At least a pcap file must be specified\n")
         sys.exit(1)
-    try:
-        rootdir = None
-        if args.directory is not None:
-            rootdir = args.directory[0]
-            create_dirs(rootdir, inputfile)
-            if os.path.isdir(rootdir) is False:
-                sys.stderr.write("The root directory is not a directory\n")
-                sys.exit(1)
-        process_file(rootdir, inputfile, fieldfilter, b_redis)
-    except OSError as e:
-        sys.stderr.write("A processing error happend.{}.\n".format(e))
+
+    ck = args.combined_keys
+
+    if args.directory is None:
+        sys.stderr.write("You should specify an output directory.\n")
         sys.exit(1)
+    else:
+        rootdir = args.directory[0]
+        create_dirs(rootdir, inputfile)
+        if os.path.isdir(rootdir) is False:
+            sys.stderr.write("The root directory is not a directory\n")
+            sys.exit(1)
+    process_file(rootdir, inputfile, fieldfilter, b_redis, ck)

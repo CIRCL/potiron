@@ -10,11 +10,12 @@ import potiron
 import datetime
 
 
-non_index = ['', 'timestamp', 'state', 'type']
+#non_index = ['', 'timestamp', 'state', 'type']
+non_index = ['', 'timestamp', 'state', 'type', 'sport', 'dport']
 bpf_filter = potiron.isn_tshark_filter
 
 
-# Save the output json file 
+# Save the output json file
 def store_packet(rootdir, pcapfilename, obj):
     if rootdir is not None:
         jsonfilename = potiron.get_file_struct(rootdir, pcapfilename)
@@ -29,8 +30,12 @@ def store_packet(rootdir, pcapfilename, obj):
 def create_dirs(rootdir, pcapfilename):
     jsonfilename = potiron.get_file_struct(rootdir, pcapfilename)
     d = os.path.dirname(jsonfilename)
-    if not os.path.exists(d):
-        os.makedirs(d)
+    try:
+        if not os.path.exists(d):
+            os.makedirs(d)
+    except OSError:
+        sys.stderr.write("Directory already exists.\n")
+        pass
 
 
 # Process data saving into json file and storage into redis
@@ -118,7 +123,8 @@ def process_file(outputdir, filename):
                     if obj is not None and idn is not None:
                         kn = "AR_{}_{}".format(idn, obj)
                         p.set(kn, feature)
-                keyname = "{}_{}".format(sensorname,timestamp)
+                #keyname = "{}_{}".format(sensorname,timestamp)
+                keyname = "{}_src{}_dst{}_{}".format(sensorname,isport,idport,timestamp)
                 p.hset(keyname,k,feature)
         p.execute()
     proc.wait()
@@ -127,7 +133,7 @@ def process_file(outputdir, filename):
         raise OSError("tshark failed. Return code {}. {}".format(proc.returncode, errmsg))
     # Write data into the json output file
     store_packet(outputdir, filename, json.dumps(allpackets))
-        
+
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Start the tool tshark and store data into a json document and redis in the same time')
@@ -137,25 +143,25 @@ if __name__ == '__main__':
     parser.add_argument("-bf", "--bpffilter", type=str, nargs='+', help="BPF Filter")
     parser.add_argument('--reverse', action='store_false', help='Create global reverse dictionaries')
     args = parser.parse_args()
-    
+
     if args.unix is None:
         sys.stderr.write('A unix socket must be specified\n')
         sys.exit(1)
-    
+
     usocket = args.unix[0]
-    
+
     red = redis.Redis(unix_socket_path=usocket)
-    
+
     if not args.reverse:
         potiron.create_reverse_global_dicts(red)
         potiron.infomsg("Created global reverse annotation dictionaries")
         sys.exit(0)
-    
+
     if args.filename is None:
         sys.stderr.write('A filename must be specified\n')
         sys.exit(1)
     filename = args.filename[0]
-    
+
     if args.bpffilter is not None:
         if len(args.bpffilter) == 1:
             bpffilter = args.bpffilter[0]
@@ -164,26 +170,20 @@ if __name__ == '__main__':
             for f in args.bpffilter:
                 bpffilter += "{} ".format(f)
         bpf_filter += " && {}".format(bpffilter)
-    
+
     # Check if file was already imported
     fn = os.path.basename(filename)
     if red.sismember("FILES", fn):
         sys.stderr.write('[INFO] Filename {} was already imported ... skip ...\n'.format(fn))
         sys.exit(0)
-    red.sadd("FILES", fn)     
-    
-    try:
-        outputdir = None
-        if args.output is None:
-            sys.stderr.write('An output directory must be specified\n')
-        else:
-            outputdir = args.output[0]
-            create_dirs(outputdir, filename)
-            if os.path.isdir(outputdir) is False:
-                sys.stderr.write("The root directory is not a directory\n")
-                sys.exit(1)
-        process_file(outputdir, filename)
-    except OSError as e:
-        sys.stderr.write("A processing error happend.{}.\n".format(e))
-        sys.exit(1)
-                
+    red.sadd("FILES", fn)
+
+    if args.output is None:
+        sys.stderr.write('An output directory must be specified\n')
+    else:
+        outputdir = args.output[0]
+        create_dirs(outputdir, filename)
+        if os.path.isdir(outputdir) is False:
+            sys.stderr.write("The root directory is not a directory\n")
+            sys.exit(1)
+    process_file(outputdir, filename)

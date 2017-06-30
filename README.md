@@ -8,7 +8,7 @@ potiron is a tool to analyze a series of network capture (pcap) files, parse the
 it in JSON format. Then the JSON format is imported into a Redis database to visualize the
 normalized information.
 
-The current version potiron supports ipsumdump.
+The current version potiron supports ipsumdump and tshark.
 
 ![Potiron web interface](./doc/screenshot.png?raw=true "Potiron web interface")
 
@@ -19,11 +19,15 @@ Requirements
 * Flask
 * Redis
 * ipsumdump
+* tshark
+* npm
+* nodejs-legacy
 
 Install
 -------
 
-    pip install -r requirements.txt
+    pip3 install -r requirements.txt
+    npm install -g phantomjs-prebuilt
     cd ./var/www
     bash ./update_thirdparty.sh
 
@@ -81,7 +85,7 @@ These files contain the data which will be used as data source in the graphs. Th
 
 	./generate.sh ./out/ /home/user/Pictures/logo.png
 
-The script will simply generate all the .html files using template.html to build the graphs. 
+The script will simply generate all the .html files using template.html to build the graphs.
 Having both generate.sh and template.html in the same path is recommanded.
 The first parameter used here is the location of the .csv files, and the .html output files will be created in the same directory. The second parameter is optionnal and is the absolute path of the logo file which will be displayed. If no argument is given, the default path is the same used for the bokeh graph, which is the CIRCL logo stored in the doc/ directory of potiron.
 
@@ -115,7 +119,7 @@ Summary
 	- potiron-isn-redis : stores data from json files in a time series redis structure in order to process ISN graphs directly from redis
 		- input : json files
 		- output : redis
-	- isn-redis / isn-redis-process-day : process ISN graphs with data from redis 
+	- isn-redis / isn-redis-process-day : process ISN graphs with data from redis
 		- input : redis data
 		- output : ISN graphs
 	- preview : displays a preview of all the ISN graphs for a month as an index, with links to each original graph

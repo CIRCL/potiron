@@ -3,3 +3,5 @@ redis
 GeoIP
 unidecode
 ipasn_redis
+bokeh
+selenium

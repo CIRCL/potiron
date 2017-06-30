@@ -9,7 +9,7 @@ import argparse
 from bokeh.plotting import figure, show, output_file, save
 from bokeh.models import BasicTickFormatter, HoverTool
 from bokeh.layouts import column
-#from bokeh.io import export_png
+from bokeh.io import export_png
 import syslog
 import datetime
 
@@ -130,8 +130,8 @@ def process_isn(src_dir,source,hour,outputdir,seq,ack):
     if seq and ack:
         p = column(p_seq,p_ack)
     show(p)
-#    export_png(p, "{}.png".format(output_file_name))
-    os.system("/usr/bin/phantomjs /usr/share/doc/phantomjs/examples/rasterize.js {0}.html {0}.png".format(output_file_name))
+    export_png(p, filename="{}.png".format(output_file_name))
+    #os.system("/usr/bin/phantomjs /home/student/Downloads/phantomjs-2.1.1-linux-x86_64/examples/rasterize.js {0}.html {0}.png".format(output_file_name))
 
 if __name__ == '__main__':
     # Parameters parser

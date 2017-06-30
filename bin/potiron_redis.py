@@ -29,31 +29,31 @@ import potiron
 # documents that is introduced
 non_index = ['', 'filename', 'sensorname', 'timestamp', 'packet_id']
 
-def process_storage(filename, red):
+def process_storage(filename, red, ck):
     # Check if file was already imported
     fn = os.path.basename(filename)
     if red.sismember("FILES", fn):
         sys.stderr.write('[INFO] Filename ' + fn + ' was already imported ... skip ...\n')
         sys.exit(0)
     red.sadd("FILES", fn)
-    
+
     f = open(filename, 'r')
     doc = json.load(f)
     f.close()
-    
+
     # Record local dictionaries
     local_dicts = dict()
     rev_dics = dict()
-    
+
     # Get sensorname assume one document per sensor name
-    
+
     item = doc[0]
     # FIXME documents must include at least a sensorname and a timestamp
     # FIXME check timestamp format
     sensorname = potiron.get_sensor_name(doc)
     lastday = None
     revcreated = False
-    
+
     for di in doc:
         if di["type"] > potiron.DICT_LOWER_BOUNDARY:
             local_dicts[di["type"]] = di
@@ -85,8 +85,10 @@ def process_storage(filename, red):
                         if obj is not None and idn is not None:
                             kn = "AR_{}_{}".format(idn, obj)
                             p.set(kn, feature)
-#                    keyname = "{}:{}:{}:{}".format(sensorname,day,k,protocol)
-                    keyname = "{}:{}:{}".format(sensorname,day,k)
+                    if ck:
+                        keyname = "{}:{}:{}:{}".format(sensorname,day,k,protocol)
+                    else:
+                        keyname = "{}:{}:{}".format(sensorname,day,k)
                     p.sadd("FIELDS", k)
                     p.zincrby(keyname, feature, 1)
             # FIXME the pipe might be to big peridocially flush them
@@ -98,26 +100,28 @@ if __name__ == '__main__':
     into redis.')
     parser.add_argument('-i', '--filename', type=str, nargs=1, help='Filename of a json document that should be imported.')
     parser.add_argument('-u', '--unix', type=str, nargs=1, help='Unix socket to connect to redis-server.')
+    parser.add_argument('-ck', '--combined_keys', action='store_true', help='Set if combined keys should be used')
     parser.add_argument('--reverse', action='store_false', help='Create global reverse dictionaries')
-    
+
     args = parser.parse_args()
     if args.unix is None:
         sys.stderr.write('A unix socket must be specified\n')
         sys.exit(1)
-    
+
     usocket = args.unix[0]
-    
+
     red = redis.Redis(unix_socket_path=usocket)
-    
+
+    ck = args.combined_keys
+
     if not args.reverse:
         potiron.create_reverse_global_dicts(red)
         potiron.infomsg("Created global reverse annotation dictionaries")
         sys.exit(0)
-    
+
     if args.filename is None:
         sys.stderr.write('A filename must be specified\n')
         sys.exit(1)
-    
     filename = args.filename[0]
-    
-    process_storage(filename, red)
+
+    process_storage(filename, red, ck)
