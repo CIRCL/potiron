@@ -7,7 +7,8 @@ import sys
 import os
 import potiron
 
-non_index = ['', 'timestamp', 'state', 'type', 'sport', 'dport']
+non_index = ['', 'filename', 'sensorname', 'packet_id','timestamp', 'length', 'protocol', 'sport',
+             'dport', 'ipsrc', 'ipdst', 'ipttl', 'iptos', 'icmpcode', 'icmptype', 'type', 'state']
 
 parser = argparse.ArgumentParser(description='Import json documents into redis time series')
 parser.add_argument('-i', '--input', type=str, nargs=1, help='Filename of a json document that should be imported.')
