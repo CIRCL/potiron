@@ -37,11 +37,11 @@ if __name__ == '__main__':
     # Parameters parser
     parser = argparse.ArgumentParser(description="Show ISN values")
     parser.add_argument("-d", "--date", type=str, nargs=1, help="Date of the files to process")
-    parser.add_argument("--hour", type=str, nargs=1, help="Hour of the informations wanted in the day selected")
+    parser.add_argument("-hr", "--hour", type=str, nargs=1, help="Hour of the informations wanted in the day selected")
     parser.add_argument("-s", "--source", type=str, nargs=1, help="Honeypot data source")
     parser.add_argument("-o", "--outputdir", type=str, nargs=1, help="Destination path for the output file")
     parser.add_argument("-u", "--unix", type=str, nargs =1, help="Unix socket to connect to redis-server")
-    parser.add_argument("-t", "--timeline", type=int, nargs=1, help="Timeline used to split data in graphs")
+    parser.add_argument("-tl", "--timeline", type=int, nargs=1, help="Timeline used to split data in graphs")
     parser.add_argument("-pf", "--port_filter", nargs='+', help="Filter the ports you want to display")
     args = parser.parse_args()
 
@@ -66,11 +66,11 @@ if __name__ == '__main__':
     else:
         source = args.source[0]
     if args.outputdir is None:
-        output = "./out/"
+        outputdir = "./out/"
     else:
-        output = args.outputdir[0]
-    if not os.path.exists(output):
-        os.makedirs(output)
+        outputdir = args.outputdir[0]
+    if not os.path.exists(outputdir):
+        os.makedirs(outputdir)
     if args.unix is None:
         sys.stderr.write('A unix socket must be specified\n')
         sys.exit(1)
@@ -160,7 +160,7 @@ if __name__ == '__main__':
                     p_ack.yaxis[0].formatter = BasicTickFormatter(use_scientific=False)
                     p_ack.scatter(x, w, color=colorsack, legend="ack values", alpha=0.5, )
                     output_name = "color_scatter_{}_{}_{}-{}_syn+ack".format(source,date,start_hour,end_hour)
-                    output_dir = "{}{}/{}/{}/{}".format(output,date.split('-')[0],date.split('-')[1],date.split('-')[2],h)
+                    output_dir = "{}{}/{}/{}/{}".format(outputdir,date.split('-')[0],date.split('-')[1],date.split('-')[2],h)
                     if not os.path.exists(output_dir):
                         os.makedirs(output_dir)
                     output_file("{}/{}.html".format(output_dir,output_name),
@@ -228,7 +228,7 @@ if __name__ == '__main__':
                 p_seq.legend.click_policy = "hide"
                 p_ack.legend.click_policy = "hide"
                 output_name = "color_scatter_{}_{}_{}-{}_syn+ack".format(source,date,start_hour,end_hour)
-                output_dir = "{}{}/{}/{}/{}".format(output,date.split('-')[0],date.split('-')[1],date.split('-')[2],h)
+                output_dir = "{}{}/{}/{}/{}".format(outputdir,date.split('-')[0],date.split('-')[1],date.split('-')[2],h)
                 if not os.path.exists(output_dir):
                     os.makedirs(output_dir)
                 output_file("{}/{}.html".format(output_dir,output_name),

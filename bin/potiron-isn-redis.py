@@ -137,9 +137,9 @@ def process_file(outputdir, filename):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Start the tool tshark and store data into a json document and redis in the same time')
-    parser.add_argument('-i', '--filename', type=str, nargs=1, help='Pcap or compressed pcap filename.')
+    parser.add_argument('-i', '--input', type=str, nargs=1, help='Pcap or compressed pcap filename.')
     parser.add_argument('-u', '--unix', type=str, nargs=1, help='Unix socket to connect to redis-server.')
-    parser.add_argument('-o', '--output', type=str, nargs=1, help='Json output file')
+    parser.add_argument('-o', '--outputdir', type=str, nargs=1, help='Json file output directory')
     parser.add_argument("-bf", "--bpffilter", type=str, nargs='+', help="BPF Filter")
     parser.add_argument('--reverse', action='store_false', help='Create global reverse dictionaries')
     args = parser.parse_args()
@@ -157,10 +157,10 @@ if __name__ == '__main__':
         potiron.infomsg("Created global reverse annotation dictionaries")
         sys.exit(0)
 
-    if args.filename is None:
-        sys.stderr.write('A filename must be specified\n')
+    if args.input is None:
+        sys.stderr.write('An input filename must be specified\n')
         sys.exit(1)
-    filename = args.filename[0]
+    filename = args.input[0]
 
     if args.bpffilter is not None:
         if len(args.bpffilter) == 1:
@@ -178,10 +178,10 @@ if __name__ == '__main__':
         sys.exit(0)
     red.sadd("FILES", fn)
 
-    if args.output is None:
+    if args.outputdir is None:
         sys.stderr.write('An output directory must be specified\n')
     else:
-        outputdir = args.output[0]
+        outputdir = args.outputdir[0]
         create_dirs(outputdir, filename)
         if os.path.isdir(outputdir) is False:
             sys.stderr.write("The root directory is not a directory\n")

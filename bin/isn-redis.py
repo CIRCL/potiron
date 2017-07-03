@@ -73,7 +73,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description="Show ISN values")
     parser.add_argument("-d", "--date", type=str, nargs=1, help="Date of the files to process")
     parser.add_argument("-s", "--source", type=str, nargs=1, help="Honeypot data source")
-    parser.add_argument("--hour", type=str, nargs=1, help="Hour of the informations wanted in the day selected")
+    parser.add_argument("-hr", "--hour", type=str, nargs=1, help="Hour of the informations wanted in the day selected")
     parser.add_argument("-tl", "--timeline", type=int, nargs=1, help="Timeline of the data to display")
     parser.add_argument("-t", "--type", type=str, nargs=1, help="Type of number : sequence or acknowledgement")
     parser.add_argument("-o", "--outputdir", type=str, nargs=1, help="Destination path for the output file")
@@ -123,11 +123,11 @@ if __name__ == '__main__':
             or simply not use any of these to display both sequence and acknowledgement numbers')
             sys.exit(1)
     if args.outputdir is None:
-        output = "./out/"
+        outputdir = "./out/"
     else:
-        output = args.outputdir[0]
-    if not os.path.exists(output):
-            os.makedirs(output)
+        outputdir = args.outputdir[0]
+    if not os.path.exists(outputdir):
+            os.makedirs(outputdir)
     if args.unix is None:
         sys.stderr.write('A unix socket must be specified\n')
         sys.exit(1)
@@ -259,7 +259,7 @@ if __name__ == '__main__':
         if ack:
             p_ack.legend.click_policy = "hide"
             p = p_ack
-    output_file_name = "{}{}{}".format(output,outputname,type_string)
+    output_file_name = "{}{}{}".format(outputdir,outputname,type_string)
     output_file("{}.html".format(output_file_name),
             title="TCP ISN values in Honeypot", mode='inline')
     # In case of two plots
