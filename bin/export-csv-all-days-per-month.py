@@ -7,9 +7,11 @@ import os
 import calendar
 from potiron_graph_annotation import field2string,bubble_annotation
 
+# Definition of the output file name
 def output_name(source, field, dest, yearmonth, day):
     return "{}{}_{}_{}-{}-{}".format(dest,source,field,yearmonth[0:4],yearmonth[4:6],day)
 
+# Parameters parser
 parser = argparse.ArgumentParser(description='Export one month data from redis')
 parser.add_argument("-s","--source", type=str, nargs=1, help="Data source")
 parser.add_argument("-d","--date", type=str, nargs=1, help='Date of the informations to display')
@@ -58,23 +60,30 @@ if args.unix is None:
 usocket = args.unix[0]
 r = redis.Redis(unix_socket_path=usocket)
 
+# Project directory
 potiron_path = os.path.dirname(os.path.realpath(__file__))[:-3]
 
+# Definition of the strings containing the informations of the field, used in the legend and the file name
 field_string, field_in_file_name = field2string(field, potiron_path)
 
 days = calendar.monthrange(int(date[0:4]),int(date[4:6]))[1]
+# For each day of the month
 for d in range(1,days+1):
     redisKey = "{}:{}{}:{}".format(source, date, format(d, '02d'), field)
     if r.exists(redisKey):
         l = 0
         values = []
+        # For each value ranged in decreasing order
         for v in r.zrevrangebyscore(redisKey,sys.maxsize,0):
             val = v.decode()
+            # If the current value is not one that should be skipped, increment the number of values to include in the chart
             if val not in args.skip :
                 values.append(val)
                 l += 1
+            # When the limit value is reached, we don't need to increment anymore, we break the loop
             if l >= limit:
                 break
+        # Write all the values and their scores into the csv datafile
         with open("{}.csv".format(output_name(source,field_in_file_name,outputdir,date,format(d, '02d'))),'w') as f:
             f.write("id,value\n")
             for v in values:

@@ -137,6 +137,7 @@ if __name__ == '__main__':
     red = redis.Redis(unix_socket_path=usocket)
 
     TOOLS="hover,crosshair,pan,wheel_zoom,zoom_in,zoom_out,box_zoom,undo,redo,reset,tap,save,box_select,poly_select,lasso_select,"
+    # if no port filter is defined
     if args.port_filter is None:
         key = "{}*".format(source)
         w_input = []

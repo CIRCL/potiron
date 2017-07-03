@@ -91,6 +91,7 @@ if __name__ == '__main__':
     # For each hour of the day
     for hours in range(sh,eh):
         h = format(hours, '02d')
+        # if no port filter is defined
         if args.port_filter is None:
             key = "{}*{}_{}".format(source,date,h)
             # If there is no key corresponding to a precise hour, go directly is the next hour
