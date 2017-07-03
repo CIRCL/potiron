@@ -25,9 +25,9 @@ else:
     source = args.source[0]
 
 if args.date is None:
-    sys.stderr.write('A date must be specified.\nThe format is : YYYYMMDD')
+    sys.stderr.write('A date must be specified.\nThe format is : YYYY-MM-DD')
     sys.exit(1)
-date = args.date[0]
+date = args.date[0].replace("-","")
 
 if args.field is None:
     sys.stderr.write('A field must be specified.\n')
@@ -46,6 +46,8 @@ if args.outputdir is None:
     outputdir = "./out/"
 else:
     outputdir = args.outputdir[0]
+    if not outputdir.endswith('/'):
+        outputdir = "{}/".format(outputdir)
 if not os.path.exists(outputdir):
     os.makedirs(outputdir)
 

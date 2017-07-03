@@ -126,6 +126,8 @@ if __name__ == '__main__':
         outputdir = "./out/"
     else:
         outputdir = args.outputdir[0]
+        if not outputdir.endswith('/'):
+            outputdir = "{}/".format(outputdir)
     if not os.path.exists(outputdir):
             os.makedirs(outputdir)
     if args.unix is None:
