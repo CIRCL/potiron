@@ -13,7 +13,7 @@ import datetime
 import potiron_redis
 
 
-bpf_filter = potiron.tshark_filter
+bpf = potiron.tshark_filter
 
 
 # Save the output json file
@@ -94,7 +94,7 @@ def process_file(rootdir, filename, fieldfilter, b_redis, ck):
     allpackets = []
     # Describe the source
     allpackets.append({"type": potiron.TYPE_SOURCE, "sensorname": sensorname,
-                       "filename": os.path.basename(filename)})
+                       "filename": os.path.basename(filename), "bpf": bpf})
     # Each packet as a incremental numeric id
     # A packet is identified with its sensorname filename and packet id for
     # further aggregation with meta data.
@@ -112,7 +112,7 @@ def process_file(rootdir, filename, fieldfilter, b_redis, ck):
     else:
         for f in tshark_fields:
             cmd += "-e {} ".format(f)
-    cmd += "-E header=n -E separator=/s -E occurrence=f -Y '{}' -r {} -o tcp.relative_sequence_numbers:FALSE".format(bpf_filter, filename)
+    cmd += "-E header=n -E separator=/s -E occurrence=f -Y '{}' -r {} -o tcp.relative_sequence_numbers:FALSE".format(bpf, filename)
 
     proc = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     json_fields = potiron.json_fields
@@ -182,14 +182,14 @@ if __name__ == '__main__':
     else:
         fieldfilter = args.fieldfilter
 
-    if args.bpffilter is not None:
-        if len(args.bpffilter) == 1:
-            bpffilter = args.bpffilter[0]
+    if args.bpfilter is not None:
+        if len(args.bpfilter) == 1:
+            bpfilter = args.bpfilter[0]
         else:
-            bpffilter = ""
-            for f in args.bpffilter:
-                bpffilter += "{} ".format(f)
-        bpf_filter += " && {}".format(bpffilter)
+            bpfilter = ""
+            for f in args.bpfilter:
+                bpfilter += "{} ".format(f)
+        bpf += " && {}".format(bpfilter)
 
     b_redis = args.redis
 
