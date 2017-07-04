@@ -48,6 +48,15 @@ def process_storage(filename, red, ck):
     # Get sensorname assume one document per sensor name
 
     item = doc[0]
+    bpf = item['bpf']
+    if red.keys('BPF'):
+        if not red.sismember('BPF', bpf):
+            red.srem('FILES', fn)
+            bpf_string = str(red.smembers('BPF'))
+            sys.stderr.write('[INFO] BPF for the current data is not the same as the one used in the data already stored here : {}\n'.format(bpf_string[3:-2]))
+            sys.exit(0)
+    else:
+        red.sadd('BPF', bpf)
     # FIXME documents must include at least a sensorname and a timestamp
     # FIXME check timestamp format
     sensorname = potiron.get_sensor_name(doc)
@@ -98,7 +107,7 @@ def process_storage(filename, red, ck):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Import json documents\
     into redis.')
-    parser.add_argument('-i', '--filename', type=str, nargs=1, help='Filename of a json document that should be imported.')
+    parser.add_argument('-i', '--input', type=str, nargs=1, help='Filename of a json document that should be imported.')
     parser.add_argument('-u', '--unix', type=str, nargs=1, help='Unix socket to connect to redis-server.')
     parser.add_argument('-ck', '--combined_keys', action='store_true', help='Set if combined keys should be used')
     parser.add_argument('--reverse', action='store_false', help='Create global reverse dictionaries')
@@ -119,9 +128,9 @@ if __name__ == '__main__':
         potiron.infomsg("Created global reverse annotation dictionaries")
         sys.exit(0)
 
-    if args.filename is None:
+    if args.input is None:
         sys.stderr.write('A filename must be specified\n')
         sys.exit(1)
-    filename = args.filename[0]
+    filename = args.input[0]
 
     process_storage(filename, red, ck)

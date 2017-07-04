@@ -13,7 +13,7 @@ import datetime
 import potiron_redis
 
 
-bpf_filter = potiron.tshark_filter
+bpf = potiron.tshark_filter
 
 
 # Save the output json file
@@ -94,7 +94,7 @@ def process_file(rootdir, filename, fieldfilter, b_redis, ck):
     allpackets = []
     # Describe the source
     allpackets.append({"type": potiron.TYPE_SOURCE, "sensorname": sensorname,
-                       "filename": os.path.basename(filename)})
+                       "filename": os.path.basename(filename), "bpf": bpf})
     # Each packet as a incremental numeric id
     # A packet is identified with its sensorname filename and packet id for
     # further aggregation with meta data.
@@ -112,7 +112,7 @@ def process_file(rootdir, filename, fieldfilter, b_redis, ck):
     else:
         for f in tshark_fields:
             cmd += "-e {} ".format(f)
-    cmd += "-E header=n -E separator=/s -E occurrence=f -Y '{}' -r {} -o tcp.relative_sequence_numbers:FALSE".format(bpf_filter, filename)
+    cmd += "-E header=n -E separator=/s -E occurrence=f -Y '{}' -r {} -o tcp.relative_sequence_numbers:FALSE".format(bpf, filename)
 
     proc = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     json_fields = potiron.json_fields
@@ -159,34 +159,37 @@ def process_file(rootdir, filename, fieldfilter, b_redis, ck):
 if __name__ == '__main__':
     # Parameters parser
     parser = argparse.ArgumentParser(description="Start the tool tshark and transform the output in a json document")
-    parser.add_argument("-i", "--read", type=str, nargs=1, help="Compressed pcap file or pcap filename")
+    parser.add_argument("-i", "--input", type=str, nargs=1, help="Compressed pcap file or pcap filename")
     parser.add_argument("-c", "--console", action='store_true', help="Log output also to console")
     parser.add_argument("-ff", "--fieldfilter", nargs='+',help="Parameters to filter fields to display")
-    parser.add_argument("-o", "--directory", nargs=1, help="Output directory where the json documents are stored")
-    parser.add_argument("-bf", "--bpffilter", type=str, nargs='+', help="BPF Filter")
+    parser.add_argument("-o", "--outputdir", nargs=1, help="Output directory where the json documents are stored")
+    parser.add_argument("-bf", "--bpfilter", type=str, nargs='+', help="Berkeley Packet Filter")
     parser.add_argument("-r", "--redis", action='store_true', help="Store data directly in redis")
     parser.add_argument('-u','--unix', type=str, nargs=1, help='Unix socket to connect to redis-server.')
     parser.add_argument('-ck', '--combined_keys', action='store_true', help='Set if combined keys should be used')
     args = parser.parse_args()
     potiron.logconsole = args.console
-    if args.read is not None:
-        if os.path.exists(args.read[0]) is False:
-            sys.stderr.write("The filename {} was not found\n".format(args.read[0]))
+    if args.input is None:
+        sys.stderr.write("At least a pcap file must be specified\n")
+        sys.exit(1)
+    else:
+        if os.path.exists(args.input[0]) is False:
+            sys.stderr.write("The filename {} was not found\n".format(args.input[0]))
             sys.exit(1)
-        inputfile = args.read[0]
+        inputfile = args.input[0]
     if args.fieldfilter is None:
         fieldfilter = []
     else:
         fieldfilter = args.fieldfilter
 
-    if args.bpffilter is not None:
-        if len(args.bpffilter) == 1:
-            bpffilter = args.bpffilter[0]
+    if args.bpfilter is not None:
+        if len(args.bpfilter) == 1:
+            bpfilter = args.bpfilter[0]
         else:
-            bpffilter = ""
-            for f in args.bpffilter:
-                bpffilter += "{} ".format(f)
-        bpf_filter += " && {}".format(bpffilter)
+            bpfilter = ""
+            for f in args.bpfilter:
+                bpfilter += "{} ".format(f)
+        bpf += " && {}".format(bpfilter)
 
     b_redis = args.redis
 
@@ -197,17 +200,13 @@ if __name__ == '__main__':
         usocket = args.unix[0]
         red = redis.Redis(unix_socket_path=usocket)
 
-    if args.read is None:
-        sys.stderr.write("At least a pcap file must be specified\n")
-        sys.exit(1)
-
     ck = args.combined_keys
 
-    if args.directory is None:
+    if args.outputdir is None:
         sys.stderr.write("You should specify an output directory.\n")
         sys.exit(1)
     else:
-        rootdir = args.directory[0]
+        rootdir = args.outputdir[0]
         create_dirs(rootdir, inputfile)
         if os.path.isdir(rootdir) is False:
             sys.stderr.write("The root directory is not a directory\n")

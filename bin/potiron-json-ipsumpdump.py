@@ -223,29 +223,29 @@ def process_file(rootdir, filename):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description="Start the too ipsumpdump and transform the output in a json document")
-    parser.add_argument("-r", "--read", type=str, nargs=1, help="Compressed pcap file or pcap filename")
+    parser.add_argument("-i", "--input", type=str, nargs=1, help="Compressed pcap file or pcap filename")
     parser.add_argument("-c", "--console", action='store_true', help="Log output also to console")
-    parser.add_argument("-o", "--directory", nargs=1, help="Output directory where the json documents are stored")
+    parser.add_argument("-o", "--outputdir", nargs=1, help="Output directory where the json documents are stored")
 
     args = parser.parse_args()
     potiron.logconsole = args.console
-    if args.read is not None:
-        if os.path.exists(args.read[0]) is False:
-            errormsg("The filename {} was not found".format(args.read[0]))
+    if args.input is None:
+        errormsg("At least a pcap file must be specified")
+        sys.exit(1)
+    else:
+        if os.path.exists(args.input[0]) is False:
+            errormsg("The filename {} was not found".format(args.input[0]))
             sys.exit(1)
 
-    if args.directory is not None and os.path.isdir(args.directory[0]) is False:
+    if args.outputdir is not None and os.path.isdir(args.outputdir[0]) is False:
         errormsg("The root directory is not a directory")
         sys.exit(1)
 
-    if args.read is None:
-        errormsg("At least a pcap file must be specified")
-        sys.exit(1)
     try:
         rootdir = None
-        if args.directory is not None:
-            rootdir = args.directory[0]
-        process_file(rootdir, args.read[0])
+        if args.outputdir is not None:
+            rootdir = args.outputdir[0]
+        process_file(rootdir, args.input[0])
     except OSError as e:
         errormsg("A processing error happend.{}.\n".format(e))
         sys.exit(1)

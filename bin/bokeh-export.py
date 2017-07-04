@@ -70,9 +70,9 @@ if __name__ == '__main__':
 
     # Define the date of the data to select
     if args.date is None:
-        sys.stderr.write('A date must be specified.\nThe format is : YYYYMM')
+        sys.stderr.write('A date must be specified.\nThe format is : YYYY-MM\n')
         sys.exit(1)
-    date = args.date[0]
+    date = args.date[0].replace("-","")
 
     # Define the occurrences to select for the given field
     if args.values is None:
@@ -85,6 +85,8 @@ if __name__ == '__main__':
         outputdir = "./out/"
     else:
         outputdir = args.outputdir[0]
+        if not outputdir.endswith('/'):
+            outputdir = "{}/".format(outputdir)
     if not os.path.exists(outputdir):
         os.makedirs(outputdir)
 

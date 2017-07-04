@@ -7,9 +7,11 @@ import os
 import calendar
 from potiron_graph_annotation import field2string,bubble_annotation
 
+# Definition of the output file name
 def output_name(source, field, date, dest):
     return "{}{}_{}_{}-{}".format(dest,source,field,date[0:4],date[4:6])
 
+# Parameters parser
 parser = argparse.ArgumentParser(description='Export one month data from redis')
 parser.add_argument("-s","--source", type=str, nargs=1, help="Data source")
 parser.add_argument("-d","--date", type=str, nargs=1, help='Date of the informations to display')
@@ -24,12 +26,11 @@ if args.source is None:
     source = "potiron"
 else:
     source = args.source[0]
-    
 
 if args.date is None:
-    sys.stderr.write('A date must be specified.\nThe format is : YYYYMM')
+    sys.stderr.write('A date must be specified.\nThe format is : YYYY-MM')
     sys.exit(1)
-date = args.date[0]
+date = args.date[0].replace("-","")
 
 if args.field is None:
     sys.stderr.write("A field must be specified.\n")
@@ -48,6 +49,8 @@ if args.outputdir is None:
     outputdir = "./out/"
 else:
     outputdir = args.outputdir[0]
+    if not outputdir.endswith('/'):
+        outputdir = "{}/".format(outputdir)
 if not os.path.exists(outputdir):
     os.makedirs(outputdir)
     
@@ -57,34 +60,45 @@ if args.unix is None:
 usocket = args.unix[0]
 r = redis.Redis(unix_socket_path=usocket)
 
+# Project directory
 potiron_path = os.path.dirname(os.path.realpath(__file__))[:-3]
 
+# Definition of the strings containing the informations of the field, used in the legend and the file name
 field_string, field_in_file_name = field2string(field, potiron_path)
 
 days = calendar.monthrange(int(date[0:4]),int(date[4:6]))[1]
-score={}                            
+score={}
+# For each day of the month                           
 for d in range(1,days+1):
     redisKey = "{}:{}{}:{}".format(source, date, format(d, '02d'), field)
     if r.exists(redisKey):
+        # For each value ranged in decreasing order
         for v in r.zrangebyscore(redisKey,0,sys.maxsize):
             countValue = r.zscore(redisKey,v)
             val = v.decode()
+            # If the current value has to be skipped, go to the next iteration of the loop
             if val in args.skip :
                 continue
+            # If the current value is already present in the list of values, increment the score with the current score
             if val in score:
                 score[val]+=countValue
+            # On the other  case, add the value with its score in the list 
             else:
                 score[val]=countValue
 
+# Sort the complete list of values for the month by score
 res = list(sorted(score, key=score.__getitem__, reverse=True))
 l = 0
 values = []
 for s in res:
+    # If the current value is not one that should be skipped, increment the number of values to include in the chart
     if s not in args.skip:
         values.append(s)
         l += 1
+    # When the limit value is reached, we don't need to increment anymore, we break the loop
     if l >= limit:
         break
+ # Write all the values and their scores into the csv datafile
 with open("{}.csv".format(output_name(source,field_in_file_name,date,outputdir)),'w') as f:
     f.write("id,value\n")
     for v in values :
