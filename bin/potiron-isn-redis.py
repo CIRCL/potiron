@@ -12,7 +12,7 @@ import datetime
 
 #non_index = ['', 'timestamp', 'state', 'type']
 non_index = ['', 'timestamp', 'state', 'type', 'sport', 'dport']
-bpf_filter = potiron.isn_tshark_filter
+bpf = potiron.isn_tshark_filter
 
 
 # Save the output json file
@@ -52,14 +52,14 @@ def process_file(outputdir, filename):
     allpackets = []
     # Describe the source
     allpackets.append({"type": potiron.TYPE_SOURCE, "sensorname": sensorname,
-                       "filename": os.path.basename(filename)})
+                       "filename": os.path.basename(filename), "bpf": bpf})
     # Each packet as a incremental numeric id
     # A packet is identified with its sensorname filename and packet id for
     # further aggregation with meta data.
     # Assumption: Each program process the pcap file the same way?
     packet_id = 0
     cmd = "tshark -n -q -Tfields -e frame.time_epoch -e tcp.srcport -e tcp.dstport -e tcp.seq -e tcp.ack "
-    cmd += "-E header=n -E separator=/s -E occurrence=f -Y '{}' -r {} -o tcp.relative_sequence_numbers:FALSE".format(bpf_filter, filename)
+    cmd += "-E header=n -E separator=/s -E occurrence=f -Y '{}' -r {} -o tcp.relative_sequence_numbers:FALSE".format(bpf, filename)
     proc = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     for line in proc.stdout.readlines():
         packet_id = packet_id + 1
@@ -140,7 +140,7 @@ if __name__ == '__main__':
     parser.add_argument('-i', '--input', type=str, nargs=1, help='Pcap or compressed pcap filename.')
     parser.add_argument('-u', '--unix', type=str, nargs=1, help='Unix socket to connect to redis-server.')
     parser.add_argument('-o', '--outputdir', type=str, nargs=1, help='Json file output directory')
-    parser.add_argument("-bf", "--bpffilter", type=str, nargs='+', help="BPF Filter")
+    parser.add_argument("-bf", "--bpfilter", type=str, nargs='+', help="BPF Filter")
     parser.add_argument('--reverse', action='store_false', help='Create global reverse dictionaries')
     args = parser.parse_args()
 
@@ -162,14 +162,14 @@ if __name__ == '__main__':
         sys.exit(1)
     filename = args.input[0]
 
-    if args.bpffilter is not None:
-        if len(args.bpffilter) == 1:
-            bpffilter = args.bpffilter[0]
+    if args.bpfilter is not None:
+        if len(args.bpfilter) == 1:
+            bpfilter = args.bpfilter[0]
         else:
-            bpffilter = ""
-            for f in args.bpffilter:
-                bpffilter += "{} ".format(f)
-        bpf_filter += " && {}".format(bpffilter)
+            bpfilter = ""
+            for f in args.bpfilter:
+                bpfilter += "{} ".format(f)
+        bpf += " && {}".format(bpfilter)
 
     # Check if file was already imported
     fn = os.path.basename(filename)
