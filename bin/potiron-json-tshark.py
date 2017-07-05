@@ -166,7 +166,7 @@ if __name__ == '__main__':
     parser.add_argument("-bf", "--bpfilter", type=str, nargs='+', help="Berkeley Packet Filter")
     parser.add_argument("-r", "--redis", action='store_true', help="Store data directly in redis")
     parser.add_argument('-u','--unix', type=str, nargs=1, help='Unix socket to connect to redis-server.')
-    parser.add_argument('-ck', '--combined_keys', action='store_true', help='Set if combined keys should be used')
+    parser.add_argument('-ck', '--combined_keys', type=str, nargs='+', help='Set if combined keys should be used')
     args = parser.parse_args()
     potiron.logconsole = args.console
     if args.input is None:
@@ -189,7 +189,7 @@ if __name__ == '__main__':
             bpfilter = ""
             for f in args.bpfilter:
                 bpfilter += "{} ".format(f)
-        bpf += " && {}".format(bpfilter)
+        bpf += " && {}".format(bpfilter[:-1])
 
     b_redis = args.redis
 
@@ -200,7 +200,10 @@ if __name__ == '__main__':
         usocket = args.unix[0]
         red = redis.Redis(unix_socket_path=usocket)
 
-    ck = args.combined_keys
+    if args.combined_keys is None:
+        ck = None
+    else:
+        ck = args.combined_keys
 
     if args.outputdir is None:
         sys.stderr.write("You should specify an output directory.\n")

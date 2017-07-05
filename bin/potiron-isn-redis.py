@@ -169,7 +169,7 @@ if __name__ == '__main__':
             bpfilter = ""
             for f in args.bpfilter:
                 bpfilter += "{} ".format(f)
-        bpf += " && {}".format(bpfilter)
+        bpf += " && {}".format(bpfilter[:-1])
 
     # Check if file was already imported
     fn = os.path.basename(filename)
