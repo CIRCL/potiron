@@ -15,29 +15,6 @@ non_index = ['', 'timestamp', 'state', 'type', 'sport', 'dport']
 bpf = potiron.isn_tshark_filter
 
 
-# Save the output json file
-def store_packet(rootdir, pcapfilename, obj):
-    if rootdir is not None:
-        jsonfilename = potiron.get_file_struct(rootdir, pcapfilename)
-        with open(jsonfilename, "w") as f:
-            f.write(obj)
-        potiron.infomsg("Created filename " + jsonfilename)
-    else:
-        sys.stdout.write(obj)
-
-
-# Create the output directory and file if it does not exist
-def create_dirs(rootdir, pcapfilename):
-    jsonfilename = potiron.get_file_struct(rootdir, pcapfilename)
-    d = os.path.dirname(jsonfilename)
-    try:
-        if not os.path.exists(d):
-            os.makedirs(d)
-    except OSError:
-        sys.stderr.write("Directory already exists.\n")
-        pass
-
-
 # Process data saving into json file and storage into redis
 def process_file(outputdir, filename):
     # If tshark is not installed, exit and raise the error
@@ -132,7 +109,7 @@ def process_file(outputdir, filename):
         errmsg = b"".join(proc.stderr.readlines())
         raise OSError("tshark failed. Return code {}. {}".format(proc.returncode, errmsg))
     # Write data into the json output file
-    store_packet(outputdir, filename, json.dumps(allpackets))
+    potiron.store_packet(outputdir, filename, json.dumps(allpackets))
 
 
 if __name__ == '__main__':
@@ -182,7 +159,7 @@ if __name__ == '__main__':
         sys.stderr.write('An output directory must be specified\n')
     else:
         outputdir = args.outputdir[0]
-        create_dirs(outputdir, filename)
+        potiron.create_dirs(outputdir, filename)
         if os.path.isdir(outputdir) is False:
             sys.stderr.write("The root directory is not a directory\n")
             sys.exit(1)
