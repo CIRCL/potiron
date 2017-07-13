@@ -59,47 +59,35 @@ def process_storage(filename, red, ck):
         red.sadd('BPF', bpf)
 
     # If combined keys are used
-    if ck is not None:
-        ck_field = ck[0]
+    if ck:
         # If redis key 'CK' already exists ...
         if red.keys('CK'):
             # ... BUT is set to 'Ńone', then combined keys are not used in the data already stored in redis
-            if red.sismember('CK','None'):
+            if red.sismember('CK','NO'):
                 sys.stderr.write('[INFO] Combined key are not used in this redis dataset.\n')
                 sys.exit(0)
-            # ... BUT the field used for combined keys is not the same
-            if not red.sscan('CK',0,'{}*'.format(ck_field))[1]:
-                sys.stderr.write('[INFO] The field {} is not the one used for combined keys in this redis dataset.\n'.format(ck_field))
-                sys.exit(0)
-            # ... BUT the number of different values used is not the same
-            if red.scard('CK') != len(ck) - 1:
-                sys.stderr.write('[INFO] The number of different values used for combined keys you want is not the same as the one already defined in this redis dataset.\n')
-                sys.exit(0)
-            # ... BUT one of the values does not match the values already used
-            for v in ck[1:]:
-                member = '{}_{}'.format(ck_field, v)
-                if not red.sismember('CK', member):
-                    sys.stderr.write('[INFO] The {} {} is not included in redis combined keys for this dataset\n'.format(ck_field, v))
-                    sys.exit(0)
-            # if all the 4 previous tests are passed, then we know we are using the same combined keys
         # If redis key 'CK' does not exist ...
         else:
-            # ... add each value in the key
-            for v in ck[1:]:
-                red.sadd('CK','{}_{}'.format(ck_field,v))
+            red.sadd('CK','YES')
     # If combined key are not used, the key 'CK' should exist anyway, with the value 'None'
     else:
         # If redis key 'CK' already exists ...
         if red.keys('CK'):
             # ... BUT is not set to 'None', then combined keys are used in the data already stored in redis
-            if not red.sismember('CK','None'):
+            if red.sismember('CK','YES'):
                 sys.stderr.write('[INFO] Combined key are used in this redis dataset.\n')
                 sys.exit(0)
         # On the other case, we add it
         else:
-            red.sadd('CK','None')
+            red.sadd('CK','NO')
 
     red.sadd("FILES", fn)
+
+    # Project directory
+    potiron_path = os.path.dirname(os.path.realpath(__file__))[:-3]
+    protocols_path = "{}doc/protocols".format(potiron_path)
+    protocols = potiron.define_protocols(protocols_path)
+
     # FIXME documents must include at least a sensorname and a timestamp
     # FIXME check timestamp format
     sensorname = potiron.get_sensor_name(doc)
@@ -117,17 +105,8 @@ def process_storage(filename, red, ck):
                 rev_dics = potiron.create_reverse_local_dicts(local_dicts)
                 revcreated = True
             key = sensorname
-            if ck is not None:
-                if ck_field == 'protocol':
-                    if di['protocol'] == 6:
-                        key += ":{}".format('tcp')
-                    else:
-                        key += ":{}".format('udp')
-                else:
-                    ck_val = di[ck_field]
-                    if ck_val not in ck:
-                        continue
-                    key += ":{}_{}".format(ck_field,ck_val)
+            if ck:
+                key += ":{}".format(protocols[str(di['protocol'])])
             timestamp = di['timestamp']
             (day, time) = timestamp.split(' ')
             day = day.replace('-', '')
@@ -135,7 +114,7 @@ def process_storage(filename, red, ck):
                 red.sadd("DAYS", day)
             p = red.pipeline()
             for k in list(di.keys()):
-                if k not in non_index and k != ck_field:
+                if k not in non_index:
                     feature = di[k]
                     if k.startswith(potiron.ANNOTATION_PREFIX):
                         feature = potiron.translate_dictionaries(rev_dics, red, k, di[k])
@@ -150,6 +129,7 @@ def process_storage(filename, red, ck):
                     p.zincrby(keyname, feature, 1)
             # FIXME the pipe might be to big peridocially flush them
             p.execute()
+    potiron.infomsg('Data from {} stored into redis'.format(filename))
 
 
 if __name__ == '__main__':
@@ -157,7 +137,7 @@ if __name__ == '__main__':
     into redis.')
     parser.add_argument('-i', '--input', type=str, nargs=1, help='Filename of a json document that should be imported.')
     parser.add_argument('-u', '--unix', type=str, nargs=1, help='Unix socket to connect to redis-server.')
-    parser.add_argument('-ck', '--combined_keys', type=str, nargs='+', help='Set if combined keys should be used')
+    parser.add_argument('-ck', '--combined_keys', action='store_true', help='Set if combined keys should be used')
     parser.add_argument('--reverse', action='store_false', help='Create global reverse dictionaries')
 
     args = parser.parse_args()
@@ -169,10 +149,7 @@ if __name__ == '__main__':
 
     red = redis.Redis(unix_socket_path=usocket)
 
-    if args.combined_keys is None:
-        ck = None
-    else:
-        ck = args.combined_keys
+    ck = args.combined_keys
 
     if not args.reverse:
         potiron.create_reverse_global_dicts(red)

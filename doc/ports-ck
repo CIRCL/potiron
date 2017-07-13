@@ -18,6 +18,8 @@
 8	udp	Unassigned
 9	tcp	Discard
 9	udp	Discard
+9	sctp	Discard
+9	dccp	Discard
 10	tcp	Unassigned
 10	udp	Unassigned
 11	tcp	Active Users
@@ -38,18 +40,21 @@
 18	udp	Message Send Protocol (historic)
 19	tcp	Character Generator
 19	udp	Character Generator
-20	tcp	File Transfer [Default Data]
-20	udp	File Transfer [Default Data]
+20	tcp	File Transfer Protocol
+20	udp	File Transfer Protocol
+20	sctp	FTP
 21	tcp	File Transfer Protocol [Control]
 21	udp	File Transfer Protocol [Control]
-22	tcp	The Secure Shell (SSH) Protocol
-22	udp	The Secure Shell (SSH) Protocol
+21	sctp	FTP
+22	tcp	SSH
+22	udp	SSH
+22	sctp	SSH
 23	tcp	Telnet
 23	udp	Telnet
 24	tcp	any private mail system
 24	udp	any private mail system
-25	tcp	Simple Mail Transfer
-25	udp	Simple Mail Transfer
+25	tcp	Simple Mail Transfer Protocol
+25	udp	Simple Mail Transfer Protocol
 26	tcp	Unassigned
 26	udp	Unassigned
 27	tcp	NSW User System FE
@@ -135,8 +140,8 @@
 67	udp	Bootstrap Protocol Server
 68	tcp	Bootstrap Protocol Client
 68	udp	Bootstrap Protocol Client
-69	tcp	Trivial File Transfer
-69	udp	Trivial File Transfer
+69	tcp	Trivial File Transfer Protocol
+69	udp	Trivial File Transfer Protocol
 70	tcp	Gopher
 70	udp	Gopher
 71	tcp	Remote Job Service
@@ -157,8 +162,9 @@
 78	udp	vettcp
 79	tcp	Finger
 79	udp	Finger
-80	tcp	World Wide Web HTTP
-80	udp	World Wide Web HTTP
+80	tcp	HTTP
+80	udp	HTTP
+80	sctp	HTTP
 81		Unassigned
 82	tcp	XFER Utility
 82	udp	XFER Utility
@@ -354,6 +360,7 @@
 178	udp	NextStep Window Server
 179	tcp	Border Gateway Protocol
 179	udp	Border Gateway Protocol
+179	sctp	BGP
 180	tcp	Intergraph
 180	udp	Intergraph
 181	tcp	Unify
@@ -744,8 +751,9 @@
 441	udp	decvms-sysmgt
 442	tcp	cvc_hostd
 442	udp	cvc_hostd
-443	tcp	http protocol over TLS/SSL
-443	udp	http protocol over TLS/SSL
+443	tcp	HTTPS
+443	udp	HTTPS
+443	sctp	HTTPS
 444	tcp	Simple Network Paging Protocol
 444	udp	Simple Network Paging Protocol
 445	tcp	Microsoft-DS
@@ -1470,8 +1478,12 @@
 1011-1020		Reserved
 1021	tcp	RFC3692-style Experiment 1
 1021	udp	RFC3692-style Experiment 1
+1021	sctp	RFC3692-style Experiment 1
+1021	dccp	RFC3692-style Experiment 1
 1022	tcp	RFC3692-style Experiment 2
 1022	udp	RFC3692-style Experiment 2
+1022	sctp	RFC3692-style Experiment 2
+1022	dccp	RFC3692-style Experiment 2
 1023	tcp	Reserved
 1023	udp	Reserved
 1024	tcp	Reserved
@@ -1649,6 +1661,7 @@
 1112	udp	Intelligent Communication Protocol
 1113	tcp	Licklider Transmission Protocol
 1113	udp	Licklider Transmission Protocol
+1113	dccp	Licklider Transmission Protocol
 1114	tcp	Mini SQL
 1114	udp	Mini SQL
 1115	tcp	ARDUS Transfer
@@ -1757,6 +1770,7 @@
 1166	udp	QSM RemoteExec
 1167	tcp	Cisco IP SLAs Control Protocol
 1167	udp	Cisco IP SLAs Control Protocol
+1167	sctp	Cisco IP SLAs Control Protocol
 1168	tcp	VChat Conference Service
 1168	udp	VChat Conference Service
 1169	tcp	TRIPWIRE
@@ -2862,6 +2876,7 @@
 1719	udp	H.323 Unicast Gatekeeper Signaling
 1720	tcp	H.323 Call Control Signalling
 1720	udp	H.323 Call Control Signalling
+1720	sctp	H.323 Call Control
 1721	tcp	caicci
 1721	udp	caicci
 1722	tcp	HKS License Manager
@@ -3519,6 +3534,7 @@
 2048	udp	
 2049	tcp	Network File System - Sun Microsystems
 2049	udp	Network File System - Sun Microsystems
+2049	sctp	Network File System
 2050	tcp	Avaya EMB Config Port
 2050	udp	Avaya EMB Config Port
 2051	tcp	EPNSDP
@@ -3866,6 +3882,7 @@
 2224	udp	Easy Flexible Internet/Multiplayer Games
 2225	tcp	Resource Connection Initiation Protocol
 2225	udp	Reserved
+2225	sctp	Resource Connection Initiation Protocol
 2226	tcp	Digital Instinct DRM
 2226	udp	Digital Instinct DRM
 2227	tcp	DI Messaging Service
@@ -5216,8 +5233,10 @@
 2903	udp	SUITCASE
 2904	tcp	M2UA
 2904	udp	M2UA
+2904	sctp	M2UA
 2905	tcp	M3UA
 2905	udp	De-registered
+2905	sctp	M3UA
 2906	tcp	CALLER9
 2906	udp	CALLER9
 2907	tcp	WEBMETHODS B2B
@@ -5295,8 +5314,10 @@
 2943	udp	TTNRepository
 2944	tcp	Megaco H-248
 2944	udp	Megaco H-248
+2944	sctp	Megaco-H.248 text
 2945	tcp	H248 Binary
 2945	udp	H248 Binary
+2945	sctp	Megaco/H.248 binary
 2946	tcp	FJSVmpor
 2946	udp	FJSVmpor
 2947	tcp	GPS Daemon request/response protocol
@@ -5604,6 +5625,7 @@
 3096	udp	Active Print Server Port
 3097	tcp	Reserved
 3097	udp	Reserved
+3097	sctp	ITU-T Q.1902.1/Q.2150.3
 3098	tcp	Universal Message Manager
 3098	udp	Universal Message Manager
 3099	tcp	CHIPSY Machine Daemon
@@ -6520,6 +6542,7 @@
 3564	udp	Electromed SIM port
 3565	tcp	M2PA
 3565	udp	Reserved
+3565	sctp	M2PA
 3566	tcp	Quest Data Hub
 3566	udp	Reserved
 3567	tcp	DOF Protocol Stack
@@ -7115,8 +7138,10 @@
 3862	udp	GIGA-POCKET
 3863	tcp	asap tcp port
 3863	udp	asap udp port
+3863	sctp	asap sctp
 3864	tcp	asap/tls tcp port
 3864	udp	Reserved
+3864	sctp	asap-sctp/tls
 3865	tcp	xpl automation protocol
 3865	udp	xpl automation protocol
 3866	tcp	Sun SDViz DZDAEMON Port
@@ -7125,6 +7150,7 @@
 3867	udp	Sun SDViz DZOGLSERVER Port
 3868	tcp	DIAMETER
 3868	udp	Reserved
+3868	sctp	DIAMETER
 3869	tcp	hp OVSAM MgmtServer Disco
 3869	udp	hp OVSAM MgmtServer Disco
 3870	tcp	hp OVSAM HostAgent Disco
@@ -7838,6 +7864,7 @@
 4332		Unassigned
 4333	tcp	ArrowHead Service Protocol (AHSP)
 4333	udp	ArrowHead Service Protocol (AHSP)
+4333	sctp	ArrowHead Service Protocol (AHSP)
 4334	tcp	NETCONF Call Home (SSH)
 4334	udp	Reserved
 4335	tcp	NETCONF Call Home (TLS)
@@ -8058,6 +8085,7 @@
 4500	tcp	IPsec NAT-Traversal
 4500	udp	IPsec NAT-Traversal
 4501		Unassigned
+4502	sctp	A25 (FAP-FGW)
 4503-4533		Unassigned
 4534	tcp	Reserved
 4534	udp	Armagetron Advanced Game Server
@@ -8094,6 +8122,7 @@
 4555	udp	RSIP Port
 4556	tcp	DTN Bundle TCP CL Protocol
 4556	udp	DTN Bundle UDP CL Protocol
+4556	dccp	DTN Bundle DCCP CL Protocol
 4557	tcp	Reserved
 4557	udp	Marathon everRun Quorum Service Server
 4558	tcp	Reserved
@@ -8238,6 +8267,7 @@
 4705-4710		Unassigned
 4711	tcp	Trinity Trust Network Node Communication
 4711	udp	Trinity Trust Network Node Communication
+4711	sctp	Trinity Trust Network Node Communication
 4712-4724		Unassigned
 4725	tcp	TruckStar Service
 4725	udp	TruckStar Service
@@ -8264,8 +8294,10 @@
 4738	udp	SoleraTec Locator
 4739	tcp	IP Flow Info Export
 4739	udp	IP Flow Info Export
+4739	sctp	IP Flow Info Export
 4740	tcp	ipfix protocol over TLS
 4740	udp	ipfix protocol over DTLS
+4740	sctp	ipfix protocol over DTLS
 4741	tcp	Luminizer Manager
 4741	udp	Luminizer Manager
 4742	tcp	SICCT
@@ -8476,8 +8508,10 @@
 5003	udp	FileMaker (Inc.) - Proprietary name binding
 5004	tcp	RTP media data
 5004	udp	RTP media data
+5004	dccp	RTP media data
 5005	tcp	RTP control protocol
 5005	udp	RTP control protocol
+5005	dccp	RTP control protocol
 5006	tcp	wsm server
 5006	udp	wsm server
 5007	tcp	wsm server ssl
@@ -8568,8 +8602,10 @@
 5059	udp	SIP Directory Services
 5060	tcp	SIP
 5060	udp	SIP
+5060	sctp	SIP
 5061	tcp	SIP-TLS
 5061	udp	SIP-TLS
+5061	sctp	SIP-TLS
 5062	tcp	Localisation access
 5062	udp	Localisation access
 5063	tcp	centrify secure RPC
@@ -8620,6 +8656,8 @@
 5087	tcp	BIOTIC - Binary Internet of Things Interoperable Communication
 5087	udp	Reserved
 5088-5089		Unassigned
+5090	sctp	Candidate AR
+5091	sctp	Context Transfer Protocol
 5092	tcp	Reserved
 5092	udp	Magpie Binary
 5093	tcp	Sentinel LM
@@ -8747,6 +8785,7 @@
 5210-5214		Unassigned
 5215	tcp	NOTEZA Data Safety Service
 5215	udp	Reserved
+5215	sctp	NOTEZA Data Safety Service
 5216-5220		Unassigned
 5221	tcp	3eTI Extensible Management Protocol for OAMP
 5221	udp	Reserved
@@ -9002,6 +9041,7 @@
 5444		Unassigned
 5445	tcp	Server Message Block over Remote Direct Memory Access
 5445	udp	Reserved
+5445	sctp	Server Message Block over Remote Direct Memory Access
 5446-5449		Unassigned
 5450	tcp	TiePie engineering data acquisition
 5450	udp	TiePie engineering data acquisition (discovery)
@@ -9163,12 +9203,14 @@
 5671	udp	amqp protocol over TLS/SSL
 5672	tcp	AMQP
 5672	udp	AMQP
+5672	sctp	AMQP
 5673	tcp	JACL Message Server
 5673	udp	JACL Message Server
 5674	tcp	HyperSCSI Port
 5674	udp	HyperSCSI Port
 5675	tcp	V5UA application port
 5675	udp	V5UA application port
+5675	sctp	V5UA application port
 5676	tcp	RA Administration
 5676	udp	RA Administration
 5677	tcp	Quest Central DB2 Launchr
@@ -9326,6 +9368,7 @@
 5864-5867		Unassigned
 5868	tcp	Diameter over TLS/TCP
 5868	udp	Reserved
+5868	sctp	Diameter over DTLS/SCTP
 5869-5882		Unassigned
 5883	tcp	Javascript Unit Test Environment
 5884-5899		Unassigned
@@ -9334,12 +9377,16 @@
 5901-5909		Unassigned
 5910	tcp	Context Management
 5910	udp	Context Management
+5910	sctp	Context Management
 5911	tcp	Controller Pilot Data Link Communication
 5911	udp	Controller Pilot Data Link Communication
+5911	sctp	Controller Pilot Data Link Communication
 5912	tcp	Flight Information Services
 5912	udp	Flight Information Services
+5912	sctp	Flight Information Services
 5913	tcp	Automatic Dependent Surveillance
 5913	udp	Automatic Dependent Surveillance
+5913	sctp	Automatic Dependent Surveillance
 5914-5962		Unassigned
 5963	tcp	Indy Application Server
 5963	udp	Indy Application Server
@@ -9705,6 +9752,7 @@
 6513	udp	Reserved
 6514	tcp	Syslog over TLS
 6514	udp	syslog over DTLS
+6514	dccp	syslog over DTLS
 6515	tcp	Elipse RPC Protocol
 6515	udp	Elipse RPC Protocol
 6516-6542		Unassigned
@@ -9834,16 +9882,21 @@
 6700		Unassigned
 6701	tcp	KTI/ICAD Nameserver
 6701	udp	KTI/ICAD Nameserver
+6701	sctp	Unassigned
 6702	tcp	e-Design network
 6702	udp	e-Design network
+6702	sctp	Unassigned
 6703	tcp	e-Design web
 6703	udp	e-Design web
 6704	udp	Reserved
 6704	tcp	Reserved
+6704	sctp	ForCES HP (High Priority) channel
 6705	udp	Reserved
 6705	tcp	Reserved
+6705	sctp	ForCES MP (Medium Priority) channel
 6706	udp	Reserved
 6706	tcp	Reserved
+6706	sctp	ForCES LP (Low priority) channel
 6707-6713		Unassigned
 6714	tcp	Internet Backplane Protocol
 6714	udp	Internet Backplane Protocol
@@ -9941,6 +9994,7 @@
 6969	udp	acmsoda
 6970	tcp	Conductor test coordination protocol
 6970	udp	Reserved
+6970	sctp	conductor for multiplex
 6971-6996		Unassigned
 6997	tcp	Mobility XE Protocol
 6997	udp	Mobility XE Protocol
@@ -10266,6 +10320,7 @@
 7625		Unassigned
 7626	tcp	SImple Middlebox COnfiguration (SIMCO) Server
 7626	udp	De-registered
+7626	sctp	SImple Middlebox COnfiguration (SIMCO)
 7627	tcp	SOAP Service Port
 7627	udp	SOAP Service Port
 7628	tcp	Primary Agent Work Notification
@@ -10315,6 +10370,7 @@
 7700	udp	Reserved
 7701	tcp	Reserved
 7701	udp	Reserved
+7701	sctp	SCF nFAPI defining MAC/PHY split
 7702-7706		Unassigned
 7707	tcp	EM7 Dynamic Updates
 7707	udp	EM7 Dynamic Updates
@@ -10334,6 +10390,7 @@
 7727	udp	Trident Systems Data
 7728	tcp	Open-Source Virtual Reality
 7728	udp	Open-Source Virtual Reality
+7728	sctp	Open-Source Virtual Reality
 7729-7733		Unassigned
 7734	tcp	Smith Protocol over IP
 7734	udp	Smith Protocol over IP
@@ -10678,6 +10735,8 @@
 8281		Unassigned
 8282	tcp	Libelle EnterpriseBus
 8282	udp	Libelle EnterpriseBus discovery
+8282	sctp	Reserved
+8282	dccp	Reserved
 8283-8291		Unassigned
 8292	tcp	Bloomberg professional
 8292	udp	Bloomberg professional
@@ -10762,6 +10821,7 @@
 8470	udp	Reserved
 8471	tcp	PIM over Reliable Transport
 8471	udp	Reserved
+8471	sctp	PIM over Reliable Transport
 8472	tcp	Overlay Transport Virtualization (OTV)
 8472	udp	Overlay Transport Virtualization (OTV)
 8473	tcp	Virtual Point to Point
@@ -10979,10 +11039,12 @@
 9080	tcp	Groove GLRPC
 9080	udp	Groove GLRPC
 9081		Unassigned
+9082	sctp	LCS Application Protocol
 9083	tcp	EMC PowerPath Mgmt Service
 9083	udp	Reserved
 9084	tcp	IBM AURORA Performance Visualizer
 9084	udp	IBM AURORA Performance Visualizer
+9084	sctp	IBM AURORA Performance Visualizer
 9085	tcp	IBM Remote System Console
 9085	udp	IBM Remote System Console
 9086	tcp	Vesa Net2Display
@@ -11297,7 +11359,10 @@
 9899	udp	SCTP TUNNELING
 9900	tcp	IUA
 9900	udp	IUA
+9900	sctp	IUA
 9901	udp	enrp server channel
+9901	sctp	enrp server channel
+9902	sctp	enrp/tls server channel
 9903	tcp	Reserved
 9903	udp	Multicast Ping Protocol
 9904-9908		Unassigned
@@ -11621,6 +11686,9 @@
 11967	tcp	SysInfo Service Protocol
 11967	udp	SysInfo Sercice Protocol
 11968-11996		Unassigned
+11997	sctp	WorldMailExpress
+11998	sctp	WorldMailExpress
+11999	sctp	WorldMailExpress
 12000	tcp	IBM Enterprise Extender SNA XID Exchange
 12000	udp	IBM Enterprise Extender SNA XID Exchange
 12001	tcp	IBM Enterprise Extender SNA COS Network Priority
@@ -11744,6 +11812,7 @@
 14000	udp	SCOTTY High-Speed Filetransfer
 14001	tcp	SUA
 14001	udp	De-Registered
+14001	sctp	SUA
 14002	udp	Discovery of a SCOTTY hardware codec board
 14002	tcp	Reserved
 14003-14032		Unassigned
@@ -12059,6 +12128,7 @@
 20048	udp	NFS mount protocol
 20049	tcp	Network File System (NFS) over RDMA
 20049	udp	Network File System (NFS) over RDMA
+20049	sctp	Network File System (NFS) over RDMA
 20050-20056		Unassigned
 20057	tcp	AvesTerra Hypergraph Transfer Protocol (HGTP)
 20057	udp	Reserved
@@ -12289,6 +12359,7 @@
 25009	tcp	icl-twobase10
 25009	udp	icl-twobase10
 25010-25470		Unassigned
+25471	sctp	RNSAP User Adaptation for Iurh
 25472-25575		Unassigned
 25576	tcp	Sauter Dongle
 25576	udp	Reserved
@@ -12381,11 +12452,14 @@
 28590-29117		Unassigned
 29118	tcp	Reserved
 29118	udp	Reserved
+29118	sctp	SGsAP in 3GPP
 29119-29166		Unassigned
 29167	tcp	ObTools Message Protocol
 29167	udp	ObTools Message Protocol
 29168	tcp	Reserved
 29168	udp	Reserved
+29168	sctp	SBcAP in 3GPP
+29169	sctp	HNBAP and RUA Common Association
 29170-29998		Unassigned
 29999	tcp	data exchange protocol for IEC61850 in wind power plants
 29999	udp	Reserved
@@ -12402,6 +12476,7 @@
 30005-30099		Unassigned
 30100	tcp	Remote Window Protocol
 30100	udp	Reserved
+30100	sctp	Remote Window Protocol
 30101-30259		Unassigned
 30260	tcp	Kingdoms Online (CraigAvenue)
 30260	udp	Kingdoms Online (CraigAvenue)
@@ -12568,13 +12643,20 @@
 36411	tcp	Reserved
 36412	tcp	Reserved
 36412	udp	Reserved
+36412	sctp	S1-Control Plane (3GPP)
 36413-36421		Unassigned
 36422	tcp	Reserved
 36422	udp	Reserved
+36422	sctp	X2-Control Plane (3GPP)
+36423	sctp	SLm Interface Application Protocol
+36424	sctp	Nq and Nq' Application Protocol
 36425-36442		Unassigned
+36443	sctp	M2 Application Part
+36444	sctp	M3 Application Part
 36445-36461		Unassigned
 36462	tcp	Reserved
 36462	udp	Reserved
+36462	sctp	Xw-Control Plane (3GPP)
 36463-36523		Unassigned
 36524	tcp	Febooti Automation Workshop
 36524	udp	Reserved
@@ -12616,10 +12698,13 @@
 38204-38411		Unassigned
 38412	tcp	Reserved
 38412	udp	Reserved
+38412	sctp	NG Control Plane (3GPP)
 38413-38421		Unassigned
 38422	tcp	Reserved
 38422	udp	Reserved
+38422	sctp	Xn Control Plane (3GPP)
 38423-38799		Unassigned
+38472	sctp	F1 Control Plane (3GPP)
 38800	tcp	Sruth
 38800	udp	Reserved
 38801-38864		Unassigned

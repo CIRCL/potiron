@@ -1,5 +1,5 @@
 0	Reserved
-1	TCP Port Service Multiplexer (TCPMUX0
+1	TCP Port Service Multiplexer
 4	Unassigned
 5	Remote job entry
 6	Unassigned
@@ -8,24 +8,24 @@
 9	Discard Protocol
 9	Wake-on-LAN
 10	Unassigned
-11	Active Users (systat service)
+11	Active Users
 12	Unassigned
 13	Daytime Protocol
 14	Unassigned
 15	Previously netstat service
 16	Unassigned
-17	Quote of the Day (QOTD)
+17	Quote of the Day
 18	Message Send Protocol
-19	Character Generator Protocol (CHARGEN)
-20	File Transfer Protocol (FTP) data transfer
-21	File Transfer Protocol (FTP) control (command)
-22	Secure Shell (SSH)
-23	Telnet protocol
-25	Simple Mail Transfer Protocol (SMTP)
+19	Character Generator
+20	File Transfer Protocol
+21	File Transfer Protocol [Control]
+22	SSH
+23	Telnet
+25	Simple Mail Transfer Protocol
 26	Unassigned
 37	Time Protocol
-38	Route Access Protocol (RAP)
-39	Resource Location Protocol (RLP)
+38	Route Access Protocol
+39	Resource Location Protocol
 40	Unassigned
 42	Host Name Server Protocol
 43	WHOIS protocol
@@ -34,21 +34,20 @@
 51	Reserved
 51	Previously Interface Message Processor logical address management
 52	Xerox Network Systems (XNS) Time Protocol
-53	Domain Name System (DNS)
+53	Domain Name System
 54	Xerox Network Systems (XNS) clearinghouse
 56	Xerox Network Systems (XNS) authentication
 57	Any private terminal access
 58	Xerox Network Systems (XNS) Mail
 67	Bootstrap Protocol (BOOTP) server
 68	Bootstrap Protocol (BOOTP) client
-69	Trivial File Transfer Protocol (TFTP)
+69	Trivial File Transfer Protocol
 70	Gopher protocol
 71–74	NETRJS protocol
 75	Any private dial out service
 77	Any private Remote job entry
 79	Finger protocol
-80	Hypertext Transfer Protocol (HTTP)
-80	QUIC (from Chromium) for HTTP
+80	HTTP
 81	Unassigned
 81	TorPark onion routing
 82	TorPark control
@@ -128,7 +127,7 @@
 427	Service Location Protocol (SLP)
 433	NNSP, part of Network News Transfer Protocol
 434	Mobile IP Agent (RFC 5944)
-443	Hypertext Transfer Protocol over TLS/SSL (HTTPS)
+443	HTTPS
 443	QUIC (from Chromium) for HTTPS
 444	Simple Network Paging Protocol (SNPP)
 444	Well known Slither.io port
