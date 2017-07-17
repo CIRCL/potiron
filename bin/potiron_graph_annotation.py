@@ -15,25 +15,31 @@ def field2string(field, potiron_path):
     return field_string[:-1], field_in_file_name[:-1]
 
 
-def plot_annotation(field, fieldvalues, potiron_path):
-    field_string, field_in_file_name = field2string(field, potiron_path)
-    
+def create_dict(field, potiron_path):
     field_data = {}
-    leg = []
-    fieldvalues_string = ""  
     if field == "protocol":
         with open("{}doc/protocols".format(potiron_path),'r') as p:
             for line in p.readlines():
                 val,n,_,_ = line.split('\t')
                 field_data[n] = val
-        for v in fieldvalues:
-            if v in field_data:
-                fieldvalues_string += "{}, ".format(field_data[v])
-                leg.append(field_data[v])
-            else:
-                fieldvalues_string += "{}(unknown protocol), ".format(v)
-                leg.append("{}(unknown protocol)".format(v))
     elif field == "dport" or field == "sport":
+        with open("{}doc/ports".format(potiron_path), 'r') as o:
+            for line in o.readlines():
+                port,info = line.split('\t')
+                nb = port.split('-')
+                if len(nb) == 2:
+                    for i in range(int(nb[0]),int(nb[1])+1):
+                        if i in field_data:
+                            continue
+                        else:
+                            field_data[i] = {}
+                            field_data[i]['no_proto'] = info
+                else:
+                    if port in field_data:
+                        continue
+                    else:
+                        field_data[port] = {}
+                        field_data[port]['no_proto'] = info
         with open("{}doc/ports-ck".format(potiron_path),'r') as p:
             for line in p.readlines():
                 port,proto,info = line.split('\t')
@@ -53,30 +59,73 @@ def plot_annotation(field, fieldvalues, potiron_path):
                         field_data[port]["no_proto"] = info
                     else:
                         field_data[port][proto] = info
+    return field_data
+
+
+def def_legend(actual, protocol, field, field_string, field_data):
+    if field == "protocol":
+        if actual in field_data:
+            return "{}, {}".format(actual, field_data[actual])
+        else:
+            return "{}, unknown {}".format(actual, field_string)
+    elif field == "sport" or field == "dport":
+        if actual in field_data:
+            if protocol is not None:
+                if protocol in field_data[actual]:
+                    return "{}-{}, {}".format(actual, protocol, field_data[actual][protocol])
+                else:
+                    if "no_proto" in field_data[actual]:
+                        return "{}-{}, {}".format(actual, protocol, field_data[actual]["no_proto"])
+            else:
+                if "no_proto" in field_data[actual]:
+                    return "{}, {}".format(actual, field_data[actual]["no_proto"])
+        return "{}-{}, unknown {}".format(actual, protocol, field_string)
+
+
+def plot_annotation(field, potiron_path, fieldvalues, field_string, field_data):
+    fieldvalues_string = ""
+    star = []
+    if field == "protocol":
+        for v in fieldvalues:
+            if v in field_data:
+                fieldvalues_string += "{}, ".format(field_data[v])
+            else:
+                fieldvalues_string += "{}(unknown protocol), ".format(v)
+    elif field == "dport" or field == "sport":
         for v in fieldvalues:
             value = v.split('-')
             prot = "no_proto"
             portvalue = value[0]
+            if portvalue in star:
+                continue
             if portvalue in field_data:
                 if len(value) == 2:
                     prot = value[1]
+                if prot in field_data[portvalue]:
+                    fieldvalues_string += "{} ({}), ".format(v,field_data[portvalue][prot][:-1])
+                elif prot == "*":
+                    star.append(portvalue)
+                    if 'no_proto' in field_data[portvalue]:
+                        fieldvalues_string += "{} ({}), ".format(portvalue,field_data[portvalue]['no_proto'][:-1])
+                    else:
+                        fieldvalues_string += "{} (unknown {}), ".format(portvalue,field_string)
                 else:
-                    if 'no_proto' not in field_data[portvalue]:
-                        prot = 'tcp'
-                fieldvalues_string += "{} ({}), ".format(v,field_data[portvalue][prot])
-                leg.append("{} ({})".format(v,field_data[portvalue][prot]))
+                    if 'no_proto' in field_data[portvalue]:
+                        fieldvalues_string += "{} ({}), ".format(v,field_data[portvalue]['no_proto'][:-1])
+                    else:
+                        fieldvalues_string += "{} (unknown {}), ".format(v,field_string)
             else:
-                fieldvalues_string += "{} (unknown {}), ".format(v,field_string)
-                leg.append("{} (unknown {})".format(v,field_string))
+                if len(value) == 2:
+                    if value[1] == "*":
+                        star.append(portvalue)
+                fieldvalues_string += "{} (unknown {}), ".format(portvalue,field_string)
     else:
         for v in fieldvalues:
             fieldvalues_string += "{}, ".format(v)
-            leg.append(v)
-    
-    return field_string, field_in_file_name, fieldvalues_string, leg
-    
+    return fieldvalues_string
 
-def bubble_annotation(field, field_string, value, potiron_path):
+
+def bubble_annotation(field, field_string, value, potiron_path, prot):
     if field == "protocol":
         with open("{}doc/protocols".format(potiron_path),'r') as p:
             for line in p.readlines():
@@ -85,11 +134,15 @@ def bubble_annotation(field, field_string, value, potiron_path):
                     return " - {}".format(l[0])
         return " - unknown protocol"
     elif field == "dport" or field == "sport":
-        with open("{}doc/ports".format(potiron_path),'r') as p:
+        with open("{}doc/ports-ck".format(potiron_path),'r') as p:
             for line in p.readlines():
                 l = line.split('\t')
                 if value == l[0]:
-                    return " - {}".format(l[1][:-1])
+                    if prot is None:
+                        return " - {}".format(l[2][:-1])
+                    else:
+                        if prot == l[1]:
+                            return " - {}".format(l[2][:-1])
         return (" - unknown {}".format(field_string))
     else:
         return
