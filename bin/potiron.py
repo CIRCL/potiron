@@ -19,12 +19,13 @@
 import os
 import datetime
 import syslog
+import sys
 
 # Common functions related to importer scripts
 
 # Generic filter for filtering out artefacts of honeypot operations
 # TODO put this in a config file
-bpf_filter = "not net 239.0.0.0/8 and not host 255.255.255.255"
+bpfilter = "not net 239.0.0.0/8 and not host 255.255.255.255"
 tshark_filter = "ip.dst ne 255.255.255.255"
 isn_tshark_filter = "{} && ip.proto eq 6".format(tshark_filter)
 tshark_fields = ['frame.time_epoch','ip.len','ip.proto','ip.src','ip.dst',
@@ -64,6 +65,8 @@ ANNOTATION_PREFIX = "a_"
 
 logconsole = True
 
+year = {'01': 'January', '02': 'February', '03': 'March', '04': 'April', '05': 'May', '06': 'June',
+        '07': 'July', '08': 'August', '09': 'September', '10': 'October', '11': 'November', '12': 'December'}
 
 def get_file_struct(rootdir, filename, suffix="json"):
     try:
@@ -134,6 +137,37 @@ def get_sensor_name(doc):
                 if "sensorname" in obj:
                     return obj["sensorname"]
     return None
+
+def define_protocols(path):
+    protocols = {}
+    with open(path, 'r') as prots:
+        for prot in prots.readlines():
+            l = prot.split('\t')
+            protocols[l[1]] = l[0]
+        return protocols
+
+
+# Save the output json file
+def store_packet(rootdir, pcapfilename, obj):
+    if rootdir is not None:
+        jsonfilename = get_file_struct(rootdir, pcapfilename)
+        with open(jsonfilename, "w") as f:
+            f.write(obj)
+        infomsg("Created filename " + jsonfilename)
+        return jsonfilename
+    else:
+        sys.stdout.write(obj)
+
+
+# Create the output directory and file if it does not exist
+def create_dirs(rootdir, pcapfilename):
+    jsonfilename = get_file_struct(rootdir, pcapfilename)
+    d = os.path.dirname(jsonfilename)
+    try:
+        if not os.path.exists(d):
+            os.makedirs(d)
+    except OSError:
+        pass
 
 
 # In order to save space in json documents the annotations are not repeated

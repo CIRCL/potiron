@@ -8,36 +8,11 @@ import sys
 import potiron
 import argparse
 import redis
-from potiron import infomsg, check_program
 import datetime
 import potiron_redis
 
 
 bpf = potiron.tshark_filter
-
-
-# Save the output json file
-def store_packet(rootdir, pcapfilename, obj):
-    if rootdir is not None:
-        jsonfilename = potiron.get_file_struct(rootdir, pcapfilename)
-        with open(jsonfilename, "w") as f:
-            f.write(obj)
-        infomsg("Created filename " + jsonfilename)
-        return jsonfilename
-    else:
-        sys.stdout.write(obj)
-
-
-# Create the output directory and file if it does not exist
-def create_dirs(rootdir, pcapfilename):
-    jsonfilename = potiron.get_file_struct(rootdir, pcapfilename)
-    d = os.path.dirname(jsonfilename)
-    try:
-        if not os.path.exists(d):
-            os.makedirs(d)
-    except OSError:
-        sys.stderr.write("Directory already exists.\n")
-        pass
 
 
 # Complete the packet with values that need some verifications
@@ -55,16 +30,14 @@ def fill_packet(packet):
         pass
     sport = -1
     dport = -1
-    if packet['protocol'] == 6:
-        if 'tsport' in packet:
-            sport = packet['tsport']
-        if 'tdport' in packet:
-            dport = packet['tdport']
-    else:
-        if 'usport' in packet:
-            sport = packet['usport']
-        if 'udport' in packet:
-            dport = packet['udport']
+    if 'tsport' in packet and packet['tsport']:
+        sport = packet['tsport']
+    if 'usport' in packet and packet['usport']:
+        sport = packet['usport']
+    if 'tdport' in packet and packet['tdport']:
+        dport = packet['tdport']
+    if 'udport' in packet and packet['udport']:
+        dport = packet['udport']
     if ('tsport' in packet) or ('usport' in packet):
         packet['sport'] = sport
     if ('tdport' in packet) or ('udport' in packet):
@@ -86,7 +59,7 @@ def fill_packet(packet):
 # Process data saving into json file and storage into redis
 def process_file(rootdir, filename, fieldfilter, b_redis, ck):
     # If tshark is not installed, exit and raise the error
-    if not check_program("tshark"):
+    if not potiron.check_program("tshark"):
         raise OSError("The program tshark is not installed")
     # FIXME Put in config file
     # Name of the honeypot
@@ -150,7 +123,7 @@ def process_file(rootdir, filename, fieldfilter, b_redis, ck):
         errmsg = b"".join(proc.stderr.readlines())
         raise OSError("tshark failed. Return code {}. {}".format(proc.returncode, errmsg))
     # Write and save the json file
-    jsonfilename = store_packet(rootdir, filename, json.dumps(allpackets))
+    jsonfilename = potiron.store_packet(rootdir, filename, json.dumps(allpackets))
     if b_redis:
         # If redis option, store data into redis
         potiron_redis.process_storage(jsonfilename, red, ck)
@@ -159,7 +132,7 @@ def process_file(rootdir, filename, fieldfilter, b_redis, ck):
 if __name__ == '__main__':
     # Parameters parser
     parser = argparse.ArgumentParser(description="Start the tool tshark and transform the output in a json document")
-    parser.add_argument("-i", "--input", type=str, nargs=1, help="Compressed pcap file or pcap filename")
+    parser.add_argument("-i", "--input", type=str, nargs=1, help="Pcap or compressed pcap filename")
     parser.add_argument("-c", "--console", action='store_true', help="Log output also to console")
     parser.add_argument("-ff", "--fieldfilter", nargs='+',help="Parameters to filter fields to display")
     parser.add_argument("-o", "--outputdir", nargs=1, help="Output directory where the json documents are stored")
@@ -189,7 +162,7 @@ if __name__ == '__main__':
             bpfilter = ""
             for f in args.bpfilter:
                 bpfilter += "{} ".format(f)
-        bpf += " && {}".format(bpfilter)
+        bpf += " && {}".format(bpfilter[:-1])
 
     b_redis = args.redis
 
@@ -207,7 +180,7 @@ if __name__ == '__main__':
         sys.exit(1)
     else:
         rootdir = args.outputdir[0]
-        create_dirs(rootdir, inputfile)
+        potiron.create_dirs(rootdir, inputfile)
         if os.path.isdir(rootdir) is False:
             sys.stderr.write("The root directory is not a directory\n")
             sys.exit(1)

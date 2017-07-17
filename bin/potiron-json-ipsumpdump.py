@@ -24,8 +24,6 @@ import sys
 import potiron
 import argparse
 from potiron import errormsg
-from potiron import infomsg
-from potiron import check_program
 import datetime
 
 
@@ -93,29 +91,12 @@ def numerize_proto(pstr):
     return potiron.PROTO_UNKNOWN
 
 
-def store_packet(rootdir, pcapfilename, obj):
-    if rootdir is not None:
-        jsonfilename = potiron.get_file_struct(rootdir, pcapfilename)
-        with open(jsonfilename, "w") as f:
-            f.write(obj)
-        infomsg("Created filename " + jsonfilename)
-    else:
-        sys.stdout.write(obj)
-
-
-def create_dirs(rootdir, pcapfilename):
-    jsonfilename = potiron.get_file_struct(rootdir, pcapfilename)
-    d = os.path.dirname(jsonfilename)
-    if not os.path.exists(d):
-        os.makedirs(d)
-
-
 def process_file(rootdir, filename):
-    if not check_program("ipsumdump"):
+    if not potiron.check_program("ipsumdump"):
         raise OSError("The program ipsumpdump is not installed")
     # FIXME Put in config file
     if rootdir is not None:
-        create_dirs(rootdir, filename)
+        potiron.create_dirs(rootdir, filename)
     packet = {}
     sensorname = potiron.derive_sensor_name(filename)
     allpackets = []
@@ -130,7 +111,7 @@ def process_file(rootdir, filename):
     proc = subprocess.Popen(["ipsumdump", "--no-headers", "--quiet", "--timestamp",
                              "--length", "--protocol", "--ip-src", "--ip-dst", "--ip-opt",
                              "--ip-ttl", "--ip-tos", "--sport", "--dport", "--tcp-seq", "--tcp-ack",
-                             "--icmp-code", "--icmp-type", "-f", potiron.bpf_filter, "-r", filename], 
+                             "--icmp-code", "--icmp-type", "-f", potiron.bpfilter, "-r", filename],
                              stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     for line in proc.stdout.readlines():
         packet_id = packet_id + 1
@@ -181,7 +162,7 @@ def process_file(rootdir, filename):
             iicmptype = int(icmptype)
         except ValueError:
             pass
-        
+
         if ipsrc == '-':
             ipsrc = None
         if ipdst == '-':
@@ -218,7 +199,7 @@ def process_file(rootdir, filename):
     if proc.returncode != 0:
         errmsg = "".join(proc.stderr.readlines())
         raise OSError("ipsumdump failed. Return code {}. {}".format(proc.returncode, errmsg))
-    store_packet(rootdir, filename, json.dumps(allpackets))
+    potiron.store_packet(rootdir, filename, json.dumps(allpackets))
 
 
 if __name__ == '__main__':

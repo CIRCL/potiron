@@ -35,7 +35,6 @@ def process_storage(filename, red, ck):
     if red.sismember("FILES", fn):
         sys.stderr.write('[INFO] Filename ' + fn + ' was already imported ... skip ...\n')
         sys.exit(0)
-    red.sadd("FILES", fn)
 
     f = open(filename, 'r')
     doc = json.load(f)
@@ -46,17 +45,49 @@ def process_storage(filename, red, ck):
     rev_dics = dict()
 
     # Get sensorname assume one document per sensor name
-
     item = doc[0]
     bpf = item['bpf']
+    # If redis key 'BPF' already exists
     if red.keys('BPF'):
+        # Check is the current bpf is the same as the one previously used
         if not red.sismember('BPF', bpf):
-            red.srem('FILES', fn)
             bpf_string = str(red.smembers('BPF'))
             sys.stderr.write('[INFO] BPF for the current data is not the same as the one used in the data already stored here : {}\n'.format(bpf_string[3:-2]))
             sys.exit(0)
+    # On the other case, add the bpf in the key 'BPF'
     else:
         red.sadd('BPF', bpf)
+
+    # If combined keys are used
+    if ck:
+        # If redis key 'CK' already exists ...
+        if red.keys('CK'):
+            # ... BUT is set to 'Ńone', then combined keys are not used in the data already stored in redis
+            if red.sismember('CK','NO'):
+                sys.stderr.write('[INFO] Combined key are not used in this redis dataset.\n')
+                sys.exit(0)
+        # If redis key 'CK' does not exist ...
+        else:
+            red.sadd('CK','YES')
+    # If combined key are not used, the key 'CK' should exist anyway, with the value 'None'
+    else:
+        # If redis key 'CK' already exists ...
+        if red.keys('CK'):
+            # ... BUT is not set to 'None', then combined keys are used in the data already stored in redis
+            if red.sismember('CK','YES'):
+                sys.stderr.write('[INFO] Combined key are used in this redis dataset.\n')
+                sys.exit(0)
+        # On the other case, we add it
+        else:
+            red.sadd('CK','NO')
+
+    red.sadd("FILES", fn)
+
+    # Project directory
+    potiron_path = os.path.dirname(os.path.realpath(__file__))[:-3]
+    protocols_path = "{}doc/protocols".format(potiron_path)
+    protocols = potiron.define_protocols(protocols_path)
+
     # FIXME documents must include at least a sensorname and a timestamp
     # FIXME check timestamp format
     sensorname = potiron.get_sensor_name(doc)
@@ -73,16 +104,15 @@ def process_storage(filename, red, ck):
                 # Only the last one is considered
                 rev_dics = potiron.create_reverse_local_dicts(local_dicts)
                 revcreated = True
+            key = sensorname
+            if ck:
+                key += ":{}".format(protocols[str(di['protocol'])])
             timestamp = di['timestamp']
             (day, time) = timestamp.split(' ')
             day = day.replace('-', '')
             if day != lastday:
                 red.sadd("DAYS", day)
             p = red.pipeline()
-            if di["protocol"] == 6:
-                protocol = "tcp"
-            else:
-                protocol = "udp"
             for k in list(di.keys()):
                 if k not in non_index:
                     feature = di[k]
@@ -94,14 +124,12 @@ def process_storage(filename, red, ck):
                         if obj is not None and idn is not None:
                             kn = "AR_{}_{}".format(idn, obj)
                             p.set(kn, feature)
-                    if ck:
-                        keyname = "{}:{}:{}:{}".format(sensorname,day,k,protocol)
-                    else:
-                        keyname = "{}:{}:{}".format(sensorname,day,k)
+                    keyname = "{}:{}:{}".format(key,day,k)
                     p.sadd("FIELDS", k)
                     p.zincrby(keyname, feature, 1)
             # FIXME the pipe might be to big peridocially flush them
             p.execute()
+    potiron.infomsg('Data from {} stored into redis'.format(filename))
 
 
 if __name__ == '__main__':
