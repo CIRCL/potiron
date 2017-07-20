@@ -65,7 +65,7 @@ Or process with tshark :
 
     Example :
 
-        ./potiron-json-tshark -c -i /tmp/test-honeypot-1-20140826000000.cap.gz -o ../out/ -ff tcp.srcport tcp.dstport udp.srcport udp.dstport -bf "tcp.srcport eq 80 or tcp.dstport eq 80" -r -u /tmp/redis.sock -ck
+        ./potiron-json-tshark.py -c -i /tmp/test-honeypot-1-20140826000000.cap.gz -o ../out/ -ff tcp.srcport tcp.dstport udp.srcport udp.dstport -bf "tcp.srcport eq 80 or tcp.dstport eq 80" -r -u /tmp/redis.sock -ck
 
 Then the JSON file can be imported into the Redis database :
 
