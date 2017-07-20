@@ -180,6 +180,7 @@ if __name__ == '__main__':
                     ("number", "@y{0,0}"),
                     ]
             p_seq.xaxis.axis_label = "Time"
+            p_seq.yaxis.axis_label = "Initial Sequence Numbers"
             p_seq.yaxis[0].formatter = BasicTickFormatter(use_scientific=False)
             p_seq.scatter(x, y, color=colorseq, legend="seq values", alpha=0.5, )
             p = p_seq
@@ -199,6 +200,7 @@ if __name__ == '__main__':
                     ("number", "@y{0,0}"),
                     ]
             p_ack.xaxis.axis_label = "Time"
+            p_seq.yaxis.axis_label = "Initial Acknowledgement Numbers"
             p_ack.yaxis[0].formatter = BasicTickFormatter(use_scientific=False)
             p_ack.scatter(x, w, color=colorsack, legend="ack values", alpha=0.5, )
             p = p_ack
@@ -214,6 +216,7 @@ if __name__ == '__main__':
                     ("number", "@y{0,0}"),
                     ]
             p_seq.xaxis.axis_label = "Time"
+            p_seq.yaxis.axis_label = "Initial Sequence Numbers"
             p_seq.yaxis[0].formatter = BasicTickFormatter(use_scientific=False)
         if ack:
             type_string+="_ack"
@@ -225,6 +228,7 @@ if __name__ == '__main__':
                     ("number", "@y{0,0}"),
                     ]
             p_ack.xaxis.axis_label = "Time"
+            p_seq.yaxis.axis_label = "Initial Acknowledgement Numbers"
             p_ack.yaxis[0].formatter = BasicTickFormatter(use_scientific=False)
         ports = args.port_filter
         port_color = np.array(ports)
