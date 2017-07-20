@@ -68,7 +68,7 @@ def process_file(rootdir, filename, fieldfilter, b_redis, ck):
     # Describe the source
     allpackets.append({"type": potiron.TYPE_SOURCE, "sensorname": sensorname,
                        "filename": os.path.basename(filename), "bpf": bpf})
-    # Each packet as a incremental numeric id
+    # Each packet has a incremental numeric id
     # A packet is identified with its sensorname filename and packet id for
     # further aggregation with meta data.
     # Assumption: Each program process the pcap file the same way?
@@ -135,7 +135,7 @@ if __name__ == '__main__':
     parser.add_argument("-i", "--input", type=str, nargs=1, help="Pcap or compressed pcap filename")
     parser.add_argument("-c", "--console", action='store_true', help="Log output also to console")
     parser.add_argument("-ff", "--fieldfilter", nargs='+',help="Parameters to filter fields to display")
-    parser.add_argument("-o", "--outputdir", nargs=1, help="Output directory where the json documents are stored")
+    parser.add_argument("-o", "--outputdir", type=str, nargs=1, help="Output directory where the json documents will be stored")
     parser.add_argument("-bf", "--bpfilter", type=str, nargs='+', help="Berkeley Packet Filter")
     parser.add_argument("-r", "--redis", action='store_true', help="Store data directly in redis")
     parser.add_argument('-u','--unix', type=str, nargs=1, help='Unix socket to connect to redis-server.')
@@ -158,11 +158,12 @@ if __name__ == '__main__':
     if args.bpfilter is not None:
         if len(args.bpfilter) == 1:
             bpfilter = args.bpfilter[0]
+            bpf += " && {}".format(bpfilter)
         else:
             bpfilter = ""
             for f in args.bpfilter:
                 bpfilter += "{} ".format(f)
-        bpf += " && {}".format(bpfilter[:-1])
+            bpf += " && {}".format(bpfilter[:-1])
 
     b_redis = args.redis
 
