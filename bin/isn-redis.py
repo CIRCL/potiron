@@ -72,7 +72,7 @@ if __name__ == '__main__':
     # Parameters parser
     parser = argparse.ArgumentParser(description="Show ISN values")
     parser.add_argument("-d", "--date", type=str, nargs=1, help="Date of the files to process")
-    parser.add_argument("-s", "--source", type=str, nargs=1, help="Honeypot data source")
+    parser.add_argument("-s", "--source", type=str, nargs=1, help="Sensor used as data source")
     parser.add_argument("-hr", "--hour", type=str, nargs=1, help="Hour of the informations wanted in the day selected")
     parser.add_argument("-tl", "--timeline", type=int, nargs=1, help="Timeline of the data to display")
     parser.add_argument("-t", "--type", type=str, nargs=1, help="Type of number : sequence or acknowledgement")

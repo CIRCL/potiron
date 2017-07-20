@@ -137,7 +137,7 @@ if __name__ == '__main__':
     # Parameters parser
     parser = argparse.ArgumentParser(description="Show ISN values")
     parser.add_argument("-i", "--inputdir", type=str, nargs=1, help="Source directory for the files to process")
-    parser.add_argument("-s", "--source", type=str, nargs=1, help="Honeypot data source")
+    parser.add_argument("-s", "--source", type=str, nargs=1, help="Sensor used as data source")
     parser.add_argument("-hr", "--hour", type=str, nargs=1, help="Hour of the informations wanted in the day selected")
     parser.add_argument("-t", "--type", type=str, nargs=1, help="Type of number : sequence or acknowledgement")
     parser.add_argument("-o", "--outputdir", type=str, nargs=1, help="Destination path for the output file")

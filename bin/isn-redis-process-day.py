@@ -38,7 +38,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description="Show ISN values")
     parser.add_argument("-d", "--date", type=str, nargs=1, help="Date of the files to process")
     parser.add_argument("-hr", "--hour", type=str, nargs=1, help="Hour of the informations wanted in the day selected")
-    parser.add_argument("-s", "--source", type=str, nargs=1, help="Honeypot data source")
+    parser.add_argument("-s", "--source", type=str, nargs=1, help="Sensor used as data source")
     parser.add_argument("-o", "--outputdir", type=str, nargs=1, help="Destination path for the output file")
     parser.add_argument("-u", "--unix", type=str, nargs =1, help="Unix socket to connect to redis-server")
     parser.add_argument("-tl", "--timeline", type=int, nargs=1, help="Timeline used to split data in graphs")
