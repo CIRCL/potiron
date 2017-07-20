@@ -5,3 +5,4 @@ unidecode
 ipasn_redis
 bokeh
 selenium
+pillow
