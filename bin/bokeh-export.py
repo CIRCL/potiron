@@ -27,7 +27,7 @@ def output_name(source, field, fieldvalues, date, dest):
 
 
 def generate_links(source, field, date, outputdir, usocket, logofile):
-    csv = 'sudo ./export-csv-all-days-per-month.py -s {} -d {}-{} -f {} -o {} -u {} -g --logo {} --links'.format(
+    csv = './export-csv-all-days-per-month.py -s {} -d {}-{} -f {} -o {} -u {} -g --logo {} --links'.format(
             source, date[0:4], date[4:6], field, outputdir, usocket, logofile)
     proc_csv = subprocess.Popen(csv, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     proc_csv.wait()

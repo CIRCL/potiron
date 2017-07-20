@@ -137,7 +137,7 @@ links = args.links
 
 gen = args.generate
 
-bokeh = 'sudo ./bokeh-export.py -s {} -d {} -f {} -o {} -u {}'.format(source, date, field, outputdir, usocket)
+bokeh = './bokeh-export.py -s {} -d {} -f {} -o {} -u {}'.format(source, date, field, outputdir, usocket)
 
 # Project directory
 potiron_path = os.path.dirname(os.path.realpath(__file__))[:-3]
@@ -200,6 +200,6 @@ else:
 
 gen = args.generate
 if gen:
-    shell = 'sudo ./generate.sh {} {}'.format(outputdir, logofile)
+    shell = './generate.sh {} {}'.format(outputdir, logofile)
     proc_sh = subprocess.Popen(shell, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     proc_sh.wait()
