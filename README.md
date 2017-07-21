@@ -59,13 +59,13 @@ Or process with tshark :
 
   Additional functionalities grant you the possibility to filter data :
   - '-ff' is the parameter filtering fields : only the fields specified (+ timestamp & protocol) will be included in the datafiles
-  - '-bf' is the Berkeley Packet Filter, filtering the data displayed from the capture files processing
+  - '-tf' is the Tshark Filter, filtering the data displayed from the capture files processing
 
-  As a result, both field and Berkeley Packet filters can be used in parallel to select a specific part of the whole data, when using combined keys is a way to separate in redis values coming from tcp packets and values coming from udp, icmp, GRE, etc packets. Please note that these two filters should be defined with wireshark / tshark typography
+  As a result, both field and tshark filters can be used in parallel to select a specific part of the whole data, when using combined keys is a way to separate in redis values coming from tcp packets and values coming from udp, icmp, GRE, etc packets. Please note that these two filters should be defined with wireshark / tshark typography !
 
     Example :
 
-        ./potiron-json-tshark.py -c -i /tmp/test-honeypot-1-20140826000000.cap.gz -o ../out/ -ff tcp.srcport tcp.dstport udp.srcport udp.dstport -bf "tcp.srcport eq 80 or tcp.dstport eq 80" -r -u /tmp/redis.sock -ck
+        ./potiron-json-tshark.py -c -i /tmp/test-honeypot-1-20140826000000.cap.gz -o ../out/ -ff tcp.srcport tcp.dstport udp.srcport udp.dstport -tf "tcp.srcport eq 80 or tcp.dstport eq 80" -r -u /tmp/redis.sock -ck
 
 Then the JSON file can be imported into the Redis database :
 

@@ -30,7 +30,7 @@ def process_file(outputdir, filename):
     # Describe the source
     allpackets.append({"type": potiron.TYPE_SOURCE, "sensorname": sensorname,
                        "filename": os.path.basename(filename), "bpf": bpf})
-    # Each packet as a incremental numeric id
+    # Each packet has a incremental numeric id
     # A packet is identified with its sensorname filename and packet id for
     # further aggregation with meta data.
     # Assumption: Each program process the pcap file the same way?
@@ -115,11 +115,13 @@ def process_file(outputdir, filename):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Start the tool tshark and store data into a json document and redis in the same time')
     parser.add_argument('-i', '--input', type=str, nargs=1, help='Pcap or compressed pcap filename.')
+    parser.add_argument('-c', '--console', action='store_true', help='Log output also to console')
     parser.add_argument('-u', '--unix', type=str, nargs=1, help='Unix socket to connect to redis-server.')
     parser.add_argument('-o', '--outputdir', type=str, nargs=1, help='Json file output directory')
-    parser.add_argument("-bf", "--bpfilter", type=str, nargs='+', help="BPF Filter")
     parser.add_argument('--reverse', action='store_false', help='Create global reverse dictionaries')
+    parser.add_argument("-tf", "--tsharkfilter", type=str, nargs='+', help="Tshark Filter ")
     args = parser.parse_args()
+    potiron.logconsole = args.console
 
     if args.unix is None:
         sys.stderr.write('A unix socket must be specified\n')
@@ -139,14 +141,14 @@ if __name__ == '__main__':
         sys.exit(1)
     filename = args.input[0]
 
-    if args.bpfilter is not None:
-        if len(args.bpfilter) == 1:
-            bpfilter = args.bpfilter[0]
+    if args.tsharkfilter is not None:
+        if len(args.tsharkfilter) == 1:
+            tsharkfilter = args.tsharkfilter[0]
         else:
-            bpfilter = ""
-            for f in args.bpfilter:
-                bpfilter += "{} ".format(f)
-        bpf += " && {}".format(bpfilter[:-1])
+            tsharkfilter = ""
+            for f in args.tsharkfilter:
+                tsharkfilter += "{} ".format(f)
+        bpf += " && {}".format(tsharkfilter[:-1])
 
     # Check if file was already imported
     fn = os.path.basename(filename)
@@ -154,6 +156,11 @@ if __name__ == '__main__':
         sys.stderr.write('[INFO] Filename {} was already imported ... skip ...\n'.format(fn))
         sys.exit(0)
     red.sadd("FILES", fn)
+    
+    if not args.reverse:
+        potiron.create_reverse_global_dicts(red)
+        potiron.infomsg("Created global reverse annotation dictionaries")
+        sys.exit(0)
 
     if args.outputdir is None:
         sys.stderr.write('An output directory must be specified\n')
