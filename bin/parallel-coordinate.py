@@ -11,9 +11,9 @@ def output_name(source, field, date, dest):
     return "{}parallel-coordinate_{}_{}_{}-{}".format(dest,source,field,date[0:4],date[4:6])
 
 parser = argparse.ArgumentParser(description='Export one month data from redis')
-parser.add_argument("-s","--source", type=str, nargs=1, help="Sensor used as source")
-parser.add_argument("-d","--date", type=str, nargs=1, help='Date of the informations to display')
-parser.add_argument("-f","--field", type=str, nargs=1, help="Field used")
+parser.add_argument("-s","--source", type=str, nargs=1, help='Sensor used as source (ex: "chp-5890-1")')
+parser.add_argument("-d","--date", type=str, nargs=1, help='Date of the informations to display (with the format YYYY-MM)')
+parser.add_argument("-f","--field", type=str, nargs=1, help='Field used (ex: "ipsrc")')
 parser.add_argument("-l","--limit", type=int, nargs=1, help="Limit of values to display")
 parser.add_argument("-o","--outputdir", type=str, nargs=1, help="Output directory")
 parser.add_argument("-u","--unix", type=str, nargs=1, help='Unix socket to connect to redis-server.')

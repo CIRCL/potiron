@@ -78,9 +78,9 @@ def generate_links(bokeh, v, logofile, namefile):
 
 # Parameters parser
 parser = argparse.ArgumentParser(description='Export one month data from redis')
-parser.add_argument("-s","--source", type=str, nargs=1, help="Sensor used as source")
-parser.add_argument("-d","--date", type=str, nargs=1, help='Date of the informations to display')
-parser.add_argument("-f","--field", type=str, nargs=1, help="Field used")
+parser.add_argument("-s","--source", type=str, nargs=1, help='Sensor used as source (ex: "chp-5890-1")')
+parser.add_argument("-d","--date", type=str, nargs=1, help='Date of the informations to display (with the format YYYY-MM)')
+parser.add_argument("-f","--field", type=str, nargs=1, help='Field used (ex: "dport")')
 parser.add_argument("-l","--limit", type=int, nargs=1, help="Limit of values to export - default 20")
 parser.add_argument("--skip", type=str, default=None, action="append", help="Skip a specific value")
 parser.add_argument("-o","--outputdir", type=str, nargs=1, help="Output directory")
