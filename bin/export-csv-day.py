@@ -87,7 +87,7 @@ def generate_links(bokeh, v, logofile, namefile):
 
 # Parameters parser
 parser = argparse.ArgumentParser(description='Export one day data from redis')
-parser.add_argument("-s","--source", type=str, nargs=1, help="Data source")
+parser.add_argument("-s","--source", type=str, nargs=1, help="Sensor used as source")
 parser.add_argument("-d","--date", type=str, nargs=1, help='Date of the informations to display')
 parser.add_argument("-f","--field", type=str, nargs=1, help="Field used")
 parser.add_argument("-l","--limit", type=int, nargs=1, help="Limit of values to export - default 20")
@@ -144,7 +144,7 @@ else:
 
 links = args.links
 
-bokeh = 'sudo ./bokeh-export.py -s {} -d {} -f {} -o {} -u {}'.format(source, date[:6], field, outputdir, usocket)
+bokeh = './bokeh-export.py -s {} -d {} -f {} -o {} -u {}'.format(source, date[:6], field, outputdir, usocket)
 
 # Project directory
 potiron_path = os.path.dirname(os.path.realpath(__file__))[:-3]
@@ -190,6 +190,6 @@ else:
                     generate_links(bokeh, v, logofile, namefile)
 
 if gen:
-    shell = 'sudo ./generate.sh {} {}'.format(outputdir, logofile)
+    shell = './generate.sh {} {}'.format(outputdir, logofile)
     proc_sh = subprocess.Popen(shell, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     proc_sh.wait()

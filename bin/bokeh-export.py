@@ -27,7 +27,7 @@ def output_name(source, field, fieldvalues, date, dest):
 
 
 def generate_links(source, field, date, outputdir, usocket, logofile):
-    csv = 'sudo ./export-csv-all-days-per-month.py -s {} -d {}-{} -f {} -o {} -u {} -g --logo {} --links'.format(
+    csv = './export-csv-all-days-per-month.py -s {} -d {}-{} -f {} -o {} -u {} -g --logo {} --links'.format(
             source, date[0:4], date[4:6], field, outputdir, usocket, logofile)
     proc_csv = subprocess.Popen(csv, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     proc_csv.wait()
@@ -36,9 +36,9 @@ def generate_links(source, field, date, outputdir, usocket, logofile):
 if __name__ == '__main__':
     # Parameters parser
     parser = argparse.ArgumentParser(description='Export redis values in a graph.')
-    parser.add_argument('-s','--source', type=str, nargs=1, help='Data source')
+    parser.add_argument('-s','--source', type=str, nargs=1, help='Sensor used as source')
     parser.add_argument('-f','--field', type=str, nargs=1, help='Field that should be displayed.')
-    parser.add_argument('-v','--values', nargs='+', help='Specific values of the field to display')
+    parser.add_argument('-v','--values', nargs='+', help='Specific values of the field to display (ex: 80, 80-tcp, or 80-all to display all the protocols)')
     parser.add_argument('-d','--date', type=str, nargs=1, help='Date of the informations to display')
     parser.add_argument('-u','--unix', type=str, nargs=1, help='Unix socket to connect to redis-server.')
     parser.add_argument('-o','--outputdir', type=str, nargs=1, help='Destination path for the output file')
@@ -301,6 +301,8 @@ if __name__ == '__main__':
         fieldvalues_string = plot_annotation(field, potiron_path, actual_values, field_string, field_data)
         p.title.text = "Number of {} {}seen for each day in {} {}".format(field_string, fieldvalues_string, potiron.year[date[4:6]], date[0:4])
         p.yaxis[0].formatter = BasicTickFormatter(use_scientific=False)
+        p.xaxis.axis_label = "Days"
+        p.yaxis.axis_label = "Count"
         p.legend.location = "top_left"
         p.legend.click_policy = "hide"
         # Definition of some parameters for the logo

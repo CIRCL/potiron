@@ -136,7 +136,7 @@ if __name__ == '__main__':
     parser.add_argument("-c", "--console", action='store_true', help="Log output also to console")
     parser.add_argument("-ff", "--fieldfilter", nargs='+',help="Parameters to filter fields to display")
     parser.add_argument("-o", "--outputdir", type=str, nargs=1, help="Output directory where the json documents will be stored")
-    parser.add_argument("-bf", "--bpfilter", type=str, nargs='+', help="Berkeley Packet Filter")
+    parser.add_argument("-tf", "--tsharkfilter", type=str, nargs='+', help="Tshark Filter")
     parser.add_argument("-r", "--redis", action='store_true', help="Store data directly in redis")
     parser.add_argument('-u','--unix', type=str, nargs=1, help='Unix socket to connect to redis-server.')
     parser.add_argument('-ck', '--combined_keys', action='store_true', help='Set if combined keys should be used')
@@ -155,15 +155,15 @@ if __name__ == '__main__':
     else:
         fieldfilter = args.fieldfilter
 
-    if args.bpfilter is not None:
-        if len(args.bpfilter) == 1:
-            bpfilter = args.bpfilter[0]
-            bpf += " && {}".format(bpfilter)
+    if args.tsharkfilter is not None:
+        if len(args.tsharkfilter) == 1:
+            tsharkfilter = args.tsharkfilter[0]
+            bpf += " && {}".format(tsharkfilter)
         else:
-            bpfilter = ""
-            for f in args.bpfilter:
-                bpfilter += "{} ".format(f)
-            bpf += " && {}".format(bpfilter[:-1])
+            tsharkfilter = ""
+            for f in args.tsharkfilter:
+                tsharkfilter += "{} ".format(f)
+            bpf += " && {}".format(tsharkfilter[:-1])
 
     b_redis = args.redis
 

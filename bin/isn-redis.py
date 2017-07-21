@@ -72,7 +72,7 @@ if __name__ == '__main__':
     # Parameters parser
     parser = argparse.ArgumentParser(description="Show ISN values")
     parser.add_argument("-d", "--date", type=str, nargs=1, help="Date of the files to process")
-    parser.add_argument("-s", "--source", type=str, nargs=1, help="Honeypot data source")
+    parser.add_argument("-s", "--source", type=str, nargs=1, help="Sensor used as data source")
     parser.add_argument("-hr", "--hour", type=str, nargs=1, help="Hour of the informations wanted in the day selected")
     parser.add_argument("-tl", "--timeline", type=int, nargs=1, help="Timeline of the data to display")
     parser.add_argument("-t", "--type", type=str, nargs=1, help="Type of number : sequence or acknowledgement")
@@ -180,6 +180,7 @@ if __name__ == '__main__':
                     ("number", "@y{0,0}"),
                     ]
             p_seq.xaxis.axis_label = "Time"
+            p_seq.yaxis.axis_label = "Initial Sequence Numbers"
             p_seq.yaxis[0].formatter = BasicTickFormatter(use_scientific=False)
             p_seq.scatter(x, y, color=colorseq, legend="seq values", alpha=0.5, )
             p = p_seq
@@ -199,6 +200,7 @@ if __name__ == '__main__':
                     ("number", "@y{0,0}"),
                     ]
             p_ack.xaxis.axis_label = "Time"
+            p_seq.yaxis.axis_label = "Initial Acknowledgement Numbers"
             p_ack.yaxis[0].formatter = BasicTickFormatter(use_scientific=False)
             p_ack.scatter(x, w, color=colorsack, legend="ack values", alpha=0.5, )
             p = p_ack
@@ -214,6 +216,7 @@ if __name__ == '__main__':
                     ("number", "@y{0,0}"),
                     ]
             p_seq.xaxis.axis_label = "Time"
+            p_seq.yaxis.axis_label = "Initial Sequence Numbers"
             p_seq.yaxis[0].formatter = BasicTickFormatter(use_scientific=False)
         if ack:
             type_string+="_ack"
@@ -225,6 +228,7 @@ if __name__ == '__main__':
                     ("number", "@y{0,0}"),
                     ]
             p_ack.xaxis.axis_label = "Time"
+            p_seq.yaxis.axis_label = "Initial Acknowledgement Numbers"
             p_ack.yaxis[0].formatter = BasicTickFormatter(use_scientific=False)
         ports = args.port_filter
         port_color = np.array(ports)
