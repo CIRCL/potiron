@@ -119,7 +119,7 @@ if __name__ == '__main__':
     parser.add_argument('-u', '--unix', type=str, nargs=1, help='Unix socket to connect to redis-server.')
     parser.add_argument('-o', '--outputdir', type=str, nargs=1, help='Json file output directory')
     parser.add_argument('--reverse', action='store_false', help='Create global reverse dictionaries')
-    parser.add_argument("-tf", "--tsharkfilter", type=str, nargs='+', help="Tshark Filter ")
+    parser.add_argument("-tf", "--tsharkfilter", type=str, nargs='+', help='Tshark Filter (with wireshark/tshark synthax. ex: "tcp.dstport == 80 or udp.dstport == 80")')
     args = parser.parse_args()
     potiron.logconsole = args.console
 
@@ -144,11 +144,12 @@ if __name__ == '__main__':
     if args.tsharkfilter is not None:
         if len(args.tsharkfilter) == 1:
             tsharkfilter = args.tsharkfilter[0]
+            bpf += " && {}".format(tsharkfilter)
         else:
             tsharkfilter = ""
             for f in args.tsharkfilter:
                 tsharkfilter += "{} ".format(f)
-        bpf += " && {}".format(tsharkfilter[:-1])
+            bpf += " && {}".format(tsharkfilter[:-1])
 
     # Check if file was already imported
     fn = os.path.basename(filename)

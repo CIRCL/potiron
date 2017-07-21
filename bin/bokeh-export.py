@@ -36,11 +36,11 @@ def generate_links(source, field, date, outputdir, usocket, logofile):
 if __name__ == '__main__':
     # Parameters parser
     parser = argparse.ArgumentParser(description='Export redis values in a graph.')
-    parser.add_argument('-s','--source', type=str, nargs=1, help='Sensor used as source')
-    parser.add_argument('-f','--field', type=str, nargs=1, help='Field that should be displayed.')
-    parser.add_argument('-v','--values', nargs='+', help='Specific values of the field to display (ex: 80, 80-tcp, or 80-all to display all the protocols)')
-    parser.add_argument('-d','--date', type=str, nargs=1, help='Date of the informations to display')
-    parser.add_argument('-u','--unix', type=str, nargs=1, help='Unix socket to connect to redis-server.')
+    parser.add_argument('-s','--source', type=str, nargs=1, help='Sensor used as source (ex: "chp-5890-1")')
+    parser.add_argument('-f','--field', type=str, nargs=1, help='Field that should be displayed (ex: "dport")')
+    parser.add_argument('-v','--values', nargs='+', help='Specific values of the field to display (ex: "80", "80-tcp", or "80-all" to display all the protocols)')
+    parser.add_argument('-d','--date', type=str, nargs=1, help='Date of the informations to display (with the format YYYY-MM)')
+    parser.add_argument('-u','--unix', type=str, nargs=1, help='Unix socket to connect to redis-server')
     parser.add_argument('-o','--outputdir', type=str, nargs=1, help='Destination path for the output file')
     parser.add_argument('--logo', type=str, nargs=1, help='Path of the logo file to display')
     parser.add_argument('--links', action='store_true', help='Used if you want to process the graphs usefull to have working links')

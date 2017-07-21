@@ -71,14 +71,14 @@ def update_time(t,date,h,m):
 if __name__ == '__main__':
     # Parameters parser
     parser = argparse.ArgumentParser(description="Show ISN values")
-    parser.add_argument("-d", "--date", type=str, nargs=1, help="Date of the files to process")
-    parser.add_argument("-s", "--source", type=str, nargs=1, help="Sensor used as data source")
-    parser.add_argument("-hr", "--hour", type=str, nargs=1, help="Hour of the informations wanted in the day selected")
-    parser.add_argument("-tl", "--timeline", type=int, nargs=1, help="Timeline of the data to display")
+    parser.add_argument("-d", "--date", type=str, nargs=1, help="Date of the files to process (with the format YYYY-MM-DD)")
+    parser.add_argument("-s", "--source", type=str, nargs=1, help='Sensor used as data source (ex: "chp-5890-1")')
+    parser.add_argument("-hr", "--hour", type=str, nargs=1, help="Hour of the informations wanted in the day selected (with the format HH or HH-mm)")
+    parser.add_argument("-tl", "--timeline", type=int, nargs=1, help="Timeline of the data to display (in minutes)")
     parser.add_argument("-t", "--type", type=str, nargs=1, help="Type of number : sequence or acknowledgement")
     parser.add_argument("-o", "--outputdir", type=str, nargs=1, help="Destination path for the output file")
     parser.add_argument("-u", "--unix", type=str, nargs =1, help="Unix socket to connect to redis-server")
-    parser.add_argument("-pf", "--port_filter", nargs='+', help="Filter some ports to display")
+    parser.add_argument("-pf", "--port_filter", nargs='+', help='Filter some ports to display (ex: "22 23 80")')
     args = parser.parse_args()
     braces = "{}"
     if args.date is None:
