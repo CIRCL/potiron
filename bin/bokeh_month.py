@@ -5,7 +5,7 @@ import sys
 import os
 import calendar
 import potiron
-import subprocess
+import export_csv_all_days_per_month
 from bokeh.plotting import figure, show, output_file, save
 from bokeh.models import Range1d,OpenURL,TapTool,HoverTool,BasicTickFormatter,PanTool, BoxZoomTool,ResetTool,SaveTool,WheelZoomTool,ColumnDataSource
 from bokeh.palettes import Category10_10 as palette
@@ -19,29 +19,26 @@ logo_y_scale = 13
 
 
 # Define the name of the output file
-def output_name(source, field, fieldvalues, date, dest):
+def output_name(source, field, fieldvalues, date, dest, lentwo):
     value_str = ""
     for i in sorted(fieldvalues):
         f = i.split('-')
-        if len(f) == 2:
+        if len(f) >= 2:
             if f[1] == "*" or f[1] == "all":
-                value_str += "_{}-all-protocols".format(f[0])
+                value_str += "_{}".format(f[0])
                 continue
         value_str += "_{}".format(i)
-    return "{}{}_{}-{}_{}{}".format(dest,source,date[0:4],date[4:6],field,value_str)
+    if lentwo:
+        return "{}{}_{}-{}_{}_with-protocols{}".format(dest,source,date[0:4],date[4:6],field,value_str)
+    else:
+        return "{}{}_{}-{}_{}{}".format(dest,source,date[0:4],date[4:6],field,value_str)
 
 
-def generate_links(source, field, date, outputdir, usocket, logofile):
-    csv = './export-csv-all-days-per-month.py -s {} -d {}-{} -f {} -o {} -u {} -g --logo {} --links'.format(
-            source, date[0:4], date[4:6], field, outputdir, usocket, logofile)
-    proc_csv = subprocess.Popen(csv, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-    proc_csv.wait()
-
-
-def process_file(source, field, date, fieldvalues, outputdir, logofile, links):
+def process_file(red, source, field, date, fieldvalues, outputdir, logofile, links):
+    potiron_path = potiron.potiron_path
     lentwo = False
     for v in fieldvalues:
-        if len(v.split('-')) == 2:
+        if len(v.split('-')) >= 2:
             lentwo = True
     if lentwo and red.sismember('CK', 'NO'):
         sys.stderr.write('Combined keys are not used in this redis dataset')
@@ -61,9 +58,17 @@ def process_file(source, field, date, fieldvalues, outputdir, logofile, links):
     field_data = create_dict(field, potiron_path)
     
     # Creation of the figure and the tools used on it
-    namefile=output_name(source,field_in_file_name,fieldvalues,date,outputdir)
-    output_file("{}.html".format(namefile), title=namefile.split("/")[-1])
-    hover = HoverTool(tooltips = [('count','@y'),('protocol','@protocol')])
+    namefile=output_name(source,field_in_file_name,fieldvalues,date,outputdir,lentwo)
+    all_proto = False
+    for fv in fieldvalues:
+        v = fv.split('-')
+        if len(v) >= 2 and (v[1] == '*' or v[1] == 'all'):
+            all_proto = True
+            fieldvalues.append(v[0])
+    if all_proto:
+        hover = HoverTool(tooltips = [('count','@y'),('protocol','@protocol')])
+    else:
+        hover = HoverTool(tooltips = [('count','@y')])
     taptool = TapTool()
     TOOLS = [hover,PanTool(),BoxZoomTool(),WheelZoomTool(), taptool, SaveTool(), ResetTool()]
     p = figure(width=plot_width,height=plot_height,tools=TOOLS)
@@ -76,12 +81,13 @@ def process_file(source, field, date, fieldvalues, outputdir, logofile, links):
     vlength = len(fieldvalues)
     actual_values = []
     nbLine = 0
+    day_string = "@x"
     # For each selected field or occurrence
     for v in range(vlength):
         value = fieldvalues[v].split('-')
         actual_field = value[0]
         #
-        if len(value) == 2:
+        if len(value) >= 2:
             protocol = value[1]
             if protocol == "*" or protocol == "all":
                 for prot in protocols:
@@ -115,12 +121,7 @@ def process_file(source, field, date, fieldvalues, outputdir, logofile, links):
                         leg = def_legend(actual_field, proto, field, field_string, field_data)
                         p.line(x='x',y='y',legend=leg,line_color=color,line_width=2,source=sourceplot)
                         c = p.scatter(x='x',y='y',legend=leg,size=10,color=color,alpha=0.1,source=sourceplot)
-#                        p.line(x=dayValue,y=score,legend=leg,line_color=color,line_width=2)
-#                        c = p.scatter(x=dayValue,y=score,legend=leg,size=10,color=color,alpha=0.1)
-                        day_string = "@x"
                         taptool.renderers.append(c)     # In order to have the interaction on click
-#                        proto = "@protocol"
-                        taptool.callback = OpenURL(url="{}_{}_{}-{}-{}.html".format(source,field_in_file_name,date[0:4],date[4:6],day_string))
                         nbLine += 1
                         maxScore = max(score)       # Update the min and max scores scaling
                         if maxVal < maxScore:       # in order to define the lower and upper
@@ -159,7 +160,6 @@ def process_file(source, field, date, fieldvalues, outputdir, logofile, links):
                     p.line(x=dayValue,y=score,legend=leg,line_color=color,line_width=2)
                     c = p.scatter(x=dayValue,y=score,legend=leg,size=10,color=color,alpha=0.1)
                     taptool.renderers.append(c)     # In order to have the interaction on click
-                    taptool.callback = OpenURL(url="{}_{}_{}_{}-{}-@x".format(source,field_in_file_name,protocol,date[0:4],date[4:6]))
                     nbLine += 1
                     maxScore = max(score)       # Update the min and max scores scaling
                     if maxVal < maxScore:       # in order to define the lower and upper
@@ -213,10 +213,19 @@ def process_file(source, field, date, fieldvalues, outputdir, logofile, links):
                 # We define the color of the line, draw it
                 color = palette[nbLine%10]
                 leg = def_legend(actual_field, None, field, field_string, field_data)
-                p.line(x=dayValue,y=score,legend=leg,line_color=color,line_width=2)
-                c = p.scatter(x=dayValue,y=score,legend=leg,size=10,color=color,alpha=0.1)
+                if all_proto:
+                    protos = ['all protocols'] * days
+                    sourceplot = ColumnDataSource(data=dict(
+                            x = dayValue,
+                            y = score,
+                            protocol = protos
+                            ))
+                    p.line(x='x',y='y',legend=leg,line_color=color,line_width=2,source=sourceplot)
+                    c = p.scatter(x='x',y='y',legend=leg,size=10,color=color,alpha=0.1,source=sourceplot)
+                else:
+                    p.line(x=dayValue,y=score,legend=leg,line_color=color,line_width=2)
+                    c = p.scatter(x=dayValue,y=score,legend=leg,size=10,color=color,alpha=0.1)
                 taptool.renderers.append(c)     # In order to have the interaction on click
-                taptool.callback = OpenURL(url="{}_{}_{}-{}-@x".format(source,field_in_file_name,date[0:4],date[4:6]))
                 nbLine += 1
                 maxScore = max(score)       # Update the min and max scores scaling
                 if maxVal < maxScore:       # in order to define the lower and upper
@@ -231,6 +240,10 @@ def process_file(source, field, date, fieldvalues, outputdir, logofile, links):
                 actual_values.append(actual_value)
     # If at least one value has been found in redis with our selection
     if at_least_one:
+        if lentwo:
+            taptool.callback = OpenURL(url="{}_{}_with-protocols_{}-{}-{}.html".format(source,field_in_file_name,date[0:4],date[4:6],day_string))
+        else:
+            taptool.callback = OpenURL(url="{}_{}_{}-{}-{}.html".format(source,field_in_file_name,date[0:4],date[4:6],day_string))
         output_file("{}.html".format(namefile), title=namefile.split("/")[-1])
         # Definition of some parameters of the graph
         fieldvalues_string = plot_annotation(field, potiron_path, actual_values, field_string, field_data)
@@ -257,7 +270,8 @@ def process_file(source, field, date, fieldvalues, outputdir, logofile, links):
         # Process and display the graph
         save(p)
         if links:
-            generate_links(source, field, date, outputdir, usocket, logofile)
+            ck = True if red.sismember('CK', 'YES') else False
+            export_csv_all_days_per_month.process_all_files(red, source, date, field, 10, [], outputdir, True, True, logofile, ck, lentwo)
     else:
         print ("There is no such value for the {} you specified\n".format(field))
 
@@ -324,14 +338,12 @@ if __name__ == '__main__':
     else:
         outputdir = args.outputdir[0]
     
-    # Potiron project path
-    potiron_path = os.path.dirname(os.path.realpath(__file__))[:-3]
     # Define path of circl logo, based on potiron path
     if args.logo is None:
-        logofile = "{}doc/circl.png".format(potiron_path)
+        logofile = "{}doc/circl.png".format(potiron.potiron_path)
     else:
         logofile = args.logo[0]
         
     links = args.links
     
-    process_file(source, field, date, fieldvalues, outputdir, logofile, links)   
+    process_file(red, source, field, date, fieldvalues, outputdir, logofile, links)   

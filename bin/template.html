@@ -10,8 +10,10 @@ var format = d3.format(",d");
 var color = d3.scaleOrdinal(d3.schemeCategory20c);
 var info = "##NAME##".split("_");
 if (info.length == 4){
-  info_string = info[0]+"_"+info[3].slice(0,7)+"_"+info[1]
-  info_title = info[3]+" in "+info[2]+" packets"
+  info_string = info[0]+"_"+info[3].slice(0,7)+"_"+info[1]+"_with-protocols"
+  info_title = info[3]
+  if (info[2] != "with-protocols"){
+    info_title = info_title+" in "+info[2]+" packets"}
 }
 else{
   info_string = info[0]+"_"+info[2].slice(0,7)+"_"+info[1]
@@ -59,7 +61,7 @@ d3.csv("##NAME##.csv", function(d) {
   node.append("title")
       .text(function(d) { return d.id + "\n" + format(d.value); });
   node.on("click", function(d) {
-      window.location.href=info_string+"_"+d.id.split(" ")[0]+"-*.html"});
+      window.location.href=info_string+"_"+d.id.split(" ")[0]+".html"});
 });
   var legend = svg.selectAll(".legend")
       .data(info)
