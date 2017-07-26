@@ -133,13 +133,11 @@ def process_storage(filename, red, ck):
 
 
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser(description='Import json documents\
-    into redis.')
+    parser = argparse.ArgumentParser(description='Import json documents into redis.')
     parser.add_argument('-i', '--input', type=str, nargs=1, help='Filename of a json document that should be imported.')
     parser.add_argument('-u', '--unix', type=str, nargs=1, help='Unix socket to connect to redis-server.')
     parser.add_argument('-ck', '--combined_keys', action='store_true', help='Set if combined keys should be used')
     parser.add_argument('--reverse', action='store_false', help='Create global reverse dictionaries')
-
     args = parser.parse_args()
     if args.unix is None:
         sys.stderr.write('A unix socket must be specified\n')
