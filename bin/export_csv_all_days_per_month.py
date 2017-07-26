@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-
+# -*- coding: utf-8 -*-
 import redis
 import argparse
 import sys
@@ -20,16 +20,16 @@ def output_name(source, field, dest, yearmonth, day):
     return data_part, date_part
 
 
-# Store in a disctionary of scores the scores of each value tu display, for all the protocols (in case of combined keys)
+# Store in a dictionary of scores the scores of each value tu display, for all the protocols (in case of combined keys)
 def process_score(red, redisKey, score, skip):
     for v in red.zrevrangebyscore(redisKey,MAXVAL,0):
         countValue = red.zscore(redisKey,v)
         val = v.decode()
-        if val in skip:
+        if val in skip: # If the current value has to be skipped, go to the next iteration of the loop
             continue
-        if val in score:
+        if val in score: # If the current value is already present in the list of values, increment the score with the current score
             score[val] += countValue
-        else:
+        else: # On the other  case, add the value with its score in the list
             score[val] = countValue
          
             
@@ -78,6 +78,7 @@ def process_general_file(score, namefile, field, field_string, skip, limit):
     return values
 
 
+# Call the bokeh function to create a plot with the scores of the "field" "v" in the current month defined by "date"
 def generate_links(red, source, field, date, v, outputdir, logofile, namefile, lentwo):
     n = namefile.split('/')
     name = n[-1].split('_')
@@ -92,9 +93,10 @@ def generate_links(red, source, field, date, v, outputdir, logofile, namefile, l
         bokeh_month.process_file(red, source, field, date, [v], outputdir, logofile, False)
 
 
+# Create all the files for each day
 def process_all_files(red, source, date, field, limit, skip, outputdir, links, gen, logofile, ck, lentwo):
-    current_path = potiron.current_path
-    potiron_path = potiron.potiron_path
+    current_path = potiron.current_path # Module directory
+    potiron_path = potiron.potiron_path # Project directory
     # Definition of the protocol values
     protocols_path = "{}doc/protocols".format(potiron_path)
     protocols = potiron.define_protocols(protocols_path)
@@ -102,10 +104,12 @@ def process_all_files(red, source, date, field, limit, skip, outputdir, links, g
     field_string, field_in_file_name = field2string(field, potiron_path)
     
     days = calendar.monthrange(int(date[0:4]),int(date[4:6]))[1]
-    # For each day of the month
-    for d in range(1,days+1):
+    for d in range(1,days+1): # For each day of the month
         namefile_data, namefile_date = output_name(source,field_in_file_name,outputdir,date,format(d, '02d'))
         day = format(d, '02d')
+        # While call from bokeh module, lentwo means that a value has the format 'value-protocol'
+        # here, it comes from the '-p' (= '--without-protocol') parameter (USING THE PARAMETER SET THE VARIABLE TO FALSE)
+        # on both cases, True means separate the protocols, and False means take the complete scores with all the protocols together
         if lentwo:
             score = {}
             for prot in protocols:
@@ -113,39 +117,42 @@ def process_all_files(red, source, date, field, limit, skip, outputdir, links, g
                 redisKey = "{}:{}:{}{}:{}".format(source,protocol,date,day,field)
                 namefile = "{}_{}_{}".format(namefile_data, protocol,namefile_date)
                 if red.exists(redisKey):
-                    val = process_file(red, redisKey, namefile, field, protocol, field_string, skip, limit)
-                    process_score(red, redisKey, score, skip)
-                    if links:
-                        for v in val:
+                    val = process_file(red, redisKey, namefile, field, protocol, field_string, skip, limit) # we create and process the output datafile
+                    process_score(red, redisKey, score, skip) # update the complete scores
+                    if links: 
+                        for v in val: # for each bubble in the chart, we create the bokeh plot corresponding to the value
                             generate_links(red, source, field, date, '{}-all-protocols'.format(v), outputdir, logofile, namefile, lentwo)
+            # the complete scores with protocols together are processed and the result in written in another datafile
             general_namefile = "{}_with-protocols_{}".format(namefile_data, namefile_date)
             res = process_general_file(score, general_namefile, field, field_string, skip, limit)
             if links:
-                for v in res:
+                for v in res: # for each bubble in the chart, we create the bokeh plot corresponding to the value
                     generate_links(red, source, field, date, '{}-all-protocols'.format(v), outputdir, logofile, namefile, lentwo)
-        else:
-            if ck:
+        else: # On the other case, we want to have the complete score for all the protocols together
+            if ck: # if combined keys are used anyway
                 score = {}
-                for prot in protocols:
+                for prot in protocols: # we take the scores for each protocol
                     protocol = protocols[prot]
                     redisKey = "{}:{}:{}{}:{}".format(source,protocol,date,day,field)
                     if red.exists(redisKey):
                         process_score(red, redisKey, score, skip)
+                # the scores of each protocol are added together and wirtten in one unique datafile
                 general_namefile = "{}_{}".format(namefile_data, namefile_date)
                 res = process_general_file(score, general_namefile, field, field_string, skip, limit)
                 if links:
-                    for v in res:
+                    for v in res: # for each bubble in the chart, we create the bokeh plot corresponding to the value
                         generate_links(red, source, field, date, v, outputdir, logofile, general_namefile, lentwo)
-            else:
+            else: # no combined keys
+                # here is the basic case where each score comes from one key, and there is one key per day
                 redisKey = "{}:{}{}:{}".format(source, date, day, field)
                 namefile = "{}_{}".format(namefile_data, namefile_date)
                 if red.exists(redisKey):
                     val = process_file(red, redisKey, namefile, field, None, field_string, skip, limit)
                     if links:
-                        for v in val:
+                        for v in val: # for each bubble in the chart, we create the bokeh plot corresponding to the value
                             generate_links(red, source, field, date, v, outputdir, logofile, namefile, lentwo)
-    
-    if gen:
+                            
+    if gen:  # Generate all the html files to display the charts, from the datafiles, following the template
         name_string = '##NAME##'
         logo_string = '##LOGO##'
         with open('{}/template.html'.format(current_path), 'r') as i:
@@ -178,30 +185,49 @@ if __name__ == '__main__':
                     (i.e the specific field with all protocols together in only one line).")
     args = parser.parse_args()
     
-    if args.source is None:
+    if args.source is None: # Source sensor
         source = "potiron"
     else:
         source = args.source[0]
     
-    if args.date is None:
+    if args.date is None: # Define the date of the data to select
         sys.stderr.write('A date must be specified.\nThe format is : YYYY-MM\n')
         sys.exit(1)
     date = args.date[0].replace("-","")
     
+    if args.unix is None: # Unix socket to connect to redis-server
+        sys.stderr.write('A Unix socket must be specified.\n')
+        sys.exit(1)
+    usocket = args.unix[0]
+    red = redis.Redis(unix_socket_path=usocket)
+    
+    # Define the fields available in redis
+    members=""
+    tab_members=[]
+    for i in red.smembers('FIELDS'):
+        val = i.decode()
+        members = members + val + ", "
+        tab_members.append(val)
+    members=members[:-2]
+    
+    # If no field is given in parameter, or if the field given is not in the fields in redis, the module stops
     if args.field is None:
         sys.stderr.write('A field must be specified.\n')
         sys.exit(1)
+    if args.field[0] not in tab_members:
+        sys.stderr.write('The field you chose does not exist.\nChoose one of these : {}.\n'.format(members))
+        sys.exit(1)
     field = args.field[0]
     
-    if args.limit is None:
+    if args.limit is None: # Limit number of bubbles to display in the chart
         limit = 10
     else:
         limit = args.limit[0]
     
-    if args.skip is None:
+    if args.skip is None: # Values to skip
         args.skip = []
     
-    if args.outputdir is None:
+    if args.outputdir is None: # Destination directory for the output file
         outputdir = "./out/"
     else:
         outputdir = args.outputdir[0]
@@ -210,29 +236,23 @@ if __name__ == '__main__':
     if not os.path.exists(outputdir):
         os.makedirs(outputdir)
     
-    if args.unix is None:
-        sys.stderr.write('A Unix socket must be specified.\n')
-        sys.exit(1)
-    usocket = args.unix[0]
-    red = redis.Redis(unix_socket_path=usocket)
-    
-    lentwo = args.without_protocols
-    if red.sismember("CK", "YES"):
+    lentwo = args.without_protocols # Defines if scores should be displayed for protocols together or for each protocol
+    if red.sismember("CK", "YES"): # Defines if combined keys are used in the current redis database
         ck = True
     else:
-        if lentwo:
-            without_protocols = False
+        if lentwo: # If combined keys are not used, it is not possible to display scores for each protocol,
+            without_protocols = False # and they will be displayed for protocols together
             potiron.infomsg('You did not choose to use the parameter "without_protocols" but your redis database is not currently supporting combined keys.\
                             It will continue anyway without specifying each protocol.')
         ck = False
     
-    links = args.links
+    links = args.links # Defines if bokeh plots should be processed for each value in bubbles
     
-    gen = args.generate
+    gen = args.generate # Defines if charts should be auto-generated from datafiles
     
-    # Define path of circl logo, based on potiron path
-    if args.logo is None:
+    if args.logo is None: # Define path of circl logo, based on potiron path
         logofile = "{}doc/circl.png".format(potiron.potiron_path)
     else:
         logofile = args.logo[0]
+        
     process_all_files(red, source, date, field, limit, args.skip, outputdir, links, gen, logofile, ck, lentwo)

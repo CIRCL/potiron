@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# -*- coding: utf-8 -*-
 import redis
 import argparse
 import sys
@@ -21,14 +22,16 @@ logo_y_scale = 13
 # Define the name of the output file
 def output_name(source, field, fieldvalues, date, dest, lentwo):
     value_str = ""
+    all_proto = False
     for i in sorted(fieldvalues):
         f = i.split('-')
         if len(f) >= 2:
             if f[1] == "*" or f[1] == "all":
+                all_proto = True
                 value_str += "_{}".format(f[0])
                 continue
         value_str += "_{}".format(i)
-    if lentwo:
+    if lentwo and all_proto:
         return "{}{}_{}-{}_{}_with-protocols{}".format(dest,source,date[0:4],date[4:6],field,value_str)
     else:
         return "{}{}_{}-{}_{}{}".format(dest,source,date[0:4],date[4:6],field,value_str)
@@ -38,8 +41,10 @@ def process_file(red, source, field, date, fieldvalues, outputdir, logofile, lin
     potiron_path = potiron.potiron_path
     lentwo = False
     for v in fieldvalues:
+        # if any field value is in format 'value-protocol' (or 'value-all'), it means we want to display each protocol separatly
         if len(v.split('-')) >= 2:
             lentwo = True
+    # Using the format 'value-protocol' is not possible if combined keys are not deployed in the current redis database
     if lentwo and red.sismember('CK', 'NO'):
         sys.stderr.write('Combined keys are not used in this redis dataset')
         sys.exit(1)
@@ -62,9 +67,12 @@ def process_file(red, source, field, date, fieldvalues, outputdir, logofile, lin
     all_proto = False
     for fv in fieldvalues:
         v = fv.split('-')
+        # If we want to display the values for all the procotols, we display the sum of all of them as well
         if len(v) >= 2 and (v[1] == '*' or v[1] == 'all'):
             all_proto = True
             fieldvalues.append(v[0])
+    # As displaying values for all the protocols may generate a lot of lines in the plot, 
+    # We help users showing them the protocol when they have there cursor in the line
     if all_proto:
         hover = HoverTool(tooltips = [('count','@y'),('protocol','@protocol')])
     else:
@@ -82,12 +90,10 @@ def process_file(red, source, field, date, fieldvalues, outputdir, logofile, lin
     actual_values = []
     nbLine = 0
     day_string = "@x"
-    # For each selected field or occurrence
-    for v in range(vlength):
+    for v in range(vlength): # For each selected field or occurrence
         value = fieldvalues[v].split('-')
         actual_field = value[0]
-        #
-        if len(value) >= 2:
+        if len(value) >= 2: # If we specified a or all protocol(s)
             protocol = value[1]
             if protocol == "*" or protocol == "all":
                 for prot in protocols:
@@ -95,8 +101,7 @@ def process_file(red, source, field, date, fieldvalues, outputdir, logofile, lin
                     dayValue=[]
                     proto = protocols[prot]
                     exists = False
-                    # For each day with data stored in redis
-                    for d in range(1,days+1):
+                    for d in range(1,days+1): # For each day with data stored in redis
                         day = format(d, '02d')
                         redisKey = "{}:{}:{}{}:{}".format(source,proto,date,day,field)
                         if red.exists(redisKey):
@@ -138,8 +143,7 @@ def process_file(red, source, field, date, fieldvalues, outputdir, logofile, lin
                 score=[]
                 dayValue=[]
                 exists = False
-                # For each day with data stored in redis
-                for d in range(1,days+1):
+                for d in range(1,days+1): # For each day with data stored in redis
                     day = format(d, '02d')
                     redisKey = "{}:{}:{}{}:{}".format(source,protocol,date,day,field)
                     if red.exists(redisKey):
@@ -151,8 +155,7 @@ def process_file(red, source, field, date, fieldvalues, outputdir, logofile, lin
                         else:
                             score.append(0)
                         dayValue.append(day)
-                # If at least one occurrence for the current value of field has been found
-                if exists:
+                if exists: # If at least one occurrence for the current value of field has been found
                     at_least_one = True
                     # We define the color of the line, draw it
                     color = palette[nbLine%10]
@@ -172,13 +175,13 @@ def process_file(red, source, field, date, fieldvalues, outputdir, logofile, lin
                         maxDay = int(dayValue[-1])
                     actual_value = "{}-{}".format(actual_field, protocol)
                     actual_values.append(actual_value)
-        else:
+        else: # on the other case, we don't split informations for each protocol
             score=[]
             dayValue=[]
             exists = False
+            # If combined keys are used, we must by the way take data from all the keys (i.e for each protocol)
             if red.sismember('CK', 'YES'):
-                # For each day with data stored in redis
-                for d in range(1,days+1):
+                for d in range(1,days+1): # For each day with data stored in redis
                     exists_day = False
                     day = format(d, '02d')
                     countValue = 0
@@ -194,9 +197,8 @@ def process_file(red, source, field, date, fieldvalues, outputdir, logofile, lin
                             exists = True
                         score.append(countValue)
                         dayValue.append(day)
-            else:
-                # For each day with data stored in redis
-                for d in range(1,days+1):
+            else: # When combined keys are not used, we only need to read the scores for each day
+                for d in range(1,days+1): # For each day with data stored in redis
                     day = format(d, '02d')
                     redisKey = "{}:{}{}:{}".format(source,date,day,field)
                     if red.exists(redisKey):
@@ -207,8 +209,7 @@ def process_file(red, source, field, date, fieldvalues, outputdir, logofile, lin
                         else:
                             score.append(0)
                         dayValue.append(day)
-            # If at least one occurrence for the current value of field has been found
-            if exists:
+            if exists: # If at least one occurrence for the current value of field has been found
                 at_least_one = True
                 # We define the color of the line, draw it
                 color = palette[nbLine%10]
@@ -238,9 +239,8 @@ def process_file(red, source, field, date, fieldvalues, outputdir, logofile, lin
                     maxDay = int(dayValue[-1])
                 actual_value = "{}".format(actual_field)
                 actual_values.append(actual_value)
-    # If at least one value has been found in redis with our selection
-    if at_least_one:
-        if lentwo:
+    if at_least_one: # If at least one value has been found in redis with our selection
+        if lentwo: # Defines the name of the files to call with a click on a point in the plot
             taptool.callback = OpenURL(url="{}_{}_with-protocols_{}-{}-{}.html".format(source,field_in_file_name,date[0:4],date[4:6],day_string))
         else:
             taptool.callback = OpenURL(url="{}_{}_{}-{}-{}.html".format(source,field_in_file_name,date[0:4],date[4:6],day_string))
@@ -267,7 +267,7 @@ def process_file(red, source, field, date, fieldvalues, outputdir, logofile, lin
         height = (ydrmax - ydrmin) / logo_y_scale
         width = xdr / ((logo_y_scale * im_height * plot_width) / (im_width * plot_height))
         p.image_url(url=[logofile],x=[xdr],y=[ydrmax-ydrmax*2/100],w=[width],h=[height],anchor="top_right")
-        # Process and display the graph
+        # Process the graph
         save(p)
         if links:
             ck = True if red.sismember('CK', 'YES') else False
@@ -289,14 +289,12 @@ if __name__ == '__main__':
     parser.add_argument('--links', action='store_true', help='Used if you want to process the graphs usefull to have working links')
     args = parser.parse_args()
 
-    # Source sensor
-    if args.source is None:
+    if args.source is None: # Source sensor
         source = "potiron"
     else:
         source = args.source[0]
 
-    # Unix socket to connect to redis-server
-    if args.unix is None:
+    if args.unix is None: # Unix socket to connect to redis-server
         sys.stderr.write('A Unix socket must be specified.\n')
         sys.exit(1)
     usocket = args.unix[0]
@@ -320,30 +318,27 @@ if __name__ == '__main__':
         sys.exit(1)
     field = args.field[0]
 
-    # Define the date of the data to select
-    if args.date is None:
+    if args.date is None: # Define the date of the data to select
         sys.stderr.write('A date must be specified.\nThe format is : YYYY-MM\n')
         sys.exit(1)
     date = args.date[0].replace("-","")
 
-    # Define the occurrences to select for the given field
-    if args.values is None:
+    if args.values is None: # Define the occurrences to select for the given field
         sys.stderr.write('At least one value must be specified\n')
         sys.exit(1)
     fieldvalues = args.values
 
-    # Destination directory for the output file
-    if args.outputdir is None:
+    if args.outputdir is None: # Destination directory for the output file
         outputdir = "./out/"
     else:
         outputdir = args.outputdir[0]
     
-    # Define path of circl logo, based on potiron path
-    if args.logo is None:
+    if args.logo is None: # Define path of circl logo, based on potiron path
         logofile = "{}doc/circl.png".format(potiron.potiron_path)
     else:
         logofile = args.logo[0]
-        
+    
+    # If true, export_csv_all_days_per_month module will be called to generate the files pointed by each link
     links = args.links
     
     process_file(red, source, field, date, fieldvalues, outputdir, logofile, links)   
