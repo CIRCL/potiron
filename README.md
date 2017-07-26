@@ -75,7 +75,7 @@ Then the JSON file can be imported into the Redis database :
 
 Some specific data fields can be represented into graphics (multiple values can be specified after parameter '-v') :
 
-	./bokeh-export.py -s test-honeypot-1 -f dport -v 22 -d 2017-03 -u /tmp/redis.sock -o ./out/ --logo /home/user/Pictures/logo.png
+	./bokeh_month.py -s test-honeypot-1 -f dport -v 22 -d 2017-03 -u /tmp/redis.sock -o ./out/ --logo /home/user/Pictures/logo.png
 
 The last parameter --logo is optionnal and is the ABSOLUTE path of the logo file which will be displayed. If no argument is given, the default file is the CIRCL logo stored in the doc/ directory of potiron.
 
@@ -88,18 +88,18 @@ Here, the -v parameter is important and there are some different possible combin
 
 In order to have working redirections in this plot, the resulting graphs should be created first. To do so, .csv files should be processed :
 
-	./export-csv-all-days-per-month.py -s test-honeypot-1 -f dport -d 2017-03 -u /tmp/redis.sock -o ./out/ -l 10 --skip -1
+	./export_csv_all_days_per_month.py -s test-honeypot-1 -f dport -d 2017-03 -u /tmp/redis.sock -o ./out/ -l 10 --skip -1
 
 The -l parameter is used to define the number of most frequent values to display (default number is 20)
 The --skip parameter can be used to specify values to exclude in the graph.
 
 Each one of these files can also be reprocessed separatly:
 
-	./export-csv-day.py -s test-honeypot-1 -f dport -d 2017-03-01 -u /tmp/redis.conf -o ./out/ -l 10 --skip -1
+	./export_csv_day.py -s test-honeypot-1 -f dport -d 2017-03-01 -u /tmp/redis.sock -o ./out/ -l 10 --skip -1
 
 Statistics for an entire month can also be displayed as well. The data file used in this case is created with the following :
 
-	./export-csv-month.py -s test-honeypot-1 -f dport -d 2017-03 -u /tmp/redis.conf -o ./out/ -l 10 --skip -1
+	./export_csv_month.py -s test-honeypot-1 -f dport -d 2017-03 -u /tmp/redis.sock -o ./out/ -l 10 --skip -1
 
 These files contain the data which will be used as data source in the graphs. The next step to do is creating the graphs with the data sources.
 
@@ -109,10 +109,25 @@ The script will simply generate all the .html files using template.html to build
 Having both generate.sh and template.html in the same path is recommanded.
 The first parameter used here is the location of the .csv files, and the .html output files will be created in the same directory. The second parameter is optionnal and is the absolute path of the logo file which will be displayed. If no argument is given, the default path is the same used for the bokeh graph, which is the CIRCL logo stored in the doc/ directory of potiron.
 
+In a default usage, combined keys are deployed in the redis database and data is stored by protocol. However, it is possible to display only the grouped values of all the dataset (i.e for all the protocols) by using "-p" parameter. This will set a variable to False in order to avoid treating each protocol separatly. On any case, when combined key are not used, the variable is automatically set to false to avoid errors.
+
 In order to automatize some operations, it is possible to use the "--links" parameter in bokeh-export module in order to auto-generate all the bubble charts usefull to have all the links working. The same parameter is also available in all the export-csv modules, generating the plots with bokeh for each value in bubbles.
-Finaly, bubble charts can be generated as well directly from the csv files using the "--generate" parameter in any export-csv module.
+Finaly, bubble charts can be generated as well directly from the csv files using the "--generate" or "-g" parameter in any export-csv module.
 When auto-generation parameter is called with bokeh module, both auto-generation parameters in export-csv module are called as well.
 
+Example:
+
+    ./export_csv_all_days_per_month.py -s test-honeypot-1 -f dport -d 2017-03 -u /tmp/redis.sock -o ./out/ -g -p
+
+First, this command produces the same visual result regardless of the usage or not of the "-p" parameter, and only the name will be different.
+![Top destination ports example](./doc/screenshot_top_dport.png?raw=true "Top destination ports example")
+
+But the difference relies upon the links on each bubble. For users, using "-p" means "without protocols":
+  - without the "-p" parameter, on this example the bubbles point on plot displaying count of each destination port separated by protocol
+  ![Destination ports with protocols](./doc/screenshot_dport_with_p.png "Destination ports with protocols")
+
+  - with "-p", only the red line of the previous plot is displayed, showing only the sum of all destination ports 53 for the complete dataset
+  ![Destination ports without protocols](./doc/screenshot_dport_without_p.png "Destination ports without protocols")
 
 Summary
 -------
