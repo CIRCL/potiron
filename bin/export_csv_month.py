@@ -76,8 +76,8 @@ def generate_links(red, source, field, date, v, outputdir, logofile, namefile, w
         bokeh_filename += '{}_{}_{}_{}.html'.format(name[0],name[2],name[1],v)
     print(bokeh_filename)
     if not os.path.exists(bokeh_filename):
-        bokeh_month.process_file(red, source, field, date, [v], outputdir, logofile, False)
-        
+        bokeh.set_fieldvalues([v])
+        bokeh.process_file()
 
 # Parameters parser
 parser = argparse.ArgumentParser(description='Export one month data from redis')
@@ -170,6 +170,9 @@ if args.logo is None: # Define path of circl logo, based on potiron path
 else:
     logofile = args.logo[0]
 
+if links:
+    bokeh = bokeh_month.Bokeh_Month(red, source, field, date, [], outputdir, logofile, False)
+
 # Definition of the protocol values
 protocols = red.smembers("PROTOCOLS")
 # Definition of the strings containing the informations of the field, used in the legend and the file name
@@ -194,14 +197,14 @@ if with_protocols: # variable is True, the parameter has not been called, so we 
             val = process_file(score, namefile, protocol) # we create and process the output datafile
             if links:
                 for v in val: # for each bubble in the chart, we create the bokeh plot corresponding to the value
-                    generate_links(red, source, field, date, '{}-all-protocols'.format(v), outputdir, logofile, namefile, with_protocols)
+                    generate_links(red, source, field, date, '{}-all-protocols'.format(v), outputdir, logofile, namefile, with_protocols, bokeh)
     if at_least_one:
         # the complete scores with protocols together are processed and the result in written in another datafile
         general_filename = "{}_with-protocols_{}".format(namefile_data, namefile_date)
         res = process_file(general_score, general_filename, None)
         if links:
             for v in res: # for each bubble in the chart, we create the bokeh plot corresponding to the value
-                generate_links(red, source, field, date, '{}-all-protocols'.format(v), outputdir, logofile, namefile, with_protocols)
+                generate_links(red, source, field, date, '{}-all-protocols'.format(v), outputdir, logofile, namefile, with_protocols, bokeh)
 else: # On the other case, we want to have the complete score for all the protocols together
     score={}
     exists = False
@@ -225,7 +228,7 @@ else: # On the other case, we want to have the complete score for all the protoc
         val = process_file(score, namefile, None)
         if links:
             for v in val: # for each bubble in the chart, we create the bokeh plot corresponding to the value
-                generate_links(red, source, field, date, v, outputdir, logofile, namefile, with_protocols)
+                generate_links(red, source, field, date, v, outputdir, logofile, namefile, with_protocols, bokeh)
 
 if gen: # Generate all the html files to display the charts, from the datafiles, following the template
     name_string = '##NAME##'

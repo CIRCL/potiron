@@ -78,7 +78,7 @@ def process_general_file(score, namefile, field, field_string, skip, limit):
            
 
 # Call the bokeh function to create a plot with the scores of the "field" "v" in the current month defined by "date"
-def generate_links(red, source, field, date, v, outputdir, logofile, namefile, wp):
+def generate_links(red, source, field, date, v, outputdir, logofile, namefile, wp, bokeh):
     n = namefile.split('/')
     name = n[-1].split('_')
     bokeh_filename = ''
@@ -89,7 +89,8 @@ def generate_links(red, source, field, date, v, outputdir, logofile, namefile, w
     else:
         bokeh_filename += '{}_{}_{}_{}.html'.format(name[0],name[2][:-3],name[1],v)
     if not os.path.exists(bokeh_filename):
-        bokeh_month.process_file(red, source, field, date, [v], outputdir, logofile, False)
+        bokeh.set_fieldvalues([v])
+        bokeh.process_file()
 
 
 # Parameters parser
@@ -183,8 +184,9 @@ if args.logo is None: # Define path of circl logo, based on potiron path
 else:
     logofile = args.logo[0]
 
-# Definition of the protocol values
-protocols = red.smembers("PROTOCOLS")
+if links:
+    bokeh = bokeh_month.Bokeh_Month(red, source, field, date[0:6], [], outputdir, logofile, False)
+
 # Definition of the strings containing the informations of the field, used in the legend and the file name
 field_string, field_in_file_name = field2string(field, potiron_path)
 namefile_data, namefile_date = output_name(source,field_in_file_name,date,outputdir)
@@ -198,14 +200,14 @@ if with_protocols: # variable is True, the parameter has not been called, so we 
         val = process_file(red, redisKey, namefile, field, protocol, field_string, skip, limit)  # we create and process the output datafile
         process_score(red, redisKey, score, skip)  # update the complete scores
         if links:
-                for v in val: # for each bubble in the chart, we create the bokeh plot corresponding to the value
-                    generate_links(red, source, field, date[0:6], '{}-all-protocols'.format(v), outputdir, logofile, namefile, with_protocols)
+            for v in val: # for each bubble in the chart, we create the bokeh plot corresponding to the value
+                generate_links(red, source, field, date[0:6], '{}-all-protocols'.format(v), outputdir, logofile, namefile, with_protocols, bokeh)
     # the complete scores with protocols together are processed and the result in written in another datafile
     general_namefile = "{}_with-protocols_{}".format(namefile_data, namefile_date)
     res = process_general_file(score, general_namefile, field, field_string, skip, limit)
     if links:
-            for v in res: # for each bubble in the chart, we create the bokeh plot corresponding to the value
-                generate_links(red, source, field, date[0:6], '{}-all-protocols'.format(v), outputdir, logofile, namefile, with_protocols)
+        for v in res: # for each bubble in the chart, we create the bokeh plot corresponding to the value
+            generate_links(red, source, field, date[0:6], '{}-all-protocols'.format(v), outputdir, logofile, namefile, with_protocols, bokeh)
 else: # On the other case, we want to have the complete score for all the protocols together
     if ck: # if combined keys are used anyway
         score = {}
@@ -217,15 +219,15 @@ else: # On the other case, we want to have the complete score for all the protoc
         res = process_general_file(score, general_namefile, field, field_string, skip, limit)
         if links:
             for v in res: # for each bubble in the chart, we create the bokeh plot corresponding to the value
-                generate_links(red, source, field, date[0:6], v, outputdir, logofile, general_namefile, with_protocols)
+                generate_links(red, source, field, date[0:6], v, outputdir, logofile, general_namefile, with_protocols, bokeh)
     else: # no combined keys
         # here is the basic case where each score comes from one key, and there is one key per day
         redisKey = k.decode()
         namefile = "{}_{}".format(namefile_data, namefile_date)
         val = process_file(red, redisKey, namefile, field, None, field_string, skip, limit)
         if links:
-                for v in val: # for each bubble in the chart, we create the bokeh plot corresponding to the value
-                    generate_links(red, source, field, date[0:6], v, outputdir, logofile, namefile, with_protocols)
+            for v in val: # for each bubble in the chart, we create the bokeh plot corresponding to the value
+                generate_links(red, source, field, date[0:6], v, outputdir, logofile, namefile, with_protocols, bokeh)
 if gen: # Generate all the html files to display the charts, from the datafiles, following the template
     name_string = '##NAME##'
     logo_string = '##LOGO##'
