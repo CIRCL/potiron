@@ -40,14 +40,14 @@ def process_score(red, redisKey, score, general_score, skip):
 
 
 # Sort the scores for the entire month and write them with their corresponding values in the .csv file
-def process_file(score, name, prot):
+def process_file(score, name, prot, skip, limit):
     # Sort the complete list of values for the month by score
     res = list(sorted(score, key=score.__getitem__, reverse=True))
     l = 0
     values = []
     for s in res:
         # If the current value is not one that should be skipped, increment the number of values to include in the chart
-        if s not in args.skip:
+        if s not in skip:
             values.append(s)
             l += 1
         # When the limit value is reached, we don't need to increment anymore, we break the loop
@@ -64,7 +64,7 @@ def process_file(score, name, prot):
 
 
 # Call the bokeh function to create a plot with the scores of the "field" "v" in the current month defined by "date"
-def generate_links(red, source, field, date, v, outputdir, logofile, namefile, wp):
+def generate_links(red, source, field, date, v, outputdir, logofile, namefile, wp, bokeh):
     n = namefile.split('/')
     name = n[-1].split('_')
     bokeh_filename = ''
@@ -194,14 +194,14 @@ if with_protocols: # variable is True, the parameter has not been called, so we 
         if exists:
             at_least_one = True
             namefile = "{}_{}_{}".format(namefile_data,protocol,namefile_date)
-            val = process_file(score, namefile, protocol) # we create and process the output datafile
+            val = process_file(score, namefile, protocol, skip, limit) # we create and process the output datafile
             if links:
                 for v in val: # for each bubble in the chart, we create the bokeh plot corresponding to the value
                     generate_links(red, source, field, date, '{}-all-protocols'.format(v), outputdir, logofile, namefile, with_protocols, bokeh)
     if at_least_one:
         # the complete scores with protocols together are processed and the result in written in another datafile
         general_filename = "{}_with-protocols_{}".format(namefile_data, namefile_date)
-        res = process_file(general_score, general_filename, None)
+        res = process_file(general_score, general_filename, None, skip, limit)
         if links:
             for v in res: # for each bubble in the chart, we create the bokeh plot corresponding to the value
                 generate_links(red, source, field, date, '{}-all-protocols'.format(v), outputdir, logofile, namefile, with_protocols, bokeh)
@@ -225,7 +225,7 @@ else: # On the other case, we want to have the complete score for all the protoc
                 process_score(red, redisKey, score, None, skip)
     if exists:
         namefile = "{}_{}".format(namefile_data, namefile_date)
-        val = process_file(score, namefile, None)
+        val = process_file(score, namefile, None, skip, limit)
         if links:
             for v in val: # for each bubble in the chart, we create the bokeh plot corresponding to the value
                 generate_links(red, source, field, date, v, outputdir, logofile, namefile, with_protocols, bokeh)
