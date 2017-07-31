@@ -135,7 +135,7 @@ else:
     limit = args.limit[0]
 
 if args.skip is None: # Values to skip
-    skip = []
+    skip = ['-1']
 else:
     skip = args.skip
 
@@ -171,8 +171,7 @@ else:
     logofile = args.logo[0]
 
 # Definition of the protocol values
-protocols_path = "{}doc/protocols".format(potiron_path)
-protocols = potiron.define_protocols(protocols_path)
+protocols = red.smembers("PROTOCOLS")
 # Definition of the strings containing the informations of the field, used in the legend and the file name
 field_string, field_in_file_name = field2string(field, potiron_path)
 namefile_data, namefile_date = output_name(source,field_in_file_name,date,outputdir)
@@ -181,15 +180,14 @@ if with_protocols: # variable is True, the parameter has not been called, so we 
     at_least_one = False
     general_score = {}
     for prot in protocols: 
-        protocol = protocols[prot]
+        protocol = prot.decode()
         score={}
         exists = False
-        for d in range(1,days+1): # For each day of the month
-            day = format(d, '02d')
-            redisKey = "{}:{}:{}{}:{}".format(source, protocol, date, day, field)
-            if red.exists(redisKey):
-                exists = True
-                process_score(red, redisKey, score, general_score, skip)  # update the complete scores
+        keys = red.keys("{}:{}:{}*:{}".format(source,protocol,date,field))
+        for k in sorted(keys): # For each day of the month
+            redisKey = k.decode()
+            exists = True
+            process_score(red, redisKey, score, general_score, skip)  # update the complete scores
         if exists:
             at_least_one = True
             namefile = "{}_{}_{}".format(namefile_data,protocol,namefile_date)
@@ -209,17 +207,16 @@ else: # On the other case, we want to have the complete score for all the protoc
     exists = False
     if ck: # if combined keys are used anyway
         for prot in protocols: # we take the scores for each protocol
-            protocol = protocols[prot]
-            for d in range(1,days+1): # For each day of the month
-                day = format(d, '02d')
-                redisKey = "{}:{}:{}{}:{}".format(source, protocol, date, day, field)
-                if red.exists(redisKey):
-                    exists = True
-                    process_score(red, redisKey, score, None, skip)
+            protocol = prot.decode()
+            keys = red.keys("{}:{}:{}*:{}".format(source,protocol,date,field))
+            for k in sorted(keys): # For each day of the month
+                redisKey = k.decode()
+                exists = True
+                process_score(red, redisKey, score, None, skip)
     else: # no combined keys
-        for d in range(1,days+1): # For each day of the month
-            day = format(d, '02d')
-            redisKey = "{}:{}{}:{}".format(source, date, day, field)
+        keys = red.keys("{}:{}*:{}".format(source,date,field))
+        for k in sorted(keys): # For each day of the month
+            redisKey = k.decode()
             if red.exists(redisKey):
                 exists = True
                 process_score(red, redisKey, score, None, skip)

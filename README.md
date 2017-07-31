@@ -123,7 +123,7 @@ First, this command produces the same visual result regardless of the usage or n
 ![Top destination ports example](./doc/screenshot_top_dport.png?raw=true "Top destination ports example")
 
 But the difference relies upon the links on each bubble. For users, using "-p" means "without protocols":
-  - without the "-p" parameter, on this example the bubbles point on plot displaying count of each destination port separated by protocol
+  - without the "-p" parameter, on this example the bubbles point on plots displaying the count of each destination port separated by protocol
   ![Destination ports with protocols](./doc/screenshot_dport_with_p.png "Destination ports with protocols")
 
   - with "-p", only the red line of the previous plot is displayed, showing only the sum of all destination ports 53 for the complete dataset

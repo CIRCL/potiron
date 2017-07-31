@@ -93,7 +93,7 @@ def process_storage(filename, red, ck):
     sensorname = potiron.get_sensor_name(doc)
     lastday = None
     revcreated = False
-
+    prot = []
     for di in doc:
         if di["type"] > potiron.DICT_LOWER_BOUNDARY:
             local_dicts[di["type"]] = di
@@ -106,7 +106,10 @@ def process_storage(filename, red, ck):
                 revcreated = True
             key = sensorname
             if ck:
-                key += ":{}".format(protocols[str(di['protocol'])])
+                protocol = protocols[str(di['protocol'])]
+                key += ":{}".format(protocol)
+                if protocol not in prot:
+                    prot.append(protocol)
             timestamp = di['timestamp']
             (day, time) = timestamp.split(' ')
             day = day.replace('-', '')
@@ -129,6 +132,9 @@ def process_storage(filename, red, ck):
                     p.zincrby(keyname, feature, 1)
             # FIXME the pipe might be to big peridocially flush them
             p.execute()
+    if ck:
+        for pr in prot:
+            red.sadd("PROTOCOLS", pr)
     potiron.infomsg('Data from {} stored into redis'.format(filename))
 
 

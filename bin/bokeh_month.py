@@ -54,9 +54,8 @@ def process_file(red, source, field, date, fieldvalues, outputdir, logofile, lin
     if not os.path.exists(outputdir):
         os.makedirs(outputdir)
     # Definition of the protocol values and their actual names
-    protocols_path = "{}doc/protocols".format(potiron_path)
-    protocols = potiron.define_protocols(protocols_path)
-
+    protocols = red.smembers('PROTOCOLS')
+    
     # Define the strings used for legends, titles, etc. concerning fields
     field_string, field_in_file_name = field2string(field, potiron_path)
     
@@ -99,20 +98,19 @@ def process_file(red, source, field, date, fieldvalues, outputdir, logofile, lin
                 for prot in protocols:
                     score=[]
                     dayValue=[]
-                    proto = protocols[prot]
+                    proto = prot.decode()
                     exists = False
-                    for d in range(1,days+1): # For each day with data stored in redis
-                        day = format(d, '02d')
-                        redisKey = "{}:{}:{}{}:{}".format(source,proto,date,day,field)
-                        if red.exists(redisKey):
-                            # If the key exists, we find in redis the score of the fieldvalue we want and put it in the list of scores
-                            countValue = red.zscore(redisKey, actual_field)
-                            if countValue is not None:
-                                exists = True
-                                score.append(countValue)
-                            else:
-                                score.append(0)
-                            dayValue.append(day)
+                    keys = red.keys("{}:{}:{}*:{}".format(source,proto,date,field))
+                    for k in sorted(keys):
+                        redisKey = k.decode()
+                        day = redisKey.split(':')[2][-2:]
+                        countValue = red.zscore(redisKey, actual_field)
+                        if countValue is not None:
+                            exists = True
+                            score.append(countValue)
+                        else:
+                            score.append(0)
+                        dayValue.append(day)
                     if exists:
                         at_least_one = True
                         # We define the color of the line, draw it
@@ -143,18 +141,17 @@ def process_file(red, source, field, date, fieldvalues, outputdir, logofile, lin
                 score=[]
                 dayValue=[]
                 exists = False
-                for d in range(1,days+1): # For each day with data stored in redis
-                    day = format(d, '02d')
-                    redisKey = "{}:{}:{}{}:{}".format(source,protocol,date,day,field)
-                    if red.exists(redisKey):
-                        # If the key exists, we find in redis the score of the fieldvalue we want and put it in the list of scores
-                        countValue = red.zscore(redisKey, actual_field)
-                        if countValue is not None:
-                            exists = True
-                            score.append(countValue)
-                        else:
-                            score.append(0)
-                        dayValue.append(day)
+                keys = red.keys("{}:{}:{}*:{}".format(source,protocol,date,field))
+                for k in sorted(keys):
+                    redisKey = k.decode()
+                    day = redisKey.split(':')[2][-2:]
+                    countValue = red.zscore(redisKey, actual_field)
+                    if countValue is not None:
+                        exists = True
+                        score.append(countValue)
+                    else:
+                        score.append(0)
+                    dayValue.append(day)
                 if exists: # If at least one occurrence for the current value of field has been found
                     at_least_one = True
                     # We define the color of the line, draw it
@@ -185,30 +182,29 @@ def process_file(red, source, field, date, fieldvalues, outputdir, logofile, lin
                     exists_day = False
                     day = format(d, '02d')
                     countValue = 0
-                    for prot in protocols:
-                        redisKey = "{}:{}:{}{}:{}".format(source,protocols[prot],date,day,field)
-                        if red.exists(redisKey):
-                            tmpscore = red.zscore(redisKey, actual_field)
-                            # If the key exists, we find in redis the score of the fieldvalue we want and put it in the list of scores
-                            countValue += tmpscore if tmpscore is not None else 0
-                            exists_day = True
+                    keys = red.keys("{}:*:{}{}:{}".format(source,date,day,field))
+                    for k in keys:
+                        redisKey = k.decode()
+                        tmpscore = red.zscore(redisKey, actual_field)
+                        countValue += tmpscore if tmpscore is not None else 0
+                        exists_day = True
                     if exists_day:
                         if countValue > 0:
                             exists = True
                         score.append(countValue)
                         dayValue.append(day)
             else: # When combined keys are not used, we only need to read the scores for each day
-                for d in range(1,days+1): # For each day with data stored in redis
-                    day = format(d, '02d')
-                    redisKey = "{}:{}{}:{}".format(source,date,day,field)
-                    if red.exists(redisKey):
-                        countValue = red.zscore(redisKey, actual_field)
-                        if countValue is not None:
-                            exists = True
-                            score.append(countValue)
-                        else:
-                            score.append(0)
-                        dayValue.append(day)
+                keys = red.keys("{}:{}*:{}".format(source,date,field))
+                for k in sorted(keys):
+                    redisKey = k.decode()
+                    day = redisKey.split(':')[2][-2:]
+                    countValue = red.zscore(redisKey, actual_field)
+                    if countValue is not None:
+                        exists = True
+                        score.append(countValue)
+                    else:
+                        score.append(0)
+                    dayValue.append(day)
             if exists: # If at least one occurrence for the current value of field has been found
                 at_least_one = True
                 # We define the color of the line, draw it
@@ -271,7 +267,7 @@ def process_file(red, source, field, date, fieldvalues, outputdir, logofile, lin
         save(p)
         if links:
             ck = True if red.sismember('CK', 'YES') else False
-            export_csv_all_days_per_month.process_all_files(red, source, date, field, 10, [], outputdir, True, True, logofile, ck, lentwo)
+            export_csv_all_days_per_month.process_all_files(red, source, date, field, 10, ['-1'], outputdir, True, True, logofile, ck, lentwo)
     else:
         print ("There is no such value for the {} you specified\n".format(field))
 
