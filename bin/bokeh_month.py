@@ -36,17 +36,19 @@ class Bokeh_Month(object):
         self.fieldvalues = fval
 
     # Define the name of the output file
-    def output_name(self, field_in_file_name, lentwo):
+    def output_name(self, field_in_file_name, lentwo, all_proto):
         value_str = ""
-        all_proto = False
+        written = []
         for i in sorted(self.fieldvalues):
             f = i.split('-')
             if len(f) >= 2:
-                if f[1] == "*" or f[1] == "all":
-                    all_proto = True
+                if (f[1] == "*" or f[1] == "all") and f[0] not in written:
                     value_str += "_{}".format(f[0])
-                    continue
-            value_str += "_{}".format(i)
+                    written.append(f[0])
+            else:
+                if i not in written:
+                    value_str += "_{}".format(i)
+                    written.append(i)
         if lentwo and all_proto:
             return "{}{}_{}-{}_{}_with-protocols{}".format(self.outputdir,self.source,self.date[0:4],self.date[4:6],field_in_file_name,value_str)
         else:
@@ -70,7 +72,7 @@ class Bokeh_Month(object):
             self.outputdir = "{}/".format(self.outputdir)
         if not os.path.exists(self.outputdir):
             os.makedirs(self.outputdir)
-        # Definition of the protocol values and their actual names
+        # Definition of the protocols currently present in our dataset
         protocols = self.red.smembers('PROTOCOLS')
         
         # Define the strings used for legends, titles, etc. concerning fields
@@ -78,8 +80,6 @@ class Bokeh_Month(object):
         
         field_data = create_dict(self.field, potiron_path)
         
-        # Creation of the figure and the tools used on it
-        namefile=self.output_name(field_in_file_name,lentwo)
         all_proto = False
         for fv in self.fieldvalues:
             v = fv.split('-')
@@ -87,6 +87,10 @@ class Bokeh_Month(object):
             if len(v) >= 2 and (v[1] == '*' or v[1] == 'all'):
                 all_proto = True
                 self.fieldvalues.append(v[0])
+        
+        # Creation of the figure and the tools used on it
+        namefile=self.output_name(field_in_file_name,lentwo, all_proto)
+        
         # As displaying values for all the protocols may generate a lot of lines in the plot, 
         # We help users showing them the protocol when they have there cursor in the line
         if all_proto:
@@ -132,7 +136,7 @@ class Bokeh_Month(object):
                             at_least_one = True
                             # We define the color of the line, draw it
                             color = palette[nbLine%10]
-                            protos = [proto] * days
+                            protos = [proto] * len(score)
                             sourceplot = ColumnDataSource(data=dict(
                                     x = dayValue,
                                     y = score,
@@ -228,7 +232,7 @@ class Bokeh_Month(object):
                     color = palette[nbLine%10]
                     leg = def_legend(actual_field, None, self.field, field_string, field_data)
                     if all_proto:
-                        protos = ['all protocols'] * days
+                        protos = ['all protocols'] * len(score)
                         sourceplot = ColumnDataSource(data=dict(
                                 x = dayValue,
                                 y = score,
