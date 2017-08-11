@@ -103,7 +103,7 @@ def plot_annotation(field, potiron_path, fieldvalues, field_string, field_data):
                     prot = value[1]
                 if prot in field_data[portvalue]:
                     fieldvalues_string += "{} ({}), ".format(v,field_data[portvalue][prot][:-1])
-                elif prot == "*":
+                elif prot == "*" or prot == "all":
                     star.append(portvalue)
                     if 'no_proto' in field_data[portvalue]:
                         fieldvalues_string += "{} ({}), ".format(portvalue,field_data[portvalue]['no_proto'][:-1])

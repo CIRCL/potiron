@@ -150,13 +150,6 @@ if __name__ == '__main__':
             for f in args.tsharkfilter:
                 tsharkfilter += "{} ".format(f)
             bpf += " && {}".format(tsharkfilter[:-1])
-
-    # Check if file was already imported
-    fn = os.path.basename(filename)
-    if red.sismember("FILES", fn):
-        sys.stderr.write('[INFO] Filename {} was already imported ... skip ...\n'.format(fn))
-        sys.exit(0)
-    red.sadd("FILES", fn)
     
     if not args.reverse:
         potiron.create_reverse_global_dicts(red)
@@ -171,4 +164,13 @@ if __name__ == '__main__':
         if os.path.isdir(outputdir) is False:
             sys.stderr.write("The root directory is not a directory\n")
             sys.exit(1)
+            
+    # Check if file was already imported
+    fn = os.path.basename(filename)
+    fn = '{}.json'.format(fn.split('.')[0])
+    if red.sismember("FILES", fn):
+        sys.stderr.write('[INFO] Filename {} was already imported ... skip ...\n'.format(fn))
+        sys.exit(0)
+    red.sadd("FILES", fn)
+    
     process_file(outputdir, filename)

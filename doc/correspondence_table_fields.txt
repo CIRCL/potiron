@@ -1,0 +1,21 @@
+FIELD			IPSUMDUMP		TSHARK				JSON / REDIS
+
+Timestamp		--timestamp		-e frame.time_epoch		timestamp
+Length			--length		-e ip.len			length
+Protocol		--protocol		-e ip.proto			protocol
+Source ip		--ip-src		-e ip.src			ipsrc
+Destination ip		--ip-dst		-e ip.dst			ipdst
+Ip options		--ip-opt		(?)				ipop (not currently used with tshark)
+Time To Live		--ip-ttl		-e ip.ttl			ipttl
+Type of Service		--ip-tos		-e ip.dsfield			iptos
+Source port		--sport			-e tcp.srcport / udp.srcport	sport
+Destination port 	--dport			-e tcp.dstport / udp.dstport	dport
+Sequence Number		--tcp-seq		-e tcp.seq			tcpseq
+Acknowledgement Number	--tcp-ack		-e tcp.ack			tcpack
+Icmp Code		--icmp-code		-e icmp.code			icmpcode
+Icmp Type		--icmp-type		-e icmp.type			icmptype
+
+_______________________________________________________
+OTHER OPTIONS		IPSUMDUMP	TSHARK
+
+Pcap Filename		filename	-r filename
