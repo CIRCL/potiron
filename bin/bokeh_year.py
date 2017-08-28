@@ -297,7 +297,7 @@ if __name__ == '__main__':
     if at_least_one:
         output_file("{}.html".format(namefile), title=namefile.split("/")[-1])
         fieldvalues_string = plot_annotation(field, potiron_path, actual_values, field_string, field_data)
-        p.title.text = "Number of {} {}seen for each day in {}".format(field_string, fieldvalues_string, date)
+        p.title.text = "Number of {} {}seen each day in {}".format(field_string, fieldvalues_string, date)
         p.yaxis[0].formatter = BasicTickFormatter(use_scientific=False)
         p.xaxis.axis_label = "Date"
         p.yaxis.axis_label = "Count"
