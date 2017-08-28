@@ -274,7 +274,7 @@ class Bokeh_Month(object):
             output_file("{}.html".format(namefile), title=namefile.split("/")[-1])
             # Definition of some parameters of the graph
             fieldvalues_string = plot_annotation(self.field, potiron_path, actual_values, field_string, field_data)
-            p.title.text = "Number of {} {}seen for each day in {} {}".format(field_string, 
+            p.title.text = "Number of {} {}seen each day in {} {}".format(field_string, 
                                       fieldvalues_string, potiron.year[self.date[4:6]], self.date[0:4])
             p.yaxis[0].formatter = BasicTickFormatter(use_scientific=False)
             p.xaxis.axis_label = "Days"
