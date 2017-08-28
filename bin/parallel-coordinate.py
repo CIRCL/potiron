@@ -7,6 +7,8 @@ import os
 import calendar
 from potiron_graph_annotation import field2string
 
+MAXVAL = sys.maxsize
+
 def output_name(source, field, date, dest):
     return "{}parallel-coordinate_{}_{}_{}-{}".format(dest,source,field,date[0:4],date[4:6])
 
@@ -59,10 +61,13 @@ potiron_path = os.path.dirname(os.path.realpath(__file__))[:-3]
 
 field_string, field_in_file_name = field2string(field, potiron_path)
 
+ck = r.sismember("CK", "YES")
+protocols = r.smembers("PROTOCOLS")
+
 days = calendar.monthrange(int(date[0:4]), int(date[4:6]))[1]
 outputname = output_name(source,field_in_file_name,date,outputdir)
-if not os.path.exists(outputname):
-    os.makedirs(outputname)
+if not os.path.exists(outputdir):
+    os.makedirs(outputdir)
 f = open("{}.csv".format(outputname), 'w')
 days_string = "{},".format(field_in_file_name)
 for day in range(1,days+1):
@@ -70,21 +75,42 @@ for day in range(1,days+1):
     days_string += "{}-{},".format(month,d)
 f.write("{}\n".format(days_string[:-1]))
 val = {}
-for d in range(1,days+1):
-    redisKey = "{}:{}{}:{}".format(source, date, format(d, '02d'), field)
-    if r.exists(redisKey):
-        for v in r.zrevrange(redisKey, 0, sys.maxsize)[:limit]:
+if ck:
+    for prot in protocols:
+        protocol = prot.decode()
+        keys = r.keys("{}:{}:{}*:{}".format(source,protocol,date,field))
+        for k in sorted(keys):
+            redisKey = k.decode()
+            d = redisKey.split(":")[2][-2:]
+            for v in r.zrevrangebyscore(redisKey,MAXVAL,0)[:limit]:
+                countValue = r.zscore(redisKey, v)
+                v = v.decode()
+                if v not in val:
+                    val[v] = {}
+                s = r.zscore(redisKey, v)
+                if d in val[v]:
+                    val[v][d] += s
+                else:
+                    val[v][d] = s
+else:
+    keys = r.keys("{}:{}*:{}".format(source,date,field))
+    for key in sorted(keys):
+        k = key.decode()
+        d = k.split(":")[1][-2:]
+        for v in r.zrevrangebyscore(k, 0, sys.maxsize)[:limit]:
             v = v.decode()
             if v not in val:
                 val[v] = {}
-            val[v][d] = r.zscore(redisKey, v)
+            val[v][d] = r.zscore(k, v)
+
 for line in val:
     line_string="{},".format(line)
     for value in range(1,days+1):
+        value = format(value, '02d')
         if value in val[line]:
             line_string += "{},".format(val[line][value])
         else:
-            redisKey = "{}:{}{}:{}".format(source, date, format(value, '02d'), field)
+            redisKey = "{}:{}{}:{}".format(source, date, value, field)
             score = r.zscore(redisKey,val[line])
             if score is not None:
                 line_string += "{},".format(score)
