@@ -128,7 +128,7 @@ class Export_Csv(object):
                 for k in keys:
                     redisKey = k.decode()
                     protocol = redisKey.split(':')[1]
-                    namefile = "{}_{}_{}".format(namefile_data, protocol,namefile_date)
+                    namefile = "{}_with-protocols_{}_{}".format(namefile_data, namefile_date, protocol)
                     val = self.process_file(redisKey, namefile, protocol, field_string) # we create and process the output datafile
                     self.process_score(redisKey, score) # update the complete scores
                     if self.links: 
