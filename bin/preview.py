@@ -10,6 +10,7 @@ import argparse
 import sys
 import os
 import glob
+import potiron
 
 # Parameters parser
 parser = argparse.ArgumentParser(description='Index of all the previews of ISN graphs')
@@ -33,14 +34,18 @@ error_picture = "{}doc/error-404.jpg".format(potiron_path)
 #maxDay = 0
 #month_tab=[]
 monthdir = "{}/".format(os.path.abspath(inputdir))
+tab_date = monthdir.split('/')[-3:-1]
+tab_month = potiron.year
+month = tab_month[tab_date[1]]
+year = tab_date[0]
 f = open("{}index.html".format(monthdir),'w')
 # Head of the html preview file
-f.write('<!DOCTYPE html>\n<head>\n<title>Preview Index</title>\n<meta charset="utf-8">\
+f.write('<!DOCTYPE html>\n<head>\n<title>Preview Index {0} {1}</title>\n<meta charset="utf-8">\
         \n<meta name="viewport" content="width=device-width, initial-scale=1">\
         \n<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">\
         \n<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>\
         \n<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>\
-        \n</head>\n<body>\n<div class="container">\n<h2>Preview Index</h2>\n')
+        \n</head>\n<body>\n<div class="container">\n<h2>Preview Index {0} {1}</h2>\n'.format(month, year))
 # For each day directory in the month directory
 for day in sorted(os.listdir(monthdir)):
     daydir = os.path.join(monthdir,day)

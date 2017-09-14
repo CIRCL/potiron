@@ -9,7 +9,7 @@ var svg = d3.select("svg"),
 var format = d3.format(",d");
 var color = d3.scaleOrdinal(d3.schemeCategory20c);
 var info = "##NAME##".split("_");
-if (info.length == 4){
+if (info.length >= 4){
   info_string = info[0]+"_"+info[3].slice(0,7)+"_"+info[1]+"_with-protocols"
   info_title = info[3]
   if (info[2] != "with-protocols"){

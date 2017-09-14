@@ -94,7 +94,7 @@ class Bokeh_Month(object):
         # As displaying values for all the protocols may generate a lot of lines in the plot, 
         # We help users showing them the protocol when they have there cursor in the line
         if all_proto:
-            hover = HoverTool(tooltips = [('count','@y'),('protocol','@protocol')])
+            hover = HoverTool(tooltips = [('count','@y'),('protocol','@prot')])
         else:
             hover = HoverTool(tooltips = [('count','@y')])
         taptool = TapTool()
@@ -109,7 +109,7 @@ class Bokeh_Month(object):
         vlength = len(self.fieldvalues)
         actual_values = []
         nbLine = 0
-        day_string = "@x"
+#        day_string = "@x"
         for v in range(vlength): # For each selected field or occurrence
             value = self.fieldvalues[v].split('-')
             actual_field = value[0]
@@ -136,11 +136,15 @@ class Bokeh_Month(object):
                             at_least_one = True
                             # We define the color of the line, draw it
                             color = palette[nbLine%10]
-                            protos = [proto] * len(score)
+                            protos = []
+                            for x in dayValue:
+                                protos.append("{}_{}".format(x, proto))
+                            prots = [proto] * len(score)
                             sourceplot = ColumnDataSource(data=dict(
                                     x = dayValue,
                                     y = score,
-                                    protocol = protos
+                                    protocol = protos,
+                                    prot = prots
                                     ))
                             leg = def_legend(actual_field, proto, self.field, field_string, field_data)
                             p.line(x='x',y='y',legend=leg,line_color=color,line_width=2,source=sourceplot)
@@ -232,11 +236,15 @@ class Bokeh_Month(object):
                     color = palette[nbLine%10]
                     leg = def_legend(actual_field, None, self.field, field_string, field_data)
                     if all_proto:
-                        protos = ['all protocols'] * len(score)
+                        protos = []
+                        for x in dayValue:
+                            protos.append(x)
+                        prots = ['all protocols'] * len(score)
                         sourceplot = ColumnDataSource(data=dict(
                                 x = dayValue,
                                 y = score,
-                                protocol = protos
+                                protocol = protos,
+                                prot = prots
                                 ))
                         p.line(x='x',y='y',legend=leg,line_color=color,line_width=2,source=sourceplot)
                         c = p.scatter(x='x',y='y',legend=leg,size=10,color=color,alpha=0.1,source=sourceplot)
@@ -258,15 +266,15 @@ class Bokeh_Month(object):
                     actual_values.append(actual_value)
         if at_least_one: # If at least one value has been found in redis with our selection
             if lentwo: # Defines the name of the files to call with a click on a point in the plot
-                taptool.callback = OpenURL(url="{}_{}_with-protocols_{}-{}-{}.html".format(self.source,
-                                           field_in_file_name,self.date[0:4],self.date[4:6],day_string))
+                taptool.callback = OpenURL(url="{}_{}_with-protocols_{}-{}-@protocol.html".format(self.source,
+                                           field_in_file_name,self.date[0:4],self.date[4:6]))
             else:
-                taptool.callback = OpenURL(url="{}_{}_{}-{}-{}.html".format(self.source,
-                                           field_in_file_name,self.date[0:4],self.date[4:6],day_string))
+                taptool.callback = OpenURL(url="{}_{}_{}-{}-@x.html".format(self.source,
+                                           field_in_file_name,self.date[0:4],self.date[4:6]))
             output_file("{}.html".format(namefile), title=namefile.split("/")[-1])
             # Definition of some parameters of the graph
             fieldvalues_string = plot_annotation(self.field, potiron_path, actual_values, field_string, field_data)
-            p.title.text = "Number of {} {}seen for each day in {} {}".format(field_string, 
+            p.title.text = "Number of {} {}seen each day in {} {}".format(field_string, 
                                       fieldvalues_string, potiron.year[self.date[4:6]], self.date[0:4])
             p.yaxis[0].formatter = BasicTickFormatter(use_scientific=False)
             p.xaxis.axis_label = "Days"
@@ -290,9 +298,9 @@ class Bokeh_Month(object):
             # Process the graph
             save(p)
             if self.links:
+                export_csv = export_csv_all_days_per_month.Export_Csv(self.red, self.source, self.date, self.field, 10, ['-1'], self.outputdir, True, True, self.logofile, ck, lentwo)
                 ck = True if red.sismember('CK', 'YES') else False
-                export_csv_all_days_per_month.process_all_files(self.red, self.ource, self.date, self.field, 10, ['-1'],
-                                                                self.outputdir, True, True, self.logofile, ck, lentwo)
+                export_csv.process_all_files()
         else:
             print ("There is no such value for a {} you specified: {}".format(field_string,self.fieldvalues))
 

@@ -196,7 +196,7 @@ if with_protocols: # variable is True, the parameter has not been called, so we 
     for k in keys:
         redisKey = k.decode()
         protocol = redisKey.split(':')[1]
-        namefile = "{}_{}_{}".format(namefile_data,protocol,namefile_date)
+        namefile = "{}_with-protocols_{}_{}".format(namefile_data,namefile_date,protocol)
         val = process_file(red, redisKey, namefile, field, protocol, field_string, skip, limit)  # we create and process the output datafile
         process_score(red, redisKey, score, skip)  # update the complete scores
         if links:

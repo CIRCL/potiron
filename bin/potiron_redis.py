@@ -23,10 +23,8 @@ import sys
 import os
 import potiron
 
-# List of fields that are included in the json documents that should not
-# be ranked
-# FIXME Put this as argument to the program as this list depends on the
-# documents that is introduced
+# List of fields that are included in the json documents that should not be ranked
+# FIXME Put this as argument to the program as this list depends on the documents that is introduced
 non_index = ['', 'filename', 'sensorname', 'timestamp', 'packet_id']
 
 def process_storage(filename, red, ck):
@@ -35,6 +33,8 @@ def process_storage(filename, red, ck):
     if red.sismember("FILES", fn):
         sys.stderr.write('[INFO] Filename ' + fn + ' was already imported ... skip ...\n')
         sys.exit(0)
+    # FIXME Users have to be carefull with the files extensions to not process data from capture files
+    # FIXME (potiron-json-tshark module), and the same sample again from json files (potiron_redis module)
 
     f = open(filename, 'r')
     doc = json.load(f)
@@ -113,9 +113,10 @@ def process_storage(filename, red, ck):
             timestamp = di['timestamp']
             (day, time) = timestamp.split(' ')
             day = day.replace('-', '')
-            if day != lastday:
-                red.sadd("DAYS", day)
             p = red.pipeline()
+            if day != lastday:
+                p.sadd("DAYS", day)
+                lastday = day
             for k in list(di.keys()):
                 if k not in non_index:
                     feature = di[k]

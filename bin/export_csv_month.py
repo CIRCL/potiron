@@ -193,7 +193,7 @@ if with_protocols: # variable is True, the parameter has not been called, so we 
             process_score(red, redisKey, score, general_score, skip)  # update the complete scores
         if exists:
             at_least_one = True
-            namefile = "{}_{}_{}".format(namefile_data,protocol,namefile_date)
+            namefile = "{}_with-protocols_{}_{}".format(namefile_data,namefile_date,protocol)
             val = process_file(score, namefile, protocol, skip, limit) # we create and process the output datafile
             if links:
                 for v in val: # for each bubble in the chart, we create the bokeh plot corresponding to the value
