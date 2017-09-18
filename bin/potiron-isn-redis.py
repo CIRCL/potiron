@@ -108,8 +108,9 @@ def process_file(outputdir, filename):
     if proc.returncode != 0:
         errmsg = b"".join(proc.stderr.readlines())
         raise OSError("tshark failed. Return code {}. {}".format(proc.returncode, errmsg))
-    # Write data into the json output file
-    potiron.store_packet(outputdir, filename, json.dumps(allpackets))
+    if not disable_json:
+        # Write data into the json output file
+        potiron.store_packet(outputdir, filename, json.dumps(allpackets))
 
 
 if __name__ == '__main__':
@@ -119,7 +120,8 @@ if __name__ == '__main__':
     parser.add_argument('-u', '--unix', type=str, nargs=1, help='Unix socket to connect to redis-server.')
     parser.add_argument('-o', '--outputdir', type=str, nargs=1, help='Json file output directory')
     parser.add_argument('--reverse', action='store_false', help='Create global reverse dictionaries')
-    parser.add_argument("-tf", "--tsharkfilter", type=str, nargs='+', help='Tshark Filter (with wireshark/tshark synthax. ex: "tcp.dstport == 80 or udp.dstport == 80")')
+    parser.add_argument('-tf', '--tsharkfilter', type=str, nargs='+', help='Tshark Filter (with wireshark/tshark synthax. ex: "tcp.port == 80 or udp.port == 80")')
+    parser.add_argument('-dj', '--disable_json', action='store_true', help='Disable storage into json files and directly store data in Redis')
     args = parser.parse_args()
     potiron.logconsole = args.console
 
@@ -130,7 +132,7 @@ if __name__ == '__main__':
     usocket = args.unix[0]
 
     red = redis.Redis(unix_socket_path=usocket)
-
+    
     if not args.reverse:
         potiron.create_reverse_global_dicts(red)
         potiron.infomsg("Created global reverse annotation dictionaries")
@@ -150,20 +152,35 @@ if __name__ == '__main__':
             for f in args.tsharkfilter:
                 tsharkfilter += "{} ".format(f)
             bpf += " && {}".format(tsharkfilter[:-1])
+            
+    if red.keys('BPF'):
+        # Check is the current bpf is the same as the one previously used
+        if not red.sismember('BPF', bpf):
+            bpf_string = str(red.smembers('BPF'))
+            sys.stderr.write('[INFO] BPF for the current data is not the same as the one used in the data already stored here : {}\n'.format(bpf_string[3:-2]))
+            sys.exit(0)
+    # On the other case, add the bpf in the key 'BPF'
+    else:
+        red.sadd('BPF', bpf)
     
     if not args.reverse:
         potiron.create_reverse_global_dicts(red)
         potiron.infomsg("Created global reverse annotation dictionaries")
         sys.exit(0)
 
-    if args.outputdir is None:
-        sys.stderr.write('An output directory must be specified\n')
+    disable_json = args.disable_json
+    if disable_json:
+        outputdir = None
     else:
-        outputdir = args.outputdir[0]
-        potiron.create_dirs(outputdir, filename)
-        if os.path.isdir(outputdir) is False:
-            sys.stderr.write("The root directory is not a directory\n")
+        if args.outputdir is None:
+            sys.stderr.write('An output directory must be specified\n')
             sys.exit(1)
+        else:
+            outputdir = args.outputdir[0]
+            potiron.create_dirs(outputdir, filename)
+            if os.path.isdir(outputdir) is False:
+                sys.stderr.write("The root directory is not a directory\n")
+                sys.exit(1)
             
     # Check if file was already imported
     fn = os.path.basename(filename)
