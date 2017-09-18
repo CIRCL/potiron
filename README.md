@@ -73,6 +73,11 @@ Then the JSON file can be imported into the Redis database :
 
   As the tshark module uses this one to process the storage in redis, combined keys are available here as well.
 
+  But it is also possible to skip JSON storage and save directly data in Redis, using the '--disable_json' (equals to '-dj') argument. In this case, specifying an output directory is not needed but make sure the path of the unix socket is filled out.
+  An example of command processing storage directly in Redis, skipping JSON, could then be:
+
+      ./potiron-json-tshark.py -c -i /tmp/test-honeypot-120140826000000.cap.gz -u /tmp/redis.sock -dj
+
 Some specific data fields can be represented into graphics (multiple values can be specified after parameter '-v') :
 
 	./bokeh_month.py -s test-honeypot-1 -f dport -v 22 -d 2017-03 -u /tmp/redis.sock -o ./out/ --logo /home/user/Pictures/logo.png
@@ -133,44 +138,46 @@ Summary
 -------
 
 * Usual potiron functionalities :
-	- potiron-json-ipsumdump : create json files from pcap files
-		- input : pcap files
-		- output : corresponding json files
-  - potiron-json-tshark : create json datafiles from pcap capture files, and potentially store data in redis directly
-    - input : pcap files
-    - output : corresponding json files, and redis
-	- potiron-redis : stores data from json files in redis
-		- input : json files
-		- output : redis
-	- bokeh-export : process graphs to display specific values of a field for a month
-		- input : redis data
-		- output : bokeh plot
-	- export-csv-* : process datafiles for the graphs of the most frequent values of a field, the period depends on the parameter specified in the * caracter's place
-		- input : redis data
-		- output : csv data files
-	- generate : creates graphs corresponding to the csv files, using template.html as the template of the graph
-		- input : csv data files
-		- output : d3.js bubble charts
+    - potiron-json-ipsumdump : create json files from pcap files
+        - input : pcap files
+        - output : corresponding json files
 
-	- potiron_graph_annotation is used to put the real name of the fields / values displayed in the graphs, instead of their variable name, using dictionaries stored in "doc" directory
+    - potiron-json-tshark : create json datafiles from pcap capture files, and potentially store data in redis directly
+        - input : pcap files
+        - output : corresponding json files, and / or redis
+    - potiron-redis : stores data from json files in redis
+        - input : json files
+        - output : redis
+    - bokeh-export : process graphs to display specific values of a field for a month
+        - input : redis data
+        - output : bokeh plot
+    - export-csv-* : process datafiles for the graphs of the most frequent values of a field, the period depends on the parameter specified in the * caracter's place
+        - input : redis data
+        - output : csv data files
+    - generate : creates graphs corresponding to the csv files, using template.html as the template of the graph
+        - input : csv data files
+        - output : d3.js bubble charts
+    - potiron_graph_annotation is used to put the real name of the fields / values displayed in the graphs, instead of their variable name, using dictionaries stored in "doc" directory
 
 * Additionnal functionalities :
-	- isn-pcap / isn-pcap-process-day : use pcap files to process graphs of the sequence and acknowledgement numbers over time, with the destination port indicated as the color of the dots
-		- input : pcap files
-		- output : ISN graphs
-	- potiron-isn-redis : stores data from json files in a time series redis structure in order to process ISN graphs directly from redis
-		- input : json files
-		- output : redis
-	- isn-redis / isn-redis-process-day : process ISN graphs with data from redis
-		- input : redis data
-		- output : ISN graphs
-	- preview : displays a preview of all the ISN graphs for a month as an index, with links to each original graph
-		- input : ISN graphs images
-		- output : index of all the previews
-
-	- parallel-coordinate : process csv files containing data used to display parallel coordinates of the daily most frequent values of a field for a month
-		- input : redis data
-		- output : csv data files
-	- generate-pc : creates parallel coordinate graphs with the csv files, using template-pc.html as template
-		- input : csv data files
-		- output : d3.js parallel coordinate graphs
+    - isn-pcap / isn-pcap-process-day : use pcap files to process graphs of the sequence and acknowledgement numbers over time, with the destination port indicated as the color of the dots
+        - input : pcap files
+        - output : ISN graphs
+    - potiron-isn-redis : stores data from json files in a time series redis structure in order to process ISN graphs directly from redis
+        - input : pcap files
+        - output : json files, and / or redis
+    - potiron-isn-redis-from-json : stores data from json files in redis
+        - input : json files
+        - output : redis
+    - isn-redis / isn-redis-process-day : process ISN graphs with data from redis
+        - input : redis data
+        - output : ISN graphs
+    - preview : displays a preview of all the ISN graphs for a month as an index, with links to each original graph
+        - input : ISN graphs images
+        - output : index of all the previews
+    - parallel-coordinate : process csv files containing data used to display parallel coordinates of the daily most frequent values of a field for a month
+        - input : redis data
+        - output : csv data files
+    - generate-pc : creates parallel coordinate graphs with the csv files, using template-pc.html as template
+        - input : csv data files
+        - output : d3.js parallel coordinate graphs
