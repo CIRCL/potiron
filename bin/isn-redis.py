@@ -8,7 +8,7 @@ import argparse
 import redis
 import datetime
 from bokeh.plotting import figure, show, output_file, save
-from bokeh.models import BasicTickFormatter, HoverTool
+from bokeh.models import BasicTickFormatter, HoverTool, ColumnDataSource
 from bokeh.layouts import column
 from bokeh.io import export_png
 from bokeh.palettes import Category20_20 as palette
@@ -20,8 +20,8 @@ def errormsg(msg):
     syslog.openlog("isn-pcap", syslog.LOG_PID | syslog.LOG_PERROR,
                    syslog.LOG_INFO)
     syslog.syslog("[INFO] " + msg)
-    
-    
+
+
 # Define value of hour and minutes from an hour in format HH:mm
 def define_hour(hour):
     if len(hour) != 5:
@@ -73,12 +73,13 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description="Show ISN values")
     parser.add_argument("-d", "--date", type=str, nargs=1, help="Date of the files to process (with the format YYYY-MM-DD)")
     parser.add_argument("-s", "--source", type=str, nargs=1, help='Sensor used as data source (ex: "chp-5890-1")')
-    parser.add_argument("-hr", "--hour", type=str, nargs=1, help="Hour of the informations wanted in the day selected (with the format HH or HH-mm)")
+    parser.add_argument("-hr", "--hour", type=str, nargs=1, help="Hour of the informations wanted in the day selected (with the format HH or HH:mm)")
     parser.add_argument("-tl", "--timeline", type=int, nargs=1, help="Timeline of the data to display (in minutes)")
     parser.add_argument("-t", "--type", type=str, nargs=1, help="Type of number : sequence or acknowledgement")
     parser.add_argument("-o", "--outputdir", type=str, nargs=1, help="Destination path for the output file")
-    parser.add_argument("-u", "--unix", type=str, nargs =1, help="Unix socket to connect to redis-server")
+    parser.add_argument("-u", "--unix", type=str, nargs=1, help="Unix socket to connect to redis-server")
     parser.add_argument("-pf", "--port_filter", nargs='+', help='Filter some ports to display (ex: "22 23 80")')
+    parser.add_argument("-e", "--export", action="store_true", help="Choose to export plot(s) in png to have an overview before opening it")
     args = parser.parse_args()
     braces = "{}"
     if args.date is None:
@@ -135,6 +136,7 @@ if __name__ == '__main__':
         sys.exit(1)
     usocket = args.unix[0]
     red = redis.Redis(unix_socket_path=usocket)
+    export = args.export
 
     TOOLS="hover,crosshair,pan,wheel_zoom,zoom_in,zoom_out,box_zoom,undo,redo,reset,tap,save,box_select,poly_select,lasso_select,"
     # if no port filter is defined
@@ -143,8 +145,8 @@ if __name__ == '__main__':
         w_input = []
         x_input = []
         y_input = []
-        zseq_input = []
-        zack_input = []
+        zd_input = []
+        zs_input = []
         t = 0
         while t < timeline:
             redisKey = "{}{}_{}:{}*".format(key,date,h,m)
@@ -158,51 +160,75 @@ if __name__ == '__main__':
                     sport = 0
                 if dport == '':
                     dport = 0
-                zseq_input.append(int(dport))
-                zack_input.append(int(sport))
+                zd_input.append(int(dport))
+                zs_input.append(int(sport))
                 x_input.append("{} {}".format(line.split("_")[3],line.split("_")[4]))
             t,date,h,m = update_time(t,date,h,m)
         x = np.array(x_input, dtype=np.datetime64)
+        z_d = np.array(zd_input)
+        z_s = np.array(zs_input)
         type_string = ""
         # Definition of the sequence numbers plot
         if seq:
             type_string+="_seq"
             y = np.array(y_input)
-            z_seq = np.array(zseq_input)
             colorseq = [
-                "#%02x%02x%02x" % (int(r), int(g), 150) for r, g in zip(50+z_seq*2, 30+z_seq*2)
+                "#%02x%02x%02x" % (int(r), int(g), 150) for r, g in zip(50+z_d*2, 30+z_d*2)
             ]
             p_seq = figure(width=width,height=700,tools=TOOLS, x_axis_type="datetime", title="TCP sequence values in Honeypot {}".format(title))
             hoverseq = p_seq.select(dict(type=HoverTool))
             hoverseq.tooltips = [
                     ("index", "$index"),
-                    ("timestamp", "@x{0,0}"),
+                    ("timestamp", "@x{%F %H:%M:%S}"),
                     ("number", "@y{0,0}"),
+                    ("dest port", "@dport"),
+                    ("src port", "@sport")
                     ]
+            hoverseq.formatters = {
+                    'x': 'datetime'}
+            sourceplot = ColumnDataSource(data=dict(
+                    x = x,
+                    y = y,
+                    dport = z_d,
+                    sport = z_s,
+                    colorseq = colorseq
+                    ))
             p_seq.xaxis.axis_label = "Time"
-            p_seq.yaxis.axis_label = "Initial Sequence Numbers"
+            p_seq.yaxis.axis_label = "Sequence Numbers"
             p_seq.yaxis[0].formatter = BasicTickFormatter(use_scientific=False)
-            p_seq.scatter(x, y, color=colorseq, legend="seq values", alpha=0.5, )
+#            p_seq.scatter(x='x', y='y', color=colorseq, legend="seq values", alpha=0.5, source=sourceplot)
+            p_seq.scatter(x='x', y='y', color='colorseq', legend="seq values", alpha=0.5,source=sourceplot)
             p = p_seq
         # Definition of the acknowledgement numbers plot
         if ack:
             type_string+="_ack"
             w = np.array(w_input)
-            z_ack = np.array(zack_input)
             colorsack = [
-                "#%02x%02x%02x" % (int(r), int(g), 150) for r, g in zip(50+z_ack*2, 30+z_ack*2)
+                "#%02x%02x%02x" % (int(r), int(g), 150) for r, g in zip(50+z_s*2, 30+z_s*2)
             ]
             p_ack = figure(width=width,height=700,tools=TOOLS, x_axis_type="datetime", title="TCP acknowledgement values in Honeypot {}".format(title))
             hoverack = p_ack.select(dict(type=HoverTool))
             hoverack.tooltips = [
                     ("index", "$index"),
-                    ("timestamp", "@x{0,0}"),
+                    ("timestamp", "@x{%F %H:%M:%S}"),
                     ("number", "@y{0,0}"),
+                    ("dest port", "@dport"),
+                    ("src port", "@sport")
                     ]
+            hoverack.formatters = {
+                    'x': 'datetime'}
+            sourceplot = ColumnDataSource(data=dict(
+                    x = x,
+                    w = w,
+                    dport = z_d,
+                    sport = z_s,
+                    colorsack = colorsack
+                    ))
             p_ack.xaxis.axis_label = "Time"
-            p_seq.yaxis.axis_label = "Initial Acknowledgement Numbers"
+            p_ack.yaxis.axis_label = "Acknowledgement Numbers"
             p_ack.yaxis[0].formatter = BasicTickFormatter(use_scientific=False)
-            p_ack.scatter(x, w, color=colorsack, legend="ack values", alpha=0.5, )
+#            p_ack.scatter(x='x', y='w', color=colorsack, legend="ack values", alpha=0.5, source=sourceplot)
+            p_ack.scatter(x='x', y='w', color='colorsack', legend="ack values", alpha=0.5, source=sourceplot)
             p = p_ack
     else:
         type_string = ""
@@ -212,11 +238,13 @@ if __name__ == '__main__':
             hoverseq = p_seq.select(dict(type=HoverTool))
             hoverseq.tooltips = [
                     ("index", "$index"),
-                    ("timestamp", "@x{0,0}"),
-                    ("number", "@y{0,0}"),
+                    ("timestamp", "@x{%F %H:%M:%S}"),
+                    ("number", "@y{0,0}")
                     ]
+            hoverseq.formatters = {
+                    'x': 'datetime'}
             p_seq.xaxis.axis_label = "Time"
-            p_seq.yaxis.axis_label = "Initial Sequence Numbers"
+            p_seq.yaxis.axis_label = "Sequence Numbers"
             p_seq.yaxis[0].formatter = BasicTickFormatter(use_scientific=False)
         if ack:
             type_string+="_ack"
@@ -224,11 +252,13 @@ if __name__ == '__main__':
             hoverack = p_ack.select(dict(type=HoverTool))
             hoverack.tooltips = [
                     ("index", "$index"),
-                    ("timestamp", "@x{0,0}"),
-                    ("number", "@y{0,0}"),
+                    ("timestamp", "@x{%F %H:%M:%S}"),
+                    ("number", "@y{0,0}")
                     ]
+            hoverack.formatters = {
+                    'x': 'datetime'}
             p_ack.xaxis.axis_label = "Time"
-            p_seq.yaxis.axis_label = "Initial Acknowledgement Numbers"
+            p_ack.yaxis.axis_label = "Acknowledgement Numbers"
             p_ack.yaxis[0].formatter = BasicTickFormatter(use_scientific=False)
         ports = args.port_filter
         port_color = np.array(ports)
@@ -275,5 +305,6 @@ if __name__ == '__main__':
     # Draw the plot(s)
     save(p)
     # Export the plot as .png
-    export_png(p, filename="{}.png".format(output_file_name))
+    if export:
+        export_png(p, filename="{}.png".format(output_file_name))
 #    os.system("/usr/bin/phantomjs /usr/share/doc/phantomjs/examples/rasterize.js {0}.html {0}.png".format(output_file_name))

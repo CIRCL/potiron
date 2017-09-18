@@ -7,7 +7,7 @@ import numpy as np
 import argparse
 import redis
 from bokeh.plotting import figure, show, output_file, save
-from bokeh.models import BasicTickFormatter, HoverTool
+from bokeh.models import BasicTickFormatter, HoverTool, ColumnDataSource
 from bokeh.layouts import column
 from bokeh.io import export_png
 from bokeh.palettes import Category20_20 as palette
@@ -37,12 +37,13 @@ if __name__ == '__main__':
     # Parameters parser
     parser = argparse.ArgumentParser(description="Show ISN values")
     parser.add_argument("-d", "--date", type=str, nargs=1, help="Date of the files to process (with the format YYYY-MM-DD)")
-    parser.add_argument("-hr", "--hour", type=str, nargs=1, help="Hour of the informations wanted in the day selected (with the format HH-mm or HH")
+    parser.add_argument("-hr", "--hour", type=str, nargs=1, help="Hour of the informations wanted in the day selected (with the format HH:mm or HH")
     parser.add_argument("-s", "--source", type=str, nargs=1, help='Sensor used as data source (ex: "chp-5890-1")')
     parser.add_argument("-o", "--outputdir", type=str, nargs=1, help="Destination path for the output file")
     parser.add_argument("-u", "--unix", type=str, nargs =1, help="Unix socket to connect to redis-server")
     parser.add_argument("-tl", "--timeline", type=int, nargs=1, help="Timeline used to split data in graphs (in minutes)")
     parser.add_argument("-pf", "--port_filter", nargs='+', help='Filter the ports you want to display (ex: "22 23 80")')
+    parser.add_argument("-e", "--export", action="store_true", help="Choose to export plot(s) in png to have an overview before opening it")
     args = parser.parse_args()
 
     if args.date is None:
@@ -50,11 +51,13 @@ if __name__ == '__main__':
         sys.exit(1)
     date = args.date[0]
     string_date = date.replace("-","")
+    if len(date.split('-')) == 1:
+        date = "{}-{}-{}".format(date[0:4],date[4:6],date[6:8])
     if args.hour is None:
         sh = 0
         eh = 24
     else:
-        hh = args.hour[0].split('-')
+        hh = args.hour[0].split(':')
         sh = int(hh[0])
         eh = sh + 1
         if len(hh) > 1:
@@ -85,6 +88,7 @@ if __name__ == '__main__':
         if 60 % timeline != 0:
             sys.stderr.write('Please choose a number which devides 60 whithout any rest.\n')
             sys.exit(1)
+    export = args.export
     # Number of occurrences per hour with the defined timeline
     occurrence_num_hour = 60 / timeline
     TOOLS = "hover,crosshair,pan,wheel_zoom,zoom_in,zoom_out,box_zoom,undo,redo,reset,tap,save,box_select,poly_select,lasso_select,"
@@ -103,8 +107,8 @@ if __name__ == '__main__':
                 w_input = []
                 x_input = []
                 y_input = []
-                zseq_input = []
-                zack_input = []
+                zd_input = []
+                zs_input = []
                 start_min = format(minutes, '02d')
                 # For each minute in the timeline
                 while minutes < (timeline * nb):
@@ -120,23 +124,23 @@ if __name__ == '__main__':
                             sport = 0
                         if dport == '':
                             dport = 0
-                        zseq_input.append(int(dport))
-                        zack_input.append(int(sport))
+                        zd_input.append(int(dport))
+                        zs_input.append(int(sport))
                         x_input.append("{} {}".format(line.split("_")[3],line.split("_")[4]))
                     minutes += 1
                 end_min = format(minutes, '02d')
                 # If there is at least one occurrence found in the current timeline, draw the plot
                 if len(x_input) > 0:
                     x = np.array(x_input, dtype=np.datetime64)
-                    z_seq = np.array(zseq_input)
-                    z_ack = np.array(zack_input)
+                    z_d = np.array(zd_input)
+                    z_s = np.array(zs_input)
                     y = np.array(y_input)
                     w = np.array(w_input)
                     colorseq = [
-                        "#%02x%02x%02x" % (int(r), int(g), 150) for r, g in zip(50+z_seq*2, 30+z_seq*2)
+                        "#%02x%02x%02x" % (int(r), int(g), 150) for r, g in zip(50+z_d*2, 30+z_d*2)
                     ]
                     colorsack = [
-                        "#%02x%02x%02x" % (int(r), int(g), 150) for r, g in zip(50+z_ack*2, 30+z_ack*2)
+                        "#%02x%02x%02x" % (int(r), int(g), 150) for r, g in zip(50+z_s*2, 30+z_s*2)
                     ]
                     start_hour, end_hour = string_timeline(h, start_min, end_min)
                     title = " {} collected on {} between {} and {}".format(source, date, start_hour, end_hour)
@@ -145,23 +149,46 @@ if __name__ == '__main__':
                     hoverseq = p_seq.select(dict(type=HoverTool))
                     hoverseq.tooltips = [
                             ("index", "$index"),
-                            ("timestamp", "@x{0,0}"),
-                            ("number", "@y{0,0}")
+                            ("timestamp", "@x{%F %H:%M:%S}"),
+                            ("number", "@y{0,0}"),
+                            ("dest port", "@dport"),
+                            ("src port", "@sport")
                             ]
+                    hoverseq.formatters = {
+                            'x': 'datetime'}
+                    seq_sourceplot = ColumnDataSource(data=dict(
+                            x = x,
+                            y = y,
+                            dport = z_d,
+                            sport = z_s,
+                            colorseq = colorseq
+                            ))
                     p_seq.xaxis.axis_label = "Time"
+                    p_seq.yaxis.axis_label = "Sequence Numbers"
                     p_seq.yaxis[0].formatter = BasicTickFormatter(use_scientific=False)
-                    p_seq.scatter(x, y, color=colorseq, legend="seq values", alpha=0.5, )
-                    # Definition of the aclnowledgement numbers plot
+                    p_seq.scatter(x='x', y='y', color='colorseq', legend="seq values", alpha=0.5, source=seq_sourceplot)
                     p_ack = figure(width=1500,height=700,tools=TOOLS, x_axis_type="datetime", title="TCP acknowledgement values in Honeypot {}".format(title))
                     hoverack = p_ack.select(dict(type=HoverTool))
                     hoverack.tooltips = [
                             ("index", "$index"),
-                            ("timestamp", "@x{0,0}"),
-                            ("number", "@y{0,0}")
+                            ("timestamp", "@x{%F %H:%M:%S}"),
+                            ("number", "@y{0,0}"),
+                            ("dest port", "@dport"),
+                            ("src port", "@sport")
                             ]
+                    hoverack.formatters = {
+                            'x': 'datetime'}
+                    ack_sourceplot = ColumnDataSource(data=dict(
+                            x = x,
+                            w = w,
+                            dport = z_d,
+                            sport = z_s,
+                            colorsack = colorsack
+                            ))
                     p_ack.xaxis.axis_label = "Time"
+                    p_ack.yaxis.axis_label = "Acknowledgement Numbers"
                     p_ack.yaxis[0].formatter = BasicTickFormatter(use_scientific=False)
-                    p_ack.scatter(x, w, color=colorsack, legend="ack values", alpha=0.5, )
+                    p_ack.scatter(x='x', y='w', color='colorsack', legend="ack values", alpha=0.5, source=ack_sourceplot)
                     output_name = "color_scatter_{}_{}_{}-{}_syn+ack".format(source,date,start_hour,end_hour)
                     output_dir = "{}{}/{}/{}/{}".format(outputdir,date.split('-')[0],date.split('-')[1],date.split('-')[2],h)
                     if not os.path.exists(output_dir):
@@ -173,7 +200,8 @@ if __name__ == '__main__':
                     save(p)
                     print("{} - {}".format(start_hour,end_hour))
                     # Export the plot into a png file
-                    export_png(p, filename = "{}/{}.png".format(output_dir,output_name))
+                    if export:
+                        export_png(p, filename = "{}/{}.png".format(output_dir,output_name))
         else:
             ports = args.port_filter
             minutes = 0
@@ -188,21 +216,30 @@ if __name__ == '__main__':
                 hoverseq = p_seq.select(dict(type=HoverTool))
                 hoverseq.tooltips = [
                         ("index", "$index"),
-                        ("timestamp", "@x{0,0}"),
+                        ("timestamp", "@x{%F %H:%M:%S}"),
                         ("number", "@y{0,0}")
                         ]
+                hoverseq.formatters = {
+                        'x': 'datetime'}
                 p_seq.xaxis.axis_label = "Time"
+                p_seq.yaxis.axis_label = "Sequence Numbers"
                 p_seq.yaxis[0].formatter = BasicTickFormatter(use_scientific=False)
                 # Definition of the aclnowledgement numbers plot
                 p_ack = figure(width=1500,height=700,tools=TOOLS, x_axis_type="datetime", title="TCP acknowledgement values in Honeypot {}".format(title))
                 hoverack = p_ack.select(dict(type=HoverTool))
                 hoverack.tooltips = [
                         ("index", "$index"),
-                        ("timestamp", "@x{0,0}"),
+                        ("timestamp", "@x{%F %H:%M:%S}"),
                         ("number", "@y{0,0}")
                         ]
+                hoverack.formatters = {
+                        'x': 'datetime'}
                 p_ack.xaxis.axis_label = "Time"
+                p_ack.yaxis.axis_label = "Acknowledgement Numbers"
                 p_ack.yaxis[0].formatter = BasicTickFormatter(use_scientific=False)
+                ports_string = "port"
+                if len(ports) > 1:
+                    ports_string+="s"
                 for port in ports:
                     minutes = it_minutes
                     key = "{}*dst{}_{}_{}".format(source,port,date,h)
@@ -228,9 +265,10 @@ if __name__ == '__main__':
                     color = palette[ports.index(port)%20]
                     p_seq.scatter(x, y, color=color, legend="seq values - port {}".format(port), alpha=0.5)
                     p_ack.scatter(x, w, color=color, legend="ack values - port {}".format(port), alpha=0.5)
+                    ports_string += "_{}".format(port)
                 p_seq.legend.click_policy = "hide"
                 p_ack.legend.click_policy = "hide"
-                output_name = "color_scatter_{}_{}_{}-{}_syn+ack".format(source,date,start_hour,end_hour)
+                output_name = "color_scatter_{}_{}_{}-{}_{}_syn+ack".format(source,date,start_hour,end_hour,ports_string)
                 output_dir = "{}{}/{}/{}/{}".format(outputdir,date.split('-')[0],date.split('-')[1],date.split('-')[2],h)
                 if not os.path.exists(output_dir):
                     os.makedirs(output_dir)
@@ -241,4 +279,5 @@ if __name__ == '__main__':
                 save(p)
                 print("{} - {}".format(start_hour,end_hour))
                 # Export the plot into a png file
-                export_png(p, filename = "{}/{}.png".format(output_dir,output_name))
+                if export:
+                    export_png(p, filename = "{}/{}.png".format(output_dir,output_name))
