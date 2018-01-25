@@ -40,7 +40,7 @@ def create_dict(field, potiron_path):
                 field_data[n] = val
     elif field == "dport" or field == "sport":
         with open("{}doc/ports".format(potiron_path), 'r') as o:
-            for line in o.readlines():
+            for line in o.readlines()[2:]:
                 port,info = line.split('\t')
                 nb = port.split('-')
                 if len(nb) == 2:
