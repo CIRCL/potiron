@@ -63,7 +63,7 @@ for day in sorted(os.listdir(monthdir)):
     if os.path.isdir(daydir):
         f.write('<div class="row">\n<h3>{}</h3>\n'.format(day))
         # For each hour directory in the day directory
-        for hour in sorted(os.listdir(daydir)):  
+        for hour in sorted(os.listdir(daydir)):
             hourdir = os.path.join(daydir, hour)
             file = glob.glob(hourdir+'/*.png')
             f.write('\t<div class="col-md-4"><div class="thumbnail">\n')

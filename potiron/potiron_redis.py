@@ -36,9 +36,8 @@ def process_storage(filename, red, ck):
     # FIXME Users have to be carefull with the files extensions to not process data from capture files
     # FIXME (potiron-json-tshark module), and the same sample again from json files (potiron_redis module)
 
-    f = open(filename, 'r')
-    doc = json.load(f)
-    f.close()
+    with open(filename, 'r') as f:
+        doc = json.load(f)
 
     # Record local dictionaries
     local_dicts = dict()
@@ -152,7 +151,7 @@ if __name__ == '__main__':
 
     usocket = args.unix[0]
 
-    red = redis.Redis(unix_socket_path=usocket)
+    red = redis.StrictRedis(unix_socket_path=usocket)
 
     ck = args.combined_keys
 
