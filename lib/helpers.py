@@ -12,10 +12,10 @@ redis_backends = ('standard',)
 
 def get_homedir():
     if not os.environ.get('POTIRON_HOME'):
-        guessed_home = Path(__file__).resolve().parent.parent.parent
+        guessed_home = Path(__file__).resolve().parent.parent
         raise MissingEnv(f"POTIRON_HOME is missing. \
         Run the following command (assuming you run the code from the clonned repository):\
-        export POTIRON_HOME='{guessed_home}'")
+        export POTIRON_HOME='{guessed_home}/'")
     return Path(os.environ['POTIRON_HOME'])
 
 
