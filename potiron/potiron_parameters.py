@@ -24,17 +24,6 @@ def _check_parameters(red, parameters):
         red.hmset('PARAMETERS', parameters)
 
 
-def _create_packet(line):
-    line = line[:-1].decode()
-    packet = {key: value for key, value in zip(potiron.json_fields, line.split(' '))}
-    for special_field, value in potiron.special_fields.items():
-        if not packet[special_field]:
-            packet[special_field] = value
-    # print(globals())
-    packet = globals()[potiron.to_call](packet)
-    return packet
-
-
 def fetch_parameters(**parameters):
     field_filter = parameters.pop('field_filter', [])
     red = parameters.pop('red')
