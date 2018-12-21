@@ -34,6 +34,10 @@ tshark_fields = ['frame.time_epoch','ip.len','ip.proto','ip.src','ip.dst',
 json_fields = ['timestamp','length','protocol','ipsrc','ipdst','ipttl','iptos',
                'tsport','usport','tdport','udport','tcpseq','tcpack','icmpcode',
                'icmptype']
+to_call = '_parse_ips_parse_ports_parse_protocol'
+ip_score = '3'
+port_score = '15'
+
 PROTO_ICMP = 1
 PROTO_UDP = 17
 PROTO_TCP = 6
