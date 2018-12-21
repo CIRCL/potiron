@@ -11,7 +11,6 @@ potiron_parameters = {'ip_score': '3', 'json_fields': potiron.json_fields,
 
 def _check_parameters(red, parameters):
     json_fields = parameters.pop('json_fields')
-    print(parameters)
     if red.keys('JSON_FIELDS') and red.keys('PARAMETERS'):
         red_json_fields = set(json_field.decode() for json_field in red.lrange('JSON_FIELDS', 0, -1))
         if red_json_fields != set(json_fields):
