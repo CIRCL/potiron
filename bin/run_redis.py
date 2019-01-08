@@ -8,6 +8,17 @@ import argparse
 import time
 
 
+def __get_status():
+    backends = {}
+    for b in redis_backends:
+        try:
+            oui = check_running(b)
+            backends[b] = oui
+        except Exception:
+            backends[b] = False
+    return backends
+
+
 def launch_redis(redis_name, storage_directory: Path=None):
     if not storage_directory:
         storage_directory = get_homedir()
@@ -21,8 +32,14 @@ def shutdown_redis(redis_name, storage_directory: Path=None):
     Popen(["./shutdown_redis.sh"], cwd=(storage_directory / redis_name))
 
 
-def check_redis(stop=False):
-    backends = {b: False for b in redis_backends}
+def check_redis(start, stop):
+    backends = __get_status()
+    if not start and not stop:
+        if all(status for status in backends.values()):
+            return "All redis instances runnnig"
+        if not any(status for status in backends.values()):
+            return "All redis instances stopped"
+        return "\n".join(["%s: %s" % (name, "running" if value else "down") for name, value in backends.items()])
     while True:
         for b in backends:
             try:
@@ -31,12 +48,10 @@ def check_redis(stop=False):
                 backends[b] = False
         if stop:
             if not any(status for status in backends.values()):
-                print("All redis instances stopped")
-                break
+                return "All redis instances stopped"
         else:
             if all(status for status in backends.values()):
-                print("All redis instances runnnig")
-                break
+                return "All redis instances runnnig"
         for b, status in backends.items():
             if not stop and not status:
                 print(f"Waiting on {b}")
@@ -61,11 +76,11 @@ if __name__ == '__main__':
     parser.add_argument('--stop', action='store_true', default=False, help="Stop all")
     parser.add_argument("--status", action='store_true', default=True, help="Show status")
     args = parser.parse_args()
-    stop = False
+    if args.start and args.stop:
+        sys.exit("Please specify if you want either to start or stop redis, but not both.")
     if args.start:
         launch_all()
     elif args.stop:
         shutdown_all()
-        stop = True
-    if not args.stop and args.status:
-        check_redis(stop)
+    if args.status:
+        print(check_redis(args.start, args.stop))
