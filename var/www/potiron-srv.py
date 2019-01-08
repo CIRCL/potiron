@@ -26,8 +26,9 @@ import time
 import sys
 import os
 import configparser
-from potiron import get_annotations
-from potiron import errormsg
+import json
+from lib.helpers import get_homedir
+from potiron.potiron import get_annotations, errormsg
 app = Flask(__name__, static_folder='static', static_url_path='/static')
 
 # returns true if all the mandatory fields are set
@@ -396,41 +397,16 @@ def send_settings():
 
 
 if __name__ == '__main__':
-
-    try:
-        # Load config file
-        configfile = "potiron.cfg"
-        conf = configparser.ConfigParser()
-        if len(sys.argv) != 2:
-            sys.stderr.write("[ERROR] A config file must be specified as first\
- command line argument.\n")
-            sys.exit(1)
-        configfile = sys.argv[1]
-        if not os.path.exists(configfile):
-            sys.stderr.write("[ERROR] Config file was not found.\n")
-            sys.exit(1)
-        conf.readfp(open(configfile))
-
-        interface = conf.get("dashboard", "interface")
-        port = conf.getint("dashboard", "port")
-        sensorname = conf.get("dashboard", "sensorname")
-        debug = conf.getboolean("dashboard", "debug")
-        version = conf.get("dashboard", "version")
-        # In order to avoid to large graphs only 6 months of data will be shown
-        coverage = conf.getint("dashboard", "coverage")
-        usock = conf.get("redis", "unix_socket_path")
-        shortcoverage = conf.getint("dashboard", "shortcoverage")
-        prefix = conf.get("dashboard", "prefix")
-        red = redis.Redis(unix_socket_path=usock)
-
-        app.debug = debug
-        app.run(host=interface, port=port)
-    except configparser.NoOptionError as e:
-        sys.stderr.write("[ERROR] Config corrupted. " + str(e) + "\n")
-        sys.exit(1)
-    except configparser.NoSectionError as f:
-        sys.stderr.write("[ERROR] Config corrupted. " + str(f) + "\n")
-        sys.exit(1)
-    except ValueError as g:
-        sys.stderr.write("[ERROR] Config corrupted?. " + str(g) + "\n")
-        sys.exit(1)
+    potiron_config = get_homedir() / 'var/www/potiron.cfg.json'
+    with open(potiron_config, 'rt', encoding='utf-8') as f:
+        config = json.loads(f.read())
+    features = ('version', 'sensorname', 'interface', 'port', 'prefix',
+                'debug', 'coverage', 'shortcoverage', 'unix_socket_path')
+    for feature in features:
+        if feature not in config:
+            sys.exit("[ERROR] Config corrupted, %s missing." % feature)
+    for key, value in config.items():
+        globals()[key] = value
+    unix_socket_path = str(get_homedir() / unix_socket_path)
+    red = redis.Redis(unix_socket_path=unix_socket_path, decode_responses=True)
+    app.run()

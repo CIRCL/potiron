@@ -1,0 +1,11 @@
+{
+    "version": "1.0",
+    "sensorname": "test-honeypot-1",
+    "interface": "127.0.0.1",
+    "port": "2222",
+    "prefix": "",
+    "debug": "True",
+    "coverage": 180,
+    "shortcoverage": 7,
+    "unix_socket_path": "standard/standard.sock"
+}
