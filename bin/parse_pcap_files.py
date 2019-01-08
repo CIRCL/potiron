@@ -4,7 +4,7 @@
 from lib.helpers import get_homedir
 from multiprocessing import Pool
 from pathlib import Path
-from potiron.potiron import check_program
+from potiron.potiron import check_program, create_dir, errormsg
 from potiron.potiron_parameters import fetch_parameters
 from potiron.potiron_tshark import process_files
 import argparse
@@ -44,12 +44,19 @@ if __name__ == '__main__':
     parser.add_argument("-ff", "--fieldfilter", nargs='+',help='Parameters to filter fields to display (ex: "tcp.srcport udp.srcport")')
     parser.add_argument("-o", "--outputdir", type=str, nargs=1, help="Output directory where the json documents will be stored")
     parser.add_argument("-tf", "--tsharkfilter", type=str, nargs='+', help='Tshark Filter (with wireshark/tshark synthax. ex: "ip.proto == 6")')
-    parser.add_argument("-r", "--redis", action='store_true', help="Store data directly in redis")
-    parser.add_argument('-u','--unix', type=str, nargs=1, help='Unix socket to connect to redis-server.')
+    parser.add_argument('-u','--unix', type=str, nargs=1, help='Unix socket to connect to redis-server')
     parser.add_argument('-ck', '--combined_keys', action='store_true', help='Set if combined keys should be used')
-    parser.add_argument('-dj', '--disable_json', action='store_true', help='Disable storage into json files and directly store data in Redis')
+    parser.add_argument('-ej', '--enable_json', action='store_true', help='Enable storage into json files')
     args = parser.parse_args()
     logconsole = args.console
+    if args.unix is None:
+        sys.stderr.write('A Unix socket must be specified.\n')
+        sys.exit(1)
+    usocket = args.unix[0]
+    try:
+        red = redis.Redis(unix_socket_path=usocket)
+    except redis.ConnectionError as e:
+        sys.exit("Could not connect to redis. {}".format(e))
     if args.input is None:
         sys.stderr.write("At least a pcap file must be specified\n")
         sys.exit(1)
@@ -64,31 +71,23 @@ if __name__ == '__main__':
 
     tsharkfilter = define_tshark_filter(args.tsharkfilter) if args.tsharkfilter is not None else ""
 
-    b_redis = args.redis
-    disable_json = args.disable_json
+    enable_json = args.enable_json
 
-    if disable_json:
-        b_redis = True
+    if not enable_json:
         rootdir = 'None'
     else:
         if args.outputdir is None:
             sys.stderr.write("You should specify an output directory.\n")
             sys.exit(1)
         rootdir = args.outputdir[0]
-        potiron.create_dirs(rootdir, input_directory)
+        create_dir(rootdir)
         if os.path.isdir(rootdir) is False:
             sys.stderr.write("The root directory is not a directory\n")
             sys.exit(1)
-    if b_redis:
-        if args.unix is None:
-            sys.stderr.write('A Unix socket must be specified.\n')
-            sys.exit(1)
-        usocket = args.unix[0]
-        red = redis.Redis(unix_socket_path=usocket)
 
     ck = args.combined_keys
 
     args = {'rootdir': rootdir, 'field_filter': args.fieldfilter, 'ck': str(ck), 'tshark_filter': tsharkfilter,
-            'b_redis': str(b_redis), 'disable_json': str(disable_json), 'red': red, 'logconsole': str(logconsole)}
+            'enable_json': str(enable_json), 'red': red, 'logconsole': str(logconsole)}
     fetch_parameters(**args)
     process_files(red, files)

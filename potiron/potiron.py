@@ -157,22 +157,32 @@ def define_protocols(path):
 # Save the output json file
 def store_packet(rootdir, pcapfilename, obj):
     if rootdir is not None:
-        jsonfilename = get_file_struct(rootdir, pcapfilename)
-        with open(jsonfilename, "w") as f:
+        jsonfilename = create_file(rootdir, pcapfilename)
+        with open(jsonfilename, "wt", encoding='utf-8') as f:
             f.write(obj)
-        infomsg("Created filename " + jsonfilename)
-        return jsonfilename
     else:
         sys.stdout.write(obj)
 
 
+# Create the output directory if is does not exist
+def create_dir(rootdir):
+    d = os.path.dirname(rootdir)
+    try:
+        if not os.path.exists(d):
+            os.makedirs(d)
+    except OSError:
+        pass
+
+
 # Create the output directory and file if it does not exist
-def create_dirs(rootdir, pcapfilename):
+def create_file(rootdir, pcapfilename):
     jsonfilename = get_file_struct(rootdir, pcapfilename)
     d = os.path.dirname(jsonfilename)
     try:
         if not os.path.exists(d):
             os.makedirs(d)
+        infomsg("Created filename %s" % jsonfilename)
+        return jsonfilename
     except OSError:
         pass
 
