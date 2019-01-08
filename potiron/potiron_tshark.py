@@ -2,7 +2,9 @@
 # -*- coding: utf-8 -*-
 
 from collections import defaultdict
+import concurrent.futures
 import datetime
+import json
 import os
 import potiron.potiron as potiron
 import subprocess
@@ -20,6 +22,7 @@ _port_mapping = {'1': '_check_udport', '2': '_check_tdport',
 _ck_mapping = {'True': '_combined_redis_key', 'False': '_simple_redis_key'}
 _dj_mapping = {'True': '_set_redis_timestamp', 'False': '_set_json_timestamp'}
 _ip_mapping = {'1': ('ipdst'), '2': ('ipsrc'), '3': ('ipsrc', 'ipdst')}
+_to_process = {'False': '_process_file', 'True': '_process_file_and_save_json'}
 
 non_index = ['', 'filename', 'sensorname', 'timestamp', 'packet_id']
 special_fields = {'length': -1, 'ipttl': -1, 'iptos': 0, 'tcpseq': -1,
@@ -31,18 +34,14 @@ def process_files(red, files):
     for key, value in red.hgetall('PARAMETERS').items():
         setattr(potiron, key.decode(), value.decode())
     potiron.redis_instance = red
-    import concurrent.futures
     with concurrent.futures.ProcessPoolExecutor() as executor:
-        for to_return in executor.map(_process_file, files):
+        for to_return in executor.map(globals()[_to_process[potiron.enable_json]], files):
             potiron.infomsg(to_return)
 
 
 def _process_file(inputfile):
-    red = potiron.redis_instance
-    to_add = defaultdict(set)
-    to_incr = defaultdict(lambda: defaultdict(int))
-    fn = os.path.basename(inputfile)
-    if red.sismember("FILES", fn):
+    red, to_add, to_incr, filename, sensorname = _get_data_structures(inputfile)
+    if red.sismember("FILES", filename):
         return '[INFO] Filename %s was already imported ... skip ...\n' % inputfile
     # FIXME Users have to be carefull with the files extensions to not process data from capture files
     # FIXME (potiron-json-tshark module), and the same sample again from json files (potiron_redis module)
@@ -50,13 +49,12 @@ def _process_file(inputfile):
     # List of fields that are included in the json documents that should not be ranked
     # FIXME Put this as argument to the program as this list depends on the documents that is introduced
     proc = subprocess.Popen(potiron.cmd.format(inputfile), shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-    # Name of the honeypot
-    sensorname = potiron.derive_sensor_name(inputfile)
-    to_add["FILES"].add(fn)
+    to_add["FILES"].add(filename)
 
     lastday = None
     for line in proc.stdout.readlines():
         packet = _create_packet(line)
+        packet['timestamp'] = _set_redis_timestamp(packet['timestamp'])
         timestamp = packet['timestamp']
         rKey = globals()[_ck_mapping[potiron.ck]](packet, sensorname, to_add)
         if timestamp != lastday:
@@ -74,18 +72,74 @@ def _process_file(inputfile):
         for value, amount in values.items():
             p.zincrby(redis_key, amount, value)
     p.execute()
-    return 'Data from {} parsed.'.format(inputfile)
+    proc.wait()
+    return 'Data from {} parsed.'.format(filename)
+
+
+def _process_file_and_save_json(inputfile):
+    red, to_add, to_incr, filename, sensorname = _get_data_structures(inputfile)
+    if red.sismember("FILES", filename):
+        return '[INFO] Filename %s was already imported ... skip ...\n' % inputfile
+    # FIXME Users have to be carefull with the files extensions to not process data from capture files
+    # FIXME (potiron-json-tshark module), and the same sample again from json files (potiron_redis module)
+
+    # List of fields that are included in the json documents that should not be ranked
+    # FIXME Put this as argument to the program as this list depends on the documents that is introduced
+    proc = subprocess.Popen(potiron.cmd.format(inputfile), shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    to_add["FILES"].add(filename)
+    allpackets = [{"type": potiron.TYPE_SOURCE, "sensorname": sensorname,
+                   "filename": os.path.basename(inputfile), "bpf": potiron.tshark_filter}]
+    lastday = None
+    packet_id = 0
+    for line in proc.stdout.readlines():
+        packet = _create_packet(line)
+        packet['timestamp'] = _set_redis_timestamp(packet['timestamp'])
+        timestamp = packet['timestamp']
+        rKey = globals()[_ck_mapping[potiron.ck]](packet, sensorname, to_add)
+        if timestamp != lastday:
+            to_add["DAYS"].add(timestamp)
+            lastday = timestamp
+        for feature, value in packet.items():
+            if feature not in non_index:
+                redis_key = "%s:%s" % (rKey, feature)
+                to_add["FIELDS"].add(feature)
+                to_incr[redis_key][value] += 1
+        packet['timestamp'] = _set_json_timestamp(timestamp)
+        packet['packet_id'] = packet_id
+        packet['type'] = potiron.TYPE_PACKET
+        packet['state'] = potiron.STATE_NOT_ANNOTATE
+        allpackets.append(packet)
+        packet_id += 1
+    p = red.pipeline()
+    for key, values in to_add.items():
+        p.sadd(key, *list(values))
+    for redis_key, values in to_incr.items():
+        for value, amount in values.items():
+            p.zincrby(redis_key, amount, value)
+    p.execute()
+    potiron.store_packet(potiron.rootdir, filename, json.dumps(allpackets))
+    proc.wait()
+    return 'Data from {} parsed and stored in json format.'.format(filename)
 
 
 def _create_packet(line):
     line = line.decode().strip('\n')
     packet = {key: value for key, value in zip(potiron.json_fields, line.split(' '))}
-    packet['timestamp'] = globals()[_dj_mapping[potiron.disable_json]](packet['timestamp'])
     for special_field, value in special_fields.items():
         if special_field in packet and not packet[special_field]:
             packet[special_field] = value
     packet = globals()[potiron.to_call](packet)
     return packet
+
+
+def _get_data_structures(inputfile):
+    red = potiron.redis_instance
+    to_add = defaultdict(set)
+    to_incr = defaultdict(lambda: defaultdict(int))
+    filename = os.path.basename(inputfile)
+    # Name of the honeypot
+    sensorname = potiron.derive_sensor_name(inputfile)
+    return red, to_add, to_incr, filename, sensorname
 
 
 ################################################################################
