@@ -10,7 +10,7 @@ setup(
     url='https://github.com/CIRCL/potiron',
     description='Potiron - Normalize, Index and Visualize Network Capture.',
     packages=['potiron'],
-    scripts=['bin/run_redis.py', 'bin/parse_pcap_files.py'],
+    scripts=['bin/run_redis.py', 'bin/parse_pcap_files.py', 'var/www/potiron-srv.py'],
     classifiers=[
         'License :: OSI Approved :: GNU Affero General Public License v3 or later (AGPLv3+)',
         'Environment :: Console',
