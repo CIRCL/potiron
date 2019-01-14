@@ -7,7 +7,7 @@ from redis import StrictRedis
 from redis.exceptions import ConnectionError
 import os
 
-redis_backends = ('standard',)
+redis_backends = ('standard', 'isn')
 
 
 def get_homedir():
