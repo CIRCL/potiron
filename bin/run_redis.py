@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 import sys
-from lib.helpers import check_running, get_homedir, redis_backends
+from lib.helpers import check_running, get_homedir, REDIS_BACKENDS
 from pathlib import Path
 from subprocess import Popen
 import argparse
@@ -77,7 +77,7 @@ if __name__ == '__main__':
     parser.add_argument("--status", action='store_true', default=True, help="Show status")
     parser.add_argument("-n", "--name", type=str, nargs='+', help="Name of the redis instance(s) to interact with. If no name is set, all the currently available instances will be considered.")
     args = parser.parse_args()
-    backends = args.name if args.name is not None else redis_backends
+    backends = args.name if args.name is not None else REDIS_BACKENDS
     if args.start and args.stop:
         sys.exit("Please specify if you want either to start or stop redis, but not both.")
     if args.start:

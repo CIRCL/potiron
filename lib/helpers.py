@@ -5,9 +5,9 @@ from .exceptions import MissingEnv
 from pathlib import Path
 from redis import StrictRedis
 from redis.exceptions import ConnectionError
+import json
 import os
 
-redis_backends = ('standard', 'isn')
 
 
 def get_homedir():
@@ -19,8 +19,17 @@ def get_homedir():
     return Path(os.environ['POTIRON_HOME'])
 
 
+def _get_redis_backends():
+    with open("{}/lib/redis_backends.json".format(get_homedir()), 'rt', encoding='utf-8') as f:
+        config = json.loads(f.read())
+    return config['redis_backends']
+
+
+REDIS_BACKENDS = _get_redis_backends()
+
+
 def get_socket_path(name: str):
-    mapping = {b: Path(b, "{}.sock".format(b)) for b in redis_backends}
+    mapping = {b: Path(b, "{}.sock".format(b)) for b in REDIS_BACKENDS}
     return str(get_homedir() / mapping[name])
 
 
