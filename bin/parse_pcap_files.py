@@ -1,10 +1,8 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-from lib.helpers import get_homedir
-from multiprocessing import Pool
 from pathlib import Path
-from potiron.potiron import check_program, create_dir, errormsg
+from potiron.potiron import check_program, create_dir
 from potiron.potiron_parameters import fetch_parameters
 from potiron.potiron_tshark import process_files
 import argparse
