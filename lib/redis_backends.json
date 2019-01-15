@@ -1,7 +1,6 @@
 {
   "redis_backends": [
     "standard",
-    "isn",
-    "oui"
+    "isn"
   ]
 }
