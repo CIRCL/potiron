@@ -21,14 +21,14 @@ def __get_status(backends):
 
 def launch_redis(redis_name, storage_directory: Path=None):
     if not storage_directory:
-        storage_directory = get_homedir()
+        storage_directory = (get_homedir() / 'redis_backends')
     if not check_running(redis_name):
         Popen(["./run_redis.sh"], cwd=(storage_directory / redis_name))
 
 
 def shutdown_redis(redis_name, storage_directory: Path=None):
     if not storage_directory:
-        storage_directory = get_homedir()
+        storage_directory = (get_homedir() / 'redis_backends')
     Popen(["./shutdown_redis.sh"], cwd=(storage_directory / redis_name))
 
 

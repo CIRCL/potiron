@@ -30,7 +30,7 @@ REDIS_BACKENDS = _get_redis_backends()
 
 def get_socket_path(name: str):
     mapping = {b: Path(b, "{}.sock".format(b)) for b in REDIS_BACKENDS}
-    return str(get_homedir() / mapping[name])
+    return str(get_homedir() / 'redis_backends' / mapping[name])
 
 
 def check_running(name: str):

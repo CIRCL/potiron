@@ -407,6 +407,6 @@ if __name__ == '__main__':
             sys.exit("[ERROR] Config corrupted, %s missing." % feature)
     for key, value in config.items():
         globals()[key] = value
-    unix_socket_path = str(get_homedir() / unix_socket_path)
+    unix_socket_path = str(get_homedir() / 'redis_backends' / unix_socket_path)
     red = redis.Redis(unix_socket_path=unix_socket_path, decode_responses=True)
     app.run()
