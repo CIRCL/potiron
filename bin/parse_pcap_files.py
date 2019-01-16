@@ -37,27 +37,21 @@ if __name__ == '__main__':
 
     # Parameters parser
     parser = argparse.ArgumentParser(description="Start the tool tshark and transform the output in a json document")
-    parser.add_argument("-i", "--input", type=str, nargs=1, help="Pcap or compressed pcap filename")
+    parser.add_argument("-i", "--input", type=str, nargs=1, required=True, help="Pcap or compressed pcap filename")
     parser.add_argument("-c", "--console", action='store_true', help="Log output also to console")
     parser.add_argument("-ff", "--fieldfilter", nargs='+',help='Parameters to filter fields to display (ex: "tcp.srcport udp.srcport")')
     parser.add_argument("-o", "--outputdir", type=str, nargs=1, help="Output directory where the json documents will be stored")
     parser.add_argument("-tf", "--tsharkfilter", type=str, nargs='+', help='Tshark Filter (with wireshark/tshark synthax. ex: "ip.proto == 6")')
-    parser.add_argument('-u','--unix', type=str, nargs=1, help='Unix socket to connect to redis-server')
+    parser.add_argument('-u','--unix', type=str, nargs=1, required=True, help='Unix socket to connect to redis-server')
     parser.add_argument('-ck', '--combined_keys', action='store_true', help='Set if combined keys should be used')
     parser.add_argument('-ej', '--enable_json', action='store_true', help='Enable storage into json files')
     args = parser.parse_args()
     logconsole = args.console
-    if args.unix is None:
-        sys.stderr.write('A Unix socket must be specified.\n')
-        sys.exit(1)
     usocket = args.unix[0]
     try:
         red = redis.Redis(unix_socket_path=usocket)
     except redis.ConnectionError as e:
         sys.exit("Could not connect to redis. {}".format(e))
-    if args.input is None:
-        sys.stderr.write("At least a pcap file must be specified\n")
-        sys.exit(1)
     if os.path.exists(args.input[0]) is False:
         sys.stderr.write("The filename {} was not found\n".format(args.input[0]))
         sys.exit(1)
