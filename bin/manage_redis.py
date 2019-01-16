@@ -31,7 +31,7 @@ def _check_backends(names):
     redis_path = (get_homedir() / 'redis_backends')
     if names is None:
         redis_backends = os.listdir(redis_path)
-        if len(redis_backends) == len(REDIS_BACKENDS) and redis_backends == sorted(REDIS_BACKENDS):
+        if len(redis_backends) == len(REDIS_BACKENDS) and sorted(redis_backends) == sorted(REDIS_BACKENDS):
             _check_backend(redis_backends, redis_path)
         else:
             _check_differences(redis_backends, redis_path)
@@ -154,7 +154,7 @@ if __name__ == '__main__':
     args = parser.parse_args()
     values = (4,2,1)
     n_args = sum(value for arg, value in zip((args.create, args.delete, args.flush), values) if arg)
-    if args.status is not None:
+    if args.status:
         _check_backends(args.name) if n_args== 0 else print('Status argument, in this case, is used to check which redis backend(s) actually exist(s). Ignoring it if used with any of: -c, -d, -f.')
     if n_args not in values:
         sys.exit('Please specify if you want to create, delete, or flush some redis instance(s). Only one choice at the same time.')
