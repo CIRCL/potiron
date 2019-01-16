@@ -17,6 +17,42 @@ _to_write_files = ('{name}.conf', 'run_redis.sh', 'shutdown_redis.sh')
 _permissions = (0o644, 0o755, 0o755)
 
 
+def _check_backend(redis_backends, redis_path):
+    for backend in redis_backends:
+        reference = [f.format(name=backend) for f in _to_write_files]
+        current = [f for f in os.listdir("{}/{}".format(redis_path, backend)) if any([f.endswith('.sh'), f.endswith('.conf')])]
+        if sorted(current) == sorted(reference):
+            print("{}: OK !".format(backend))
+        else:
+            print("Please check the files in {}".format(redis_path / backend))
+
+
+def _check_backends(names):
+    redis_path = (get_homedir() / 'redis_backends')
+    if names is None:
+        redis_backends = os.listdir(redis_path)
+        if len(redis_backends) == len(REDIS_BACKENDS) and redis_backends == sorted(REDIS_BACKENDS):
+            _check_backend(redis_backends, redis_path)
+        else:
+            _check_differences(redis_backends, redis_path)
+    else:
+        _check_backend(names, redis_path)
+    sys.exit(0)
+
+
+def _check_differences(redis_backends, redis_path):
+    reference_path = "{}/lib/redis_backends.json".format('/'.join(str(redis_path).split('/')[:-1]))
+    print("Please check the directories in {} which should match with the list of backends in {}".format(redis_path, reference_path))
+    references = set(REDIS_BACKENDS)
+    redis_backends = set(redis_backends)
+    missing_references = list(references - redis_backends)
+    missing_backends = list(redis_backends - references)
+    if missing_references:
+        print("Redis backend(s) in the list but not currently in the redis_backends directory: {}".format(', '.join(missing_references)))
+    if missing_backends:
+        print("Redis backend(s) in the redis_backends directory but not the list: {}".format(', '.join(missing_backends)))
+
+
 def _create_file(potiron_path, to_read, to_write, name, permission):
     with open("{}/lib/{}".format(potiron_path, to_read), 'rt', encoding='utf-8') as f:
         to_modify = f.read()
@@ -114,9 +150,12 @@ if __name__ == '__main__':
     parser.add_argument('-d', '--delete', action='store_true', default=False, help='Delete the redis instance(s).')
     parser.add_argument('-f', '--flush', action='store_true', default=False, help='Flush the redis instance(s).')
     parser.add_argument('-n', '--name', nargs='+', type=str, help='Name of the redis instance(s) to interact with.')
+    parser.add_argument('-s', '--status', action='store_true', default=False, help='Check the existing backends.')
     args = parser.parse_args()
     values = (4,2,1)
     n_args = sum(value for arg, value in zip((args.create, args.delete, args.flush), values) if arg)
+    if args.status is not None:
+        _check_backends(args.name) if n_args== 0 else print('Status argument, in this case, is used to check which redis backend(s) actually exist(s). Ignoring it if used with any of: -c, -d, -f.')
     if n_args not in values:
         sys.exit('Please specify if you want to create, delete, or flush some redis instance(s). Only one choice at the same time.')
     globals()[_to_call[str(n_args)]](args.name)
