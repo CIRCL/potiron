@@ -183,12 +183,10 @@ def _check_tdport(packet):
 
 
 def _check_dst_ports(packet):
-    tdport = _get_port_from_packet(packet, 'tdport')
-    udport = _get_port_from_packet(packet, 'udport')
-    if all((tdport == -1, udport == -1)):
-        packet['dport'] = -1
-    else:
-        packet['dport'] = tdport if tdport != -1 else udport
+    port = 'dport'
+    tport = _get_port_from_packet(packet, 't%s' % port)
+    uport = _get_port_from_packet(packet, 'u%s' % port)
+    packet[port] = tport if tport != -1 else uport
 
 
 def _check_usport(packet):
@@ -232,12 +230,10 @@ def _check_ts_dst_ports(packet):
 
 
 def _check_src_ports(packet):
-    tsport = _get_port_from_packet(packet, 'tsport')
-    usport = _get_port_from_packet(packet, 'usport')
-    if all((tsport == -1, usport == -1)):
-        packet['sport'] = -1
-    else:
-        packet['sport'] = tsport if tsport != -1 else usport
+    port = 'sport'
+    tport = _get_port_from_packet(packet, 't%s' % port)
+    uport = _get_port_from_packet(packet, 'u%s' % port)
+    packet[port] = tport if tport != -1 else uport
 
 
 def _check_src_ud_ports(packet):
