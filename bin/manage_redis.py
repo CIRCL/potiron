@@ -19,7 +19,7 @@
 
 from bin.run_redis import shutdown_redis
 from glob import glob
-from lib.helpers import check_running, get_homedir, REDIS_BACKENDS
+from lib.helpers import check_running, get_homedir, get_socket_path, REDIS_BACKENDS
 from redis import Redis
 import argparse
 import json
