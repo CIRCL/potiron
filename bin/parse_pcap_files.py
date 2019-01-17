@@ -17,6 +17,7 @@
 #    You should have received a copy of the GNU Affero General Public License
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+from glob import glob
 from pathlib import Path
 from potiron.potiron import check_program, create_dir
 from potiron.potiron_parameters import fetch_parameters
@@ -36,12 +37,16 @@ def define_tshark_filter(tsharkfilter):
 
 def fetch_files(directory: Path):
     to_return = []
-    for dir_ in directory.iterdir():
-        if dir_.is_file():
-            if any([dir_.name.endswith('cap'), dir_.name.endswith('cap.gz')]):
-                to_return.append(str(dir_))
-        else:
-            to_return.extend(fetch_files(dir_))
+    try:
+        for dir_ in directory.iterdir():
+            if dir_.is_file():
+                if any([dir_.name.endswith('cap'), dir_.name.endswith('cap.gz')]):
+                    to_return.append(str(dir_))
+            else:
+                to_return.extend(fetch_files(dir_))
+    except (NotADirectoryError, FileNotFoundError):
+        for file_ in glob(str(directory)):
+            to_return.append(file_)
     return to_return
 
 
@@ -52,7 +57,7 @@ if __name__ == '__main__':
     # FIXME Put in config file
 
     # Parameters parser
-    parser = argparse.ArgumentParser(description="Start the tool tshark and transform the output in a json document")
+    parser = argparse.ArgumentParser(description="Start the tool tshark and store packets data in redis.")
     parser.add_argument("-i", "--input", type=str, nargs=1, required=True, help="Pcap or compressed pcap filename")
     parser.add_argument("-c", "--console", action='store_true', help="Log output also to console")
     parser.add_argument("-ff", "--fieldfilter", nargs='+',help='Parameters to filter fields to display (ex: "tcp.srcport udp.srcport")')
