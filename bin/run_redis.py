@@ -53,9 +53,9 @@ def check_all(backends, start, stop):
     backend_status = __get_status(backends)
     if not start and not stop:
         if all(status for status in backend_status.values()):
-            return "All redis instances runnnig"
+            return "All redis instances running: {}".format(', '.join(backends))
         if not any(status for status in backend_status.values()):
-            return "All redis instances stopped"
+            return "All redis instances stopped: {}".format(', '.join(backends))
         return "\n".join(["%s: %s" % (name, "running" if value else "down") for name, value in backend_status.items()])
     while True:
         for b in backend_status:
@@ -65,10 +65,10 @@ def check_all(backends, start, stop):
                 backend_status[b] = False
         if stop:
             if not any(status for status in backend_status.values()):
-                return "All redis instances stopped"
+                return "All redis instances stopped: {}".format(', '.join(backends))
         else:
             if all(status for status in backend_status.values()):
-                return "All redis instances runnnig"
+                return "All redis instances running: {}".format(', '.join(backends))
         for b, status in backend_status.items():
             if not stop and not status:
                 print(f"Waiting on {b}")
