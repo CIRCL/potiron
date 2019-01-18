@@ -21,7 +21,8 @@ from glob import glob
 from pathlib import Path
 from potiron.potiron import check_program, create_dir
 from potiron.potiron_parameters import fetch_parameters
-from potiron.potiron_tshark import process_files
+from potiron.potiron_tshark import standard_process
+from potiron.potiron_isn_tshark import isn_process
 import argparse
 import datetime
 import os
@@ -66,6 +67,7 @@ if __name__ == '__main__':
     parser.add_argument('-u','--unix', type=str, nargs=1, required=True, help='Unix socket to connect to redis-server')
     parser.add_argument('-ck', '--combined_keys', action='store_true', help='Set if combined keys should be used')
     parser.add_argument('-ej', '--enable_json', action='store_true', help='Enable storage into json files')
+    parser.add_argument('--isn', action='store_true', help='Store ISN values of packets instead of storing the standard data.')
     args = parser.parse_args()
     logconsole = args.console
     usocket = args.unix[0]
@@ -80,8 +82,13 @@ if __name__ == '__main__':
     input_directory = [Path(arg) for arg in args.input]
     files = [filename for directory in input_directory for filename in fetch_files(directory)]
 
-    if args.fieldfilter is None:
-        args.fieldfilter = []
+    isn = args.isn
+    fieldfilter = args.fieldfilter
+
+    if isn and fieldfilter is not None:
+        print("If you use '--isn', the field filter parameter will be ignored.")
+    elif not isn and fieldfilter is None:
+        fieldfilter = []
 
     tsharkfilter = define_tshark_filter(args.tsharkfilter) if args.tsharkfilter is not None else ""
 
@@ -101,7 +108,9 @@ if __name__ == '__main__':
 
     ck = args.combined_keys
 
-    args = {'rootdir': rootdir, 'field_filter': args.fieldfilter, 'ck': str(ck), 'tshark_filter': tsharkfilter,
-            'enable_json': str(enable_json), 'red': red, 'logconsole': str(logconsole)}
-    fetch_parameters(**args)
-    process_files(red, files)
+    parameters = {'rootdir': rootdir, 'tshark_filter': tsharkfilter, 'red': red, 'isn': isn,
+                  'enable_json': str(enable_json), 'logconsole': str(logconsole)}
+    if not isn:
+        parameters.update({'field_filter': fieldfilter, 'ck': str(ck)})
+    fetch_parameters(**parameters)
+    isn_process(red, files) if isn else standard_process(red, files)

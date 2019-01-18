@@ -25,34 +25,72 @@ potiron_parameters = {'ip_score': '3', 'json_fields': potiron.json_fields,
                       'port_score': '15', 'to_call': '_parse_ips_parse_ports_parse_protocol'}
 
 
-def _check_parameters(red, parameters):
+def _check_isn_parameters(red, parameters):
+    if red.keys('PARAMETERS'):
+        _check_parameter_fields(red, parameters)
+    else:
+        red.hmset('PARAMETERS', parameters)
+
+
+def _check_parameters(red, parameters, isn):
+    if isn:
+        _check_isn_parameters(red, parameters)
+    else:
+        _check_standard_parameters(red, parameters)
+
+
+def _check_parameter_fields(red, parameters):
+    red_parameters = {key.decode(): value.decode() for key, value in red.hgetall('PARAMETERS').items()}
+    if red_parameters != parameters and _deeper_parameter_fields_check(red_parameters, parameters):
+        sys.stderr.write(f'[INFO] Parameters you are using are not the same as the ones currently used: {red_parameters}'
+        sys.exit(1)
+
+
+def _check_standard_parameters(red, parameters):
     json_fields = parameters.pop('json_fields')
     if red.keys('JSON_FIELDS') and red.keys('PARAMETERS'):
         red_json_fields = set(json_field.decode() for json_field in red.lrange('JSON_FIELDS', 0, -1))
         if red_json_fields != set(json_fields):
             sys.stderr.write(f'[INFO] Fields you are trying to ingest are not the same as the ones currently used: {red_json_fields}')
-        red_parameters = {key.decode(): value.decode() for key, value in red.hgetall('PARAMETERS').items()}
-        if red_parameters != parameters:
-            sys.stderr.write(f'[INFO] Parameters you are using are not the same as the ones currently used: {red_parameters}')
+            sys.exit(1)
+        _check_parameter_fields(red, parameters)
     else:
         red.rpush('JSON_FIELDS', *json_fields)
         red.hmset('PARAMETERS', parameters)
 
 
+def _deeper_parameter_fields_check(red, current):
+    field = 'enable_json'
+    red_ej = red.pop(field)
+    current_ej = current.pop(field)
+    to_return = (red == current)
+    red[field] = red_ej
+    current[field] = current_ej
+    return to_return
+
+
 def fetch_parameters(**parameters):
-    field_filter = parameters.pop('field_filter', [])
     red = parameters.pop('red')
-    if field_filter:
-        if 'frame.time_epoch' not in field_filter:
-            field_filter.insert(0, 'frame.time_epoch')
-        if 'ip.proto' not in field_filter:
-            field_filter.insert(1, 'ip.proto')
-    tshark_filter = potiron.tshark_filter
-    if parameters.get('tshark_filter'):
-        tshark_filter += f" && {parameters.pop('tshark_filter')}"
-    parameters['cmd'] = _predefine_cmd(field_filter, tshark_filter)
-    parameters.update(_get_current_fields(field_filter) if field_filter else potiron_parameters)
-    _check_parameters(red, parameters)
+    isn = parameters['isn']
+    if isn:
+        tshark_filter = potiron.isn_tshark_filter
+        if parameters.get('tshark_filter'):
+            tshark_filter += f" && {parameters.pop('tshark_filter')}"
+        parameters['cmd'] = _predefine_cmd(tshark_filter)
+    else:
+        field_filter = parameters.pop('field_filter', [])
+        if field_filter:
+            if 'frame.time_epoch' not in field_filter:
+                field_filter.insert(0, 'frame.time_epoch')
+            if 'ip.proto' not in field_filter:
+                field_filter.insert(1, 'ip.proto')
+        tshark_filter = potiron.tshark_filter
+        if parameters.get('tshark_filter'):
+            tshark_filter += f" && {parameters.pop('tshark_filter')}"
+        parameters['cmd'] = _predefine_cmd(tshark_filter, field_filter)
+        parameters.update(_get_current_fields(field_filter) if field_filter else potiron_parameters)
+    parameters['isn'] = str(isn)
+    _check_parameters(red, parameters, isn)
 
 
 def _get_current_fields(field_filter):
@@ -95,9 +133,12 @@ def _get_port_score(fields):
     return score
 
 
-def _predefine_cmd(field_filter, tshark_filter):
-    if not field_filter:
-        field_filter = potiron.tshark_fields
+def _predefine_cmd(tshark_filter, field_filter=None):
+    if field_filter is None:
+        field_filter = potiron.isn_tshark_fields
+    else:
+        if not field_filter:
+            field_filter = potiron.tshark_fields
     filters = "-e {}".format(" -e ".join(field_filter))
     setup = f"-E header=n -E separator=/s -E occurrence=f -Y '{tshark_filter}' -r"
     end = "{} -o tcp.relative_sequence_numbers:FALSE"

@@ -45,7 +45,7 @@ special_fields = {'length': -1, 'ipttl': -1, 'iptos': 0, 'tcpseq': -1,
                   'tcpack': -1, 'icmpcode': 255, 'icmptype': 255}
 
 
-def process_files(red, files):
+def standard_process(red, files):
     potiron.json_fields = [json_field.decode() for json_field in red.lrange('JSON_FIELDS', 0, -1)]
     for key, value in red.hgetall('PARAMETERS').items():
         setattr(potiron, key.decode(), value.decode())
@@ -348,4 +348,4 @@ def _set_redis_timestamp(timestamp):
 
 if __name__ == '__main__':
     args = sys.argv
-    process_file(*args[1:])
+    standard_process(*args[1:])

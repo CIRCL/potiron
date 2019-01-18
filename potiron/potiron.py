@@ -28,9 +28,12 @@ import sys
 bpfilter = "not net 239.0.0.0/8 and not host 255.255.255.255"
 tshark_filter = "ip.dst ne 255.255.255.255"
 isn_tshark_filter = "{} && ip.proto eq 6".format(tshark_filter)
+isn_tshark_fields = ['frame.time_epoch', 'tcp.srcport',
+                     'tcp.dstport', 'tcp.seq', 'tcp.ack']
 tshark_fields = ['frame.time_epoch','ip.len','ip.proto','ip.src','ip.dst',
                  'ip.ttl','ip.dsfield','tcp.srcport','udp.srcport','tcp.dstport',
                  'udp.dstport','tcp.seq','tcp.ack','icmp.code','icmp.type']
+isn_json_fields = ['timestamp', 'sport', 'dport', 'tcpseq', 'tcpack']
 json_fields = ['timestamp','length','protocol','ipsrc','ipdst','ipttl','iptos',
                'tsport','usport','tdport','udport','tcpseq','tcpack','icmpcode',
                'icmptype']
