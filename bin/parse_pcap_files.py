@@ -58,7 +58,7 @@ if __name__ == '__main__':
 
     # Parameters parser
     parser = argparse.ArgumentParser(description="Start the tool tshark and store packets data in redis.")
-    parser.add_argument("-i", "--input", type=str, nargs=1, required=True, help="Pcap or compressed pcap filename")
+    parser.add_argument("-i", "--input", type=str, nargs='+', required=True, help="Pcap or compressed pcap filename")
     parser.add_argument("-c", "--console", action='store_true', help="Log output also to console")
     parser.add_argument("-ff", "--fieldfilter", nargs='+',help='Parameters to filter fields to display (ex: "tcp.srcport udp.srcport")')
     parser.add_argument("-o", "--outputdir", type=str, nargs=1, help="Output directory where the json documents will be stored")
@@ -73,11 +73,12 @@ if __name__ == '__main__':
         red = redis.Redis(unix_socket_path=usocket)
     except redis.ConnectionError as e:
         sys.exit("Could not connect to redis. {}".format(e))
-    if os.path.exists(args.input[0]) is False:
-        sys.stderr.write("The filename {} was not found\n".format(args.input[0]))
-        sys.exit(1)
-    input_directory = Path(args.input[0])
-    files = fetch_files(input_directory)
+    for arg in args.input:
+        if os.path.exists(arg) is False:
+            sys.stderr.write(f"The filename {arg} was not found\n")
+            sys.exit(1)
+    input_directory = [Path(arg) for arg in args.input]
+    files = [filename for directory in input_directory for filename in fetch_files(directory)]
 
     if args.fieldfilter is None:
         args.fieldfilter = []
