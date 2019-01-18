@@ -30,10 +30,10 @@ def _check_parameters(red, parameters):
     if red.keys('JSON_FIELDS') and red.keys('PARAMETERS'):
         red_json_fields = set(json_field.decode() for json_field in red.lrange('JSON_FIELDS', 0, -1))
         if red_json_fields != set(json_fields):
-            sys.stderr.write('[INFO] Fields you are trying to ingest are not the same as the ones currently used: {}'.format(red_json_fields))
+            sys.stderr.write(f'[INFO] Fields you are trying to ingest are not the same as the ones currently used: {red_json_fields}')
         red_parameters = {key.decode(): value.decode() for key, value in red.hgetall('PARAMETERS').items()}
         if red_parameters != parameters:
-            sys.stderr.write('[INFO] Parameters you are using are not the same as the ones currently used: {}'.format(red_parameters))
+            sys.stderr.write(f'[INFO] Parameters you are using are not the same as the ones currently used: {red_parameters}')
     else:
         red.rpush('JSON_FIELDS', *json_fields)
         red.hmset('PARAMETERS', parameters)
@@ -49,7 +49,7 @@ def fetch_parameters(**parameters):
             field_filter.insert(1, 'ip.proto')
     tshark_filter = potiron.tshark_filter
     if parameters.get('tshark_filter'):
-        tshark_filter += " && {}".format(parameters.pop('tshark_filter'))
+        tshark_filter += f" && {parameters.pop('tshark_filter')}"
     parameters['cmd'] = _predefine_cmd(field_filter, tshark_filter)
     parameters.update(_get_current_fields(field_filter) if field_filter else potiron_parameters)
     _check_parameters(red, parameters)
@@ -69,7 +69,7 @@ def _get_current_fields(field_filter):
     ip_score = _get_ip_score(current_fields)
     parameters['ip_score'] = str(ip_score)
     ips = "_dont_parse" if ip_score == 0 else "_parse"
-    parameters['to_call'] = "{}_ips_{}_ports_{}_protocol".format(ips, ports, protocol)
+    parameters['to_call'] = f"{ips}_ips_{ports}_ports_{protocol}_protocol"
     return parameters
 
 
@@ -99,6 +99,6 @@ def _predefine_cmd(field_filter, tshark_filter):
     if not field_filter:
         field_filter = potiron.tshark_fields
     filters = "-e {}".format(" -e ".join(field_filter))
-    setup = "-E header=n -E separator=/s -E occurrence=f -Y '{}' -r".format(tshark_filter)
+    setup = f"-E header=n -E separator=/s -E occurrence=f -Y '{tshark_filter}' -r"
     end = "{} -o tcp.relative_sequence_numbers:FALSE"
-    return "tshark -n -q -Tfields {0} {1} {2}".format(filters, setup, end)
+    return f"tshark -n -q -Tfields {filters} {setup} {end}"

@@ -58,7 +58,7 @@ def process_files(red, files):
 def _process_file(inputfile):
     red, to_add, to_incr, filename, sensorname = _get_data_structures(inputfile)
     if red.sismember("FILES", filename):
-        return '[INFO] Filename %s was already imported ... skip ...\n' % inputfile
+        return f'[INFO] Filename {inputfile} was already imported ... skip ...\n'
     # FIXME Users have to be carefull with the files extensions to not process data from capture files
     # FIXME (potiron-json-tshark module), and the same sample again from json files (potiron_redis module)
 
@@ -78,7 +78,7 @@ def _process_file(inputfile):
             lastday = timestamp
         for feature, value in packet.items():
             if feature not in non_index:
-                redis_key = "%s:%s" % (rKey, feature)
+                redis_key = f"{rKey}:{feature}"
                 to_add["FIELDS"].add(feature)
                 to_incr[redis_key][value] += 1
     p = red.pipeline()
@@ -89,13 +89,13 @@ def _process_file(inputfile):
             p.zincrby(redis_key, amount, value)
     p.execute()
     proc.wait()
-    return 'Data from {} parsed.'.format(filename)
+    return f'Data from {filename} parsed.'
 
 
 def _process_file_and_save_json(inputfile):
     red, to_add, to_incr, filename, sensorname = _get_data_structures(inputfile)
     if red.sismember("FILES", filename):
-        return '[INFO] Filename %s was already imported ... skip ...\n' % inputfile
+        return f'[INFO] Filename {inputfile} was already imported ... skip ...\n'
     # FIXME Users have to be carefull with the files extensions to not process data from capture files
     # FIXME (potiron-json-tshark module), and the same sample again from json files (potiron_redis module)
 
@@ -117,7 +117,7 @@ def _process_file_and_save_json(inputfile):
             lastday = timestamp
         for feature, value in packet.items():
             if feature not in non_index:
-                redis_key = "%s:%s" % (rKey, feature)
+                redis_key = f"{rKey}:{feature}"
                 to_add["FIELDS"].add(feature)
                 to_incr[redis_key][value] += 1
         packet['timestamp'] = _set_json_timestamp(timestamp)
@@ -135,7 +135,7 @@ def _process_file_and_save_json(inputfile):
     p.execute()
     potiron.store_packet(potiron.rootdir, filename, json.dumps(allpackets))
     proc.wait()
-    return 'Data from {} parsed and stored in json format.'.format(filename)
+    return f'Data from {filename} parsed and stored in json format.'
 
 
 def _create_packet(line):
@@ -184,8 +184,8 @@ def _check_tdport(packet):
 
 def _check_dst_ports(packet):
     port = 'dport'
-    tport = _get_port_from_packet(packet, 't%s' % port)
-    uport = _get_port_from_packet(packet, 'u%s' % port)
+    tport = _get_port_from_packet(packet, f't{port}')
+    uport = _get_port_from_packet(packet, f'u{port}')
     packet[port] = tport if tport != -1 else uport
 
 
@@ -231,8 +231,8 @@ def _check_ts_dst_ports(packet):
 
 def _check_src_ports(packet):
     port = 'sport'
-    tport = _get_port_from_packet(packet, 't%s' % port)
-    uport = _get_port_from_packet(packet, 'u%s' % port)
+    tport = _get_port_from_packet(packet, f't{port}')
+    uport = _get_port_from_packet(packet, f'u{port}')
     packet[port] = tport if tport != -1 else uport
 
 
@@ -325,19 +325,19 @@ def _parse_ips_parse_ports_parse_protocol(packet):
 
 def _combined_redis_key(packet, sensorname, to_add):
     protocol = potiron.protocols[str(packet['protocol'])]
-    rKey = "%s:%s:%s" % (sensorname, protocol, packet['timestamp'])
+    rKey = f"{sensorname}:{protocol}:{packet['timestamp']}"
     to_add["PROTOCOLS"].add(protocol)
     return rKey
 
 
 def _simple_redis_key(packet, sensorname, _):
-    return "%s:%s" % (sensorname, packet['timestamp'])
+    return f"{sensorname}:{packet['timestamp']}"
 
 
 def _set_json_timestamp(timestamp):
     int_part, dec_part = timestamp.split('.')
     intobj = datetime.datetime.fromtimestamp(float(int_part))
-    return "%s:%s" % (intobj.strftime("%Y-%m-%d %H:%M:%S"), dec_part[:-3])
+    return f'{intobj.strftime("%Y-%m-%d %H:%M:%S")}.{dec_part[:-3]}'
 
 
 def _set_redis_timestamp(timestamp):

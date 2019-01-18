@@ -72,7 +72,7 @@ if __name__ == '__main__':
     try:
         red = redis.Redis(unix_socket_path=usocket)
     except redis.ConnectionError as e:
-        sys.exit("Could not connect to redis. {}".format(e))
+        sys.exit(f"Could not connect to redis. {e}")
     for arg in args.input:
         if os.path.exists(arg) is False:
             sys.stderr.write(f"The filename {arg} was not found\n")
