@@ -183,8 +183,8 @@ def create_file(rootdir, pcapfilename):
             os.makedirs(d)
         infomsg("Created filename %s" % jsonfilename)
         return jsonfilename
-    except OSError:
-        pass
+    except OSError as e:
+        print(e)
 
 
 # In order to save space in json documents the annotations are not repeated
