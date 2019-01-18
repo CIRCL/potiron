@@ -109,8 +109,8 @@ def _process_file_and_save_json(inputfile):
     packet_id = 0
     for line in proc.stdout.readlines():
         packet = _create_packet(line)
-        packet['timestamp'] = _set_redis_timestamp(packet['timestamp'])
         timestamp = packet['timestamp']
+        packet['timestamp'] = _set_redis_timestamp(packet['timestamp'])
         rKey = globals()[_ck_mapping[potiron.ck]](packet, sensorname, to_add)
         if timestamp != lastday:
             to_add["DAYS"].add(timestamp)
