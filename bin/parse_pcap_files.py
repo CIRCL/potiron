@@ -51,6 +51,13 @@ def fetch_files(directory: Path):
     return to_return
 
 
+def _get_function_score(isn):
+    score = 0
+    if isn:
+        sccore += 1
+    return str(score)
+
+
 if __name__ == '__main__':
     # If tshark is not installed, exit and raise the error
     if not check_program('tshark'):
@@ -113,4 +120,7 @@ if __name__ == '__main__':
     if not isn:
         parameters.update({'field_filter': fieldfilter, 'ck': str(ck)})
     fetch_parameters(**parameters)
-    isn_process(red, files) if isn else standard_process(red, files)
+    try:
+        globals()[_get_function_score(isn)](red, files)
+    except KeyError:
+        sys.stderr.write("Invalid content option.")
