@@ -31,6 +31,9 @@ import subprocess
 import sys
 
 
+_function_mapping = {'0': 'standard_process', '1': 'isn_process'}
+
+
 def define_tshark_filter(tsharkfilter):
     to_return = tsharkfilter[0] if len(tsharkfilter) == 0 else " && ".join(tsharkfilter)
     return to_return
@@ -121,6 +124,6 @@ if __name__ == '__main__':
         parameters.update({'field_filter': fieldfilter, 'ck': str(ck)})
     fetch_parameters(**parameters)
     try:
-        globals()[_get_function_score(isn)](red, files)
+        globals()[_function_mapping[_get_function_score(isn)]](red, files)
     except KeyError:
         sys.stderr.write("Invalid content option.")
