@@ -35,7 +35,7 @@ _function_mapping = {'0': 'standard_process', '1': 'isn_process'}
 
 
 def define_tshark_filter(tsharkfilter):
-    to_return = tsharkfilter[0] if len(tsharkfilter) == 0 else " && ".join(tsharkfilter)
+    to_return = tsharkfilter[0] if len(tsharkfilter) == 1 else " ".join(tsharkfilter)
     return to_return
 
 
@@ -56,9 +56,11 @@ def fetch_files(directory: Path):
 
 def _get_function_score(isn):
     score = 0
+    format = 'standard'
     if isn:
-        sccore += 1
-    return str(score)
+        score += 1
+        format = 'isn'
+    return str(score), format
 
 
 if __name__ == '__main__':
@@ -77,10 +79,20 @@ if __name__ == '__main__':
     parser.add_argument('-u','--unix', type=str, nargs=1, required=True, help='Unix socket to connect to redis-server')
     parser.add_argument('-ck', '--combined_keys', action='store_true', help='Set if combined keys should be used')
     parser.add_argument('-ej', '--enable_json', action='store_true', help='Enable storage into json files')
-    parser.add_argument('--isn', action='store_true', help='Store ISN values of packets instead of storing the standard data.')
+    parser.add_argument('--isn', action='store_true', help='Store ISN values of packets instead of storing the standard format of data.')
     args = parser.parse_args()
     logconsole = args.console
     usocket = args.unix[0]
+    isn = args.isn
+
+    try:
+        _to_call, format = _get_function_score(isn, layer2)
+        _to_call = _function_mapping[_to_call]
+    except KeyError:
+        sys.exit(f"Invalid content option. \
+        Please specify if you want to store either {', '.join(['isn', 'layer2'])} data (choose only one option), \
+        or store data in standard format by using none of these parameters.")
+
     try:
         red = redis.Redis(unix_socket_path=usocket)
     except redis.ConnectionError as e:
@@ -92,12 +104,11 @@ if __name__ == '__main__':
     input_directory = [Path(arg) for arg in args.input]
     files = [filename for directory in input_directory for filename in fetch_files(directory)]
 
-    isn = args.isn
     fieldfilter = args.fieldfilter
 
-    if isn and fieldfilter is not None:
-        print("If you use '--isn', the field filter parameter will be ignored.")
-    elif not isn and fieldfilter is None:
+    if format != 'standard' and fieldfilter is not None:
+        print("If you use '--isn' or --layer2 (alternatively -l2), the field filter parameter will be ignored.")
+    elif format == 'standard' and fieldfilter is None:
         fieldfilter = []
 
     tsharkfilter = define_tshark_filter(args.tsharkfilter) if args.tsharkfilter is not None else ""
@@ -118,12 +129,9 @@ if __name__ == '__main__':
 
     ck = args.combined_keys
 
-    parameters = {'rootdir': rootdir, 'tshark_filter': tsharkfilter, 'red': red, 'isn': isn,
+    parameters = {'rootdir': rootdir, 'tshark_filter': tsharkfilter, 'red': red, 'format': format,
                   'enable_json': str(enable_json), 'logconsole': str(logconsole)}
-    if not isn:
+    if format == 'standard':
         parameters.update({'field_filter': fieldfilter, 'ck': str(ck)})
     fetch_parameters(**parameters)
-    try:
-        globals()[_function_mapping[_get_function_score(isn)]](red, files)
-    except KeyError:
-        sys.stderr.write("Invalid content option.")
+    globals()[_to_call](red, files)
