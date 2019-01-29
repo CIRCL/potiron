@@ -31,19 +31,21 @@ _to_process = {'False': '_process_file', 'True': '_process_file_and_save_json'}
 
 def layer2_process(red, files):
     for key, value in red.hgetall('PARAMETERS').items():
-        setattr(potiron, key.decode(), value.decode())
-    potiron.redis_instance = red
+        globals()[f"_{key.decode().upper()}"] = value.decode()
+    if _ENABLE_JSON:
+        globals()["_FIRST_PACKET"] = {feature[1:].lower(): globals()[feature] for feature in ("_FORMAT", "_TSHARK_FILTER")}
+    globals()["_RED"] = red
     with concurrent.futures.ProcessPoolExecutor() as executor:
-        for to_return in executor.map(globals()[_to_process[potiron.enable_json]], files):
+        for to_return in executor.map(globals()[_to_process[_ENABLE_JSON]], files):
             potiron.infomsg(to_return)
 
 
 def _process_file(inputfile):
     to_set = {}
-    red, to_incr, filename, sensorname = _get_data_structures(inputfile)
-    if red.sismember("FILES", filename):
+    to_incr, filename, sensorname = _get_data_structures(inputfile)
+    if _RED.sismember("FILES", filename):
         return f'[INFO] Filename {inputfile} was already imported ... skip ...\n'
-    proc = subprocess.Popen(potiron.cmd.format(inputfile), shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    proc = subprocess.Popen(_CMD.format(inputfile), shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 
     lastday = None
     for line in proc.stdout.readlines():
@@ -53,7 +55,7 @@ def _process_file(inputfile):
         timestamp = f"{day}_{time}"
         day = day.replace('-', '')
         if day != lastday:
-            red.sadd("DAYS", day)
+            _RED.sadd("DAYS", day)
         count_key = f"{sensorname}_{day}_count"
         if packet['opcode'] == '1':
             keyname = f"{sensorname}_{packet['ipdst']}_{timestamp}"
@@ -68,7 +70,7 @@ def _process_file(inputfile):
             to_set[keyname] = {key: value for key, value in zip(keys, values)}
             to_set[keyname]['rep_timestamp'] = timestamp
             to_incr[count_key]['reply'] += 1
-    p = red.pipeline()
+    p = _RED.pipeline()
     for key, values in to_set.items():
         p.hmset(key, values)
     for key, values in to_incr.items():
@@ -76,18 +78,19 @@ def _process_file(inputfile):
             p.zincrby(key, amount, value)
     p.execute()
     proc.wait()
-    red.sadd("FILES", filename)
+    _RED.sadd("FILES", filename)
     return f"Layer2 data from {filename} parsed."
 
 
 def _process_file_and_save_json(inputfile):
     to_set = {}
-    red, to_incr, filename, sensorname = _get_data_structures(inputfile)
-    if red.sismember("FILES", filename):
+    to_incr, filename, sensorname = _get_data_structures(inputfile)
+    if _RED.sismember("FILES", filename):
         return f'[INFO] Filename {inputfile} was already imported ... skip ...\n'
-    proc = subprocess.Popen(potiron.cmd.format(inputfile), shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-    allpackets = [{"type": potiron.TYPE_SOURCE, "sensorname": sensorname,
-                   "filename": os.path.basename(inputfile), "bpf": potiron.tshark_filter}]
+    proc = subprocess.Popen(_CMD.format(inputfile), shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    first_packet = {"type": potiron.TYPE_SOURCE, "sensorname": sensorname, "filename": filename}
+    first_packet.update(_FIRST_PACKET)
+    allpackets = [first_packet]
 
     lastday = None
     packet_id = 0
@@ -99,7 +102,7 @@ def _process_file_and_save_json(inputfile):
         timestamp = f"{day}_{time}"
         day = day.replace('-', '')
         if day != lastday:
-            red.sadd("DAYS", day)
+            _RED.sadd("DAYS", day)
         count_key = f"{sensorname}_{day}_count"
         if packet['opcode'] == '1':
             keyname = f"{sensorname}_{packet['ipdst']}_{timestamp}"
@@ -116,7 +119,7 @@ def _process_file_and_save_json(inputfile):
             to_incr[count_key]['reply'] += 1
         packet_id += 1
 
-    p = red.pipeline()
+    p = _RED.pipeline()
     for key, values in to_set.items():
         p.hmset(key, values)
     for key, values in to_incr.items():
@@ -124,8 +127,8 @@ def _process_file_and_save_json(inputfile):
             p.zincrby(key, amount, value)
     p.execute()
     proc.wait()
-    potiron.store_packet(potiron.rootdir, filename, json.dumps(allpackets))
-    red.sadd("FILES", filename)
+    potiron.store_packet(_ROOTDIR, filename, json.dumps(allpackets))
+    _RED.sadd("FILES", filename)
     return f"Layer2 data from {filename} parsed and stored in json format."
 
 
@@ -135,8 +138,7 @@ def _create_packet(line):
 
 
 def _get_data_structures(inputfile):
-    red = potiron.redis_instance
     to_incr = defaultdict(lambda: defaultdict(int))
     filename = os.path.basename(inputfile)
     sensorname = potiron.derive_sensor_name(inputfile)
-    return red, to_incr, filename, sensorname
+    return to_incr, filename, sensorname
