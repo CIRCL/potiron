@@ -57,6 +57,7 @@ def _check_standard_parameters(red, parameters):
 
 def _deeper_parameter_fields_check(red, red_params, current):
     error = ""
+    change = ""
     for key, value in red_params.items():
         try:
             current_value = current[key]
@@ -77,7 +78,8 @@ def _deeper_parameter_fields_check(red, red_params, current):
 def fetch_parameters(**parameters):
     red = parameters.pop('red')
     format = parameters['format']
-    if format == 'isn':
+    special_formats = ('isn', 'layer2')
+    if format in special_formats:
         tshark_filter = getattr(potiron, f"{format}_tshark_filter")
         if parameters.get('tshark_filter'):
             tshark_filter += f" && {parameters.pop('tshark_filter')}"
