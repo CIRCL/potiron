@@ -18,6 +18,7 @@
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 from collections import defaultdict
+from lib.helpers import get_homedir
 import concurrent.futures
 import datetime
 import json
@@ -46,25 +47,27 @@ special_fields = {'length': -1, 'ipttl': -1, 'iptos': 0, 'tcpseq': -1,
 
 
 def standard_process(red, files):
-    potiron.json_fields = [json_field.decode() for json_field in red.lrange('JSON_FIELDS', 0, -1)]
+    globals()["_JSON_FIELDS"] = [json_field.decode() for json_field in red.lrange('JSON_FIELDS', 0, -1)]
     for key, value in red.hgetall('PARAMETERS').items():
-        setattr(potiron, key.decode(), value.decode())
-    potiron.redis_instance = red
+        globals()[f"_{key.decode().upper()}"] = value.decode()
+    if _CK:
+        globals()["_PROTOCOLS" = potiron.define_protocols(get_homedir() / "doc/protocols")
+    globals()["_RED"] = red
     with concurrent.futures.ProcessPoolExecutor() as executor:
-        for to_return in executor.map(globals()[_to_process[potiron.enable_json]], files):
+        for to_return in executor.map(globals()[_to_process[_ENABLE_JSON]], files):
             potiron.infomsg(to_return)
 
 
 def _process_file(inputfile):
-    red, to_add, to_incr, filename, sensorname = _get_data_structures(inputfile)
-    if red.sismember("FILES", filename):
+    to_add, to_incr, filename, sensorname = _get_data_structures(inputfile)
+    if _RED.sismember("FILES", filename):
         return f'[INFO] Filename {inputfile} was already imported ... skip ...\n'
     # FIXME Users have to be carefull with the files extensions to not process data from capture files
     # FIXME (potiron-json-tshark module), and the same sample again from json files (potiron_redis module)
 
     # List of fields that are included in the json documents that should not be ranked
     # FIXME Put this as argument to the program as this list depends on the documents that is introduced
-    proc = subprocess.Popen(potiron.cmd.format(inputfile), shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    proc = subprocess.Popen(_CMD.format(inputfile), shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     to_add["FILES"].add(filename)
 
     lastday = None
@@ -72,7 +75,7 @@ def _process_file(inputfile):
         packet = _create_packet(line)
         packet['timestamp'] = _set_redis_timestamp(packet['timestamp'])
         timestamp = packet['timestamp']
-        rKey = globals()[_ck_mapping[potiron.ck]](packet, sensorname, to_add)
+        rKey = globals()[_ck_mapping[_CK]](packet, sensorname, to_add)
         if timestamp != lastday:
             to_add["DAYS"].add(timestamp)
             lastday = timestamp
@@ -81,7 +84,7 @@ def _process_file(inputfile):
                 redis_key = f"{rKey}:{feature}"
                 to_add["FIELDS"].add(feature)
                 to_incr[redis_key][value] += 1
-    p = red.pipeline()
+    p = _RED.pipeline()
     for key, values in to_add.items():
         p.sadd(key, *list(values))
     for redis_key, values in to_incr.items():
@@ -93,15 +96,15 @@ def _process_file(inputfile):
 
 
 def _process_file_and_save_json(inputfile):
-    red, to_add, to_incr, filename, sensorname = _get_data_structures(inputfile)
-    if red.sismember("FILES", filename):
+    to_add, to_incr, filename, sensorname = _get_data_structures(inputfile)
+    if _RED.sismember("FILES", filename):
         return f'[INFO] Filename {inputfile} was already imported ... skip ...\n'
     # FIXME Users have to be carefull with the files extensions to not process data from capture files
     # FIXME (potiron-json-tshark module), and the same sample again from json files (potiron_redis module)
 
     # List of fields that are included in the json documents that should not be ranked
     # FIXME Put this as argument to the program as this list depends on the documents that is introduced
-    proc = subprocess.Popen(potiron.cmd.format(inputfile), shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    proc = subprocess.Popen(_CMD.format(inputfile), shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     to_add["FILES"].add(filename)
     allpackets = [{"type": potiron.TYPE_SOURCE, "sensorname": sensorname,
                    "filename": os.path.basename(inputfile), "bpf": potiron.tshark_filter}]
@@ -111,7 +114,7 @@ def _process_file_and_save_json(inputfile):
         packet = _create_packet(line)
         timestamp = packet['timestamp']
         packet['timestamp'] = _set_redis_timestamp(packet['timestamp'])
-        rKey = globals()[_ck_mapping[potiron.ck]](packet, sensorname, to_add)
+        rKey = globals()[_ck_mapping[_CK]](packet, sensorname, to_add)
         if timestamp != lastday:
             to_add["DAYS"].add(timestamp)
             lastday = timestamp
@@ -126,36 +129,35 @@ def _process_file_and_save_json(inputfile):
         packet['state'] = potiron.STATE_NOT_ANNOTATE
         allpackets.append(packet)
         packet_id += 1
-    p = red.pipeline()
+    p = _RED.pipeline()
     for key, values in to_add.items():
         p.sadd(key, *list(values))
     for redis_key, values in to_incr.items():
         for value, amount in values.items():
             p.zincrby(redis_key, amount, value)
     p.execute()
-    potiron.store_packet(potiron.rootdir, filename, json.dumps(allpackets))
+    potiron.store_packet(_ROOTDIR, filename, json.dumps(allpackets))
     proc.wait()
     return f'Data from {filename} parsed and stored in json format.'
 
 
 def _create_packet(line):
     line = line.decode().strip('\n')
-    packet = {key: value for key, value in zip(potiron.json_fields, line.split(' '))}
+    packet = {key: value for key, value in zip(_JSON_FIELDS, line.split(' '))}
     for special_field, value in special_fields.items():
         if special_field in packet and not packet[special_field]:
             packet[special_field] = value
-    packet = globals()[potiron.to_call](packet)
+    packet = globals()[_TO_CALL](packet)
     return packet
 
 
 def _get_data_structures(inputfile):
-    red = potiron.redis_instance
     to_add = defaultdict(set)
     to_incr = defaultdict(lambda: defaultdict(int))
     filename = os.path.basename(inputfile)
     # Name of the honeypot
     sensorname = potiron.derive_sensor_name(inputfile)
-    return red, to_add, to_incr, filename, sensorname
+    return to_add, to_incr, filename, sensorname
 
 
 ################################################################################
@@ -261,7 +263,7 @@ def _get_port_from_packet(packet, port):
 
 
 def _handle_ips(packet):
-    for ip in _ip_mapping[potiron.ip_score]:
+    for ip in _ip_mapping[_IP_SCORE]:
         if ip not in packet or any((not packet[ip], packet[ip] == '-')):
             packet[ip] = -1
 
@@ -289,13 +291,13 @@ def _dont_parse_ips_dont_parse_ports_parse_protocol(packet):
 
 
 def _dont_parse_ips_parse_ports_dont_parse_protocol(packet):
-    globals()[_port_mapping[potiron.port_score]](packet)
+    globals()[_port_mapping[_PORT_SCORE]](packet)
     return packet
 
 
 def _dont_parse_ips_parse_ports_parse_protocol(packet):
     _handle_protocol(packet)
-    globals()[_port_mapping[potiron.port_score]](packet)
+    globals()[_port_mapping[_PORT_SCORE]](packet)
     return packet
 
 
@@ -311,20 +313,20 @@ def _parse_ips_dont_parse_ports_parse_protocol(packet):
 
 
 def _parse_ips_parse_ports_dont_parse_protocol(packet):
-    globals()[_port_mapping[potiron.port_score]](packet)
+    globals()[_port_mapping[_PORT_SCORE]](packet)
     _handle_ips(packet)
     return packet
 
 
 def _parse_ips_parse_ports_parse_protocol(packet):
     _handle_protocol(packet)
-    globals()[_port_mapping[potiron.port_score]](packet)
+    globals()[_port_mapping[_PORT_SCORE]](packet)
     _handle_ips(packet)
     return packet
 
 
 def _combined_redis_key(packet, sensorname, to_add):
-    protocol = potiron.protocols[str(packet['protocol'])]
+    protocol = _PROTOCOLS[str(packet['protocol'])]
     rKey = f"{sensorname}:{protocol}:{packet['timestamp']}"
     to_add["PROTOCOLS"].add(protocol)
     return rKey
