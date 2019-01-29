@@ -50,8 +50,10 @@ def standard_process(red, files):
     globals()["_JSON_FIELDS"] = [json_field.decode() for json_field in red.lrange('JSON_FIELDS', 0, -1)]
     for key, value in red.hgetall('PARAMETERS').items():
         globals()[f"_{key.decode().upper()}"] = value.decode()
+    if _ENABLE_JSON:
+        globals()["_FIRST_PACKET"] = {feature[1:].lower(): globals()[feature] for feature in ("_FORMAT", "_CK", "_TSHARK_FILTER", "_JSON_FIELDS")}
     if _CK:
-        globals()["_PROTOCOLS" = potiron.define_protocols(get_homedir() / "doc/protocols")
+        globals()["_PROTOCOLS"] = potiron.define_protocols(get_homedir() / "doc/protocols")
     globals()["_RED"] = red
     with concurrent.futures.ProcessPoolExecutor() as executor:
         for to_return in executor.map(globals()[_to_process[_ENABLE_JSON]], files):
@@ -106,8 +108,9 @@ def _process_file_and_save_json(inputfile):
     # FIXME Put this as argument to the program as this list depends on the documents that is introduced
     proc = subprocess.Popen(_CMD.format(inputfile), shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     to_add["FILES"].add(filename)
-    allpackets = [{"type": potiron.TYPE_SOURCE, "sensorname": sensorname,
-                   "filename": os.path.basename(inputfile), "bpf": potiron.tshark_filter}]
+    first_packet = {"type": potiron.TYPE_SOURCE, "sensorname": sensorname, "filename": filename}
+    first_packet.update(_FIRST_PACKET)
+    allpackets = [first_packet]
     lastday = None
     packet_id = 0
     for line in proc.stdout.readlines():
