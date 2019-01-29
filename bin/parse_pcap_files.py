@@ -23,6 +23,7 @@ from potiron.potiron import check_program, create_dir
 from potiron.potiron_parameters import fetch_parameters
 from potiron.potiron_tshark import standard_process
 from potiron.potiron_isn_tshark import isn_process
+from potiron.potiron_layer2_tshark import layer2_process
 import argparse
 import datetime
 import os
@@ -31,7 +32,7 @@ import subprocess
 import sys
 
 
-_function_mapping = {'0': 'standard_process', '1': 'isn_process'}
+_function_mapping = {'0': 'standard_process', '1': 'isn_process', '2': 'layer2_process'}
 
 
 def define_tshark_filter(tsharkfilter):
@@ -54,12 +55,15 @@ def fetch_files(directory: Path):
     return to_return
 
 
-def _get_function_score(isn):
+def _get_function_score(isn, layer2):
     score = 0
     format = 'standard'
     if isn:
         score += 1
         format = 'isn'
+    if layer2:
+        score += 2
+        format = 'layer2'
     return str(score), format
 
 
@@ -80,10 +84,12 @@ if __name__ == '__main__':
     parser.add_argument('-ck', '--combined_keys', action='store_true', help='Set if combined keys should be used')
     parser.add_argument('-ej', '--enable_json', action='store_true', help='Enable storage into json files')
     parser.add_argument('--isn', action='store_true', help='Store ISN values of packets instead of storing the standard format of data.')
+    parser.add_argument('-l2', '--layer2', action='store_true', help='Store Layer2 values of packets instead of storing the standard format of data.')
     args = parser.parse_args()
     logconsole = args.console
     usocket = args.unix[0]
     isn = args.isn
+    layer2 = args.layer2
 
     try:
         _to_call, format = _get_function_score(isn, layer2)

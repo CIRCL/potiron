@@ -28,8 +28,12 @@ import sys
 bpfilter = "not net 239.0.0.0/8 and not host 255.255.255.255"
 tshark_filter = "ip.dst ne 255.255.255.255"
 isn_tshark_filter = "{} && ip.proto eq 6".format(tshark_filter)
+layer2_tshark_filter = "eth.type == 0x806"
 isn_tshark_fields = ['frame.time_epoch', 'tcp.srcport',
                      'tcp.dstport', 'tcp.seq', 'tcp.ack']
+layer2_tshark_fields = ['frame.time_epoch', 'eth.src', 'eth.dst', 'arp.src.proto_ipv4',
+                        'arp.dst.proto_ipv4', 'arp.src.hw_mac', 'arp.dst.hw_mac',
+                        'arp.opcode']
 tshark_fields = ['frame.time_epoch','ip.len','ip.proto','ip.src','ip.dst',
                  'ip.ttl','ip.dsfield','tcp.srcport','udp.srcport','tcp.dstport',
                  'udp.dstport','tcp.seq','tcp.ack','icmp.code','icmp.type']
@@ -37,6 +41,8 @@ isn_json_fields = ['timestamp', 'sport', 'dport', 'tcpseq', 'tcpack']
 json_fields = ['timestamp','length','protocol','ipsrc','ipdst','ipttl','iptos',
                'tsport','usport','tdport','udport','tcpseq','tcpack','icmpcode',
                'icmptype']
+layer2_json_fields = ['timestamp', 'ethsrc', 'ethdst', 'ipsrc', 'ipdst',
+                      'arpsrc', 'arpdst', 'opcode']
 to_call = '_parse_ips_parse_ports_parse_protocol'
 ip_score = '3'
 port_score = '15'
