@@ -114,16 +114,6 @@ def _create_json_packet(packet, packet_id):
     return to_return
 
 
-def _define_redis_key(lastday, packet, sensorname, timestamp):
-    day, time = timestamp.split(' ')
-    timestamp = f"{day}_{time}"
-    day = day.replace('-', '')
-    if day != lastday:
-        _RED.sadd("DAYS", day)
-    ports = "_".join([f"{port}{packet.pop(value)}" for port, value in zip(('src', 'dst'), ('sport', 'dport'))])
-    return f"{sensorname}_{ports}_{timestamp}"
-
-
 def _get_data_structures(inputfile):
     to_set = defaultdict(dict)
     filename = os.path.basename(inputfile)
