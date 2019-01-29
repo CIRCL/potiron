@@ -61,8 +61,8 @@ def _process_file(inputfile):
     for key, item in to_set.items():
         p.hmset(key, item)
     p.execute()
-    red.sadd("FILES", filename)
     proc.wait()
+    red.sadd("FILES", filename)
     return f'ISN Data from {filename} parsed.'
 
 
@@ -88,14 +88,15 @@ def _process_file_and_save_json(inputfile):
         ports = "_".join([f"{port}{packet.pop(value)}" for port, value in zip(('src', 'dst'), ('sport', 'dport'))])
         key = f"{sensorname}_{ports}_{timestamp}"
         to_set[key] = {isn_type: value for isn_type, value in packet.items()}
+        packet_id += 1
 
     p = red.pipeline()
     for key, item in to_set.items():
         p.hmset(key, item)
     p.execute()
+    proc.wait()
     potiron.store_packet(potiron.rootdir, filename, json.dumps(allpackets))
     red.sadd("FILES", filename)
-    proc.wait()
     return f'ISN Data from {filename} parsed and stored in json format.'
 
 
