@@ -18,9 +18,9 @@
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 from collections import defaultdict
+from concurrent.futures import ProcessPoolExecutor
 from potiron.potiron_isn_tshark import _create_json_packet
 from potiron.potiron_tshark import _set_json_timestamp
-import concurrent.futures
 import json
 import os
 import potiron.potiron as potiron
@@ -35,7 +35,7 @@ def layer2_process(red, files):
     if _ENABLE_JSON:
         globals()["_FIRST_PACKET"] = {feature[1:].lower(): globals()[feature] for feature in ("_FORMAT", "_TSHARK_FILTER")}
     globals()["_RED"] = red
-    with concurrent.futures.ProcessPoolExecutor() as executor:
+    with ProcessPoolExecutor() as executor:
         for to_return in executor.map(globals()[_to_process[_ENABLE_JSON]], files):
             potiron.infomsg(to_return)
 

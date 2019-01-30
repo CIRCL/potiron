@@ -18,8 +18,9 @@
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 from collections import defaultdict
+from concurrent.futures import ProcessPoolExecutor
 from lib.helpers import get_homedir
-import concurrent.futures
+from potiron.potiron_parameters import extract_json_fields
 import datetime
 import json
 import os
@@ -47,7 +48,8 @@ special_fields = {'length': -1, 'ipttl': -1, 'iptos': 0, 'tcpseq': -1,
 
 
 def standard_process(red, files):
-    globals()["_JSON_FIELDS"] = [json_field.decode() for json_field in red.lrange('JSON_FIELDS', 0, -1)]
+    globals()["_FIELDS"] = [field.decode() for field in red.lrange('FIELDS', 0, -1)]
+    globals()["_JSON_FIELDS"] = extract_json_fields(_FIELDS)
     for key, value in red.hgetall('PARAMETERS').items():
         globals()[f"_{key.decode().upper()}"] = value.decode()
     if _ENABLE_JSON:
@@ -55,7 +57,7 @@ def standard_process(red, files):
     if _CK:
         globals()["_PROTOCOLS"] = potiron.define_protocols(get_homedir() / "doc/protocols")
     globals()["_RED"] = red
-    with concurrent.futures.ProcessPoolExecutor() as executor:
+    with ProcessPoolExecutor() as executor:
         for to_return in executor.map(globals()[_to_process[_ENABLE_JSON]], files):
             potiron.infomsg(to_return)
 
@@ -84,7 +86,6 @@ def _process_file(inputfile):
         for feature, value in packet.items():
             if feature not in non_index:
                 redis_key = f"{rKey}:{feature}"
-                to_add["FIELDS"].add(feature)
                 to_incr[redis_key][value] += 1
     p = _RED.pipeline()
     for key, values in to_add.items():
@@ -124,7 +125,6 @@ def _process_file_and_save_json(inputfile):
         for feature, value in packet.items():
             if feature not in non_index:
                 redis_key = f"{rKey}:{feature}"
-                to_add["FIELDS"].add(feature)
                 to_incr[redis_key][value] += 1
         packet['timestamp'] = _set_json_timestamp(timestamp)
         packet['packet_id'] = packet_id
@@ -146,7 +146,7 @@ def _process_file_and_save_json(inputfile):
 
 def _create_packet(line):
     line = line.decode().strip('\n')
-    packet = {key: value for key, value in zip(_JSON_FIELDS, line.split(' '))}
+    packet = {key: value for key, value in zip(_FIELDS, line.split(' '))}
     for special_field, value in special_fields.items():
         if special_field in packet and not packet[special_field]:
             packet[special_field] = value
