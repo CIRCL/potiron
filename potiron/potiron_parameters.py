@@ -44,14 +44,15 @@ def _check_parameter_fields(red, parameters):
 
 
 def _check_standard_parameters(red, parameters):
-    json_fields = parameters.pop('json_fields')
-    if red.keys('JSON_FIELDS') and red.keys('PARAMETERS'):
-        red_json_fields = set(json_field.decode() for json_field in red.lrange('JSON_FIELDS', 0, -1))
-        if red_json_fields != set(json_fields):
+    fields = parameters.pop('fields')
+    if red.keys('FIELDS') and red.keys('PARAMETERS'):
+        red_fields = set(field.decode() for field in red.lrange('FIELDS', 0, -1))
+        if red_fields != set(fields):
             sys.exit(f'[INFO] Fields you are trying to ingest are not the same as the ones currently used: {red_json_fields}\n')
         _check_parameter_fields(red, parameters)
     else:
-        red.rpush('JSON_FIELDS', *json_fields)
+        red.rpush('FIELDS', *fields)
+        red.rpush('JSON_FIELDS', *extract_json_fields(fields))
         red.hmset('PARAMETERS', parameters)
 
 
@@ -68,11 +69,22 @@ def _deeper_parameter_fields_check(red, red_params, current):
                 error += f" - {key}:\n\t - current value: '{current_value}'\n\t - value saved in redis: '{value}'\n"
             else:
                 red.hset("PARAMETERS", key, current_value)
-                change += f" - {key}: {value} changed into {current_value}"
+                change += f" - {key}: {value} changed into {current_value}\n"
     if error:
         sys.exit(f"[INFO] Error with some of the critical parameters:\n{error}")
     if change:
         print(f"[INFO] Some not critical parameters have changed, the execution is not compromised but notice the following changes:\n{change}")
+
+
+def extract_json_fields(fields):
+    json_fields = []
+    for field in fields:
+        if field in ('tsport', 'usport', 'tdport', 'udport'):
+            if field[1:] not in json_fields:
+                json_fields.append(field[1:])
+        elif field != 'timestamp':
+            json_fields.append(field)
+    return json_fields
 
 
 def fetch_parameters(**parameters):
@@ -109,7 +121,7 @@ def _get_current_fields(field_filter):
         current_fields = [potiron.json_fields[potiron.tshark_fields.index(field)] for field in field_filter]
     except ValueError:
         sys.exit(f"Wrong value for fields filter, choose in the following list: {', '.join(potiron.tshark_fields)}.\nAlternatively if you do not specify any field to filter on, all the fields in this list will be used.")
-    parameters['json_fields'] = current_fields
+    parameters['fields'] = current_fields
     protocol = "parse" if 'protocol' in current_fields else 'dont_parse'
     port_score = _get_port_score(current_fields)
     parameters['port_score'] = str(port_score)
