@@ -40,15 +40,15 @@ def define_tshark_filter(tsharkfilter):
     return to_return
 
 
-def fetch_files(directory: Path):
+def fetch_files(directory: Path, formats):
     to_return = []
     try:
         for dir_ in directory.iterdir():
             if dir_.is_file():
-                if any([dir_.name.endswith('cap'), dir_.name.endswith('cap.gz')]):
+                if any([dir_.name.endswith(format) for format in formats]):
                     to_return.append(str(dir_))
             else:
-                to_return.extend(fetch_files(dir_))
+                to_return.extend(fetch_files(dir_, formats))
     except (NotADirectoryError, FileNotFoundError):
         for file_ in glob(str(directory)):
             to_return.append(file_)
@@ -108,7 +108,7 @@ if __name__ == '__main__':
             sys.stderr.write(f"The filename {arg} was not found\n")
             sys.exit(1)
     input_directory = [Path(arg) for arg in args.input]
-    files = [filename for directory in input_directory for filename in fetch_files(directory)]
+    files = [filename for directory in input_directory for filename in fetch_files(directory, ('cap',  'cap.gz'))]
 
     fieldfilter = args.fieldfilter
 
