@@ -38,7 +38,6 @@ _port_mapping = {'1': '_check_udport', '2': '_check_tdport',
                 '13': '_check_src_ud_ports', '14': '_check_src_td_ports',
                 '15': '_check_all_ports'}
 _ck_mapping = {'True': '_combined_redis_key', 'False': '_simple_redis_key'}
-_dj_mapping = {'True': '_set_redis_timestamp', 'False': '_set_json_timestamp'}
 _ip_mapping = {'1': ('ipdst'), '2': ('ipsrc'), '3': ('ipsrc', 'ipdst')}
 _to_process = {'False': '_process_file', 'True': '_process_file_and_save_json'}
 
@@ -56,6 +55,7 @@ def standard_process(red, files):
         globals()["_FIRST_PACKET"] = {feature[1:].lower(): globals()[feature] for feature in ("_FORMAT", "_CK", "_TSHARK_FILTER", "_JSON_FIELDS")}
     if _CK:
         globals()["_PROTOCOLS"] = potiron.define_protocols(get_homedir() / "doc/protocols")
+    globals()["_KEY_FUNCTION"] = globals()[_ck_mapping[_CK]]
     globals()["_RED"] = red
     with ProcessPoolExecutor() as executor:
         for to_return in executor.map(globals()[_to_process[_ENABLE_JSON]], files):
@@ -79,14 +79,12 @@ def _process_file(inputfile):
         packet = _create_packet(line)
         packet['timestamp'] = _set_redis_timestamp(packet['timestamp'])
         timestamp = packet['timestamp']
-        rKey = globals()[_ck_mapping[_CK]](packet, sensorname, to_add)
+        rKey = _KEY_FUNCTION(packet, sensorname, to_add)
         if timestamp != lastday:
             to_add["DAYS"].add(timestamp)
             lastday = timestamp
-        for feature, value in packet.items():
-            if feature not in non_index:
-                redis_key = f"{rKey}:{feature}"
-                to_incr[redis_key][value] += 1
+        for field in _JSON_FIELDS:
+            to_incr[f"{rKey}:{field}"][packet[field]] += 1
     p = _RED.pipeline()
     for key, values in to_add.items():
         p.sadd(key, *list(values))
@@ -118,14 +116,13 @@ def _process_file_and_save_json(inputfile):
         packet = _create_packet(line)
         timestamp = packet['timestamp']
         packet['timestamp'] = _set_redis_timestamp(packet['timestamp'])
-        rKey = globals()[_ck_mapping[_CK]](packet, sensorname, to_add)
-        if timestamp != lastday:
-            to_add["DAYS"].add(timestamp)
-            lastday = timestamp
-        for feature, value in packet.items():
-            if feature not in non_index:
-                redis_key = f"{rKey}:{feature}"
-                to_incr[redis_key][value] += 1
+        rKey = _KEY_FUNCTION(packet, sensorname, to_add)
+        if packet['timestamp'] != lastday:
+            day = packet['timestamp']
+            to_add["DAYS"].add(day)
+            lastday = day
+        for field in _JSON_FIELDS:
+            to_incr[f"{rKey}:{field}"][packet[field]] += 1
         packet['timestamp'] = _set_json_timestamp(timestamp)
         packet['packet_id'] = packet_id
         packet['type'] = potiron.TYPE_PACKET
