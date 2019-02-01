@@ -90,14 +90,7 @@ def extract_json_fields(fields):
 def fetch_parameters(**parameters):
     red = parameters.pop('red')
     format = parameters['format']
-    special_formats = ('isn', 'layer2')
-    if format in special_formats:
-        tshark_filter = getattr(potiron, f"{format}_tshark_filter")
-        if parameters.get('tshark_filter'):
-            tshark_filter += f" && {parameters.pop('tshark_filter')}"
-            parameters['tshark_filter'] = tshark_filter
-        parameters['cmd'] = _predefine_cmd(tshark_filter, getattr(potiron, f"{format}_tshark_fields"))
-    else:
+    if format == 'standard':
         field_filter = parameters.pop('field_filter', [])
         if field_filter:
             if 'frame.time_epoch' not in field_filter:
@@ -112,7 +105,14 @@ def fetch_parameters(**parameters):
             parameters['tshark_filter'] = tshark_filter
         parameters['cmd'] = _predefine_cmd(tshark_filter, field_filter)
         parameters.update(_get_current_fields(field_filter) if field_filter else potiron_parameters)
-    _check_parameters(red, parameters) if format in special_formats else _check_standard_parameters(red, parameters)
+        _check_standard_parameters(red, parameters)
+    else:
+        tshark_filter = getattr(potiron, f"{format}_tshark_filter")
+        if parameters.get('tshark_filter'):
+            tshark_filter += f" && {parameters.pop('tshark_filter')}"
+            parameters['tshark_filter'] = tshark_filter
+        parameters['cmd'] = _predefine_cmd(tshark_filter, getattr(potiron, f"{format}_tshark_fields"))
+        _check_parameters(red, parameters)
 
 
 def _get_current_fields(field_filter):

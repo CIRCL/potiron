@@ -29,7 +29,8 @@ import subprocess
 _to_process = {'False': '_process_file', 'True': '_process_file_and_save_json'}
 
 
-def layer2_process(red, files):
+def layer2_process(red, files, logconsole):
+    potiron.logconsole = logconsole
     for key, value in red.hgetall('PARAMETERS').items():
         globals()[f"_{key.decode().upper()}"] = value.decode()
     if _ENABLE_JSON:
@@ -44,7 +45,7 @@ def _process_file(inputfile):
     to_set = {}
     to_incr, filename, sensorname = _get_data_structures(inputfile)
     if _RED.sismember("FILES", filename):
-        return f'[INFO] Filename {inputfile} was already imported ... skip ...\n'
+        return f'Filename {inputfile} was already imported ... skip ...\n'
     proc = subprocess.Popen(_CMD.format(inputfile), shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 
     lastday = None
@@ -86,7 +87,7 @@ def _process_file_and_save_json(inputfile):
     to_set = {}
     to_incr, filename, sensorname = _get_data_structures(inputfile)
     if _RED.sismember("FILES", filename):
-        return f'[INFO] Filename {inputfile} was already imported ... skip ...\n'
+        return f'Filename {inputfile} was already imported ... skip ...\n'
     proc = subprocess.Popen(_CMD.format(inputfile), shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     first_packet = {"type": potiron.TYPE_SOURCE, "sensorname": sensorname, "filename": filename}
     first_packet.update(_FIRST_PACKET)

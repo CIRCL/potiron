@@ -46,13 +46,14 @@ special_fields = {'length': -1, 'ipttl': -1, 'iptos': 0, 'tcpseq': -1,
                   'tcpack': -1, 'icmpcode': 255, 'icmptype': 255}
 
 
-def standard_process(red, files):
+def standard_process(red, files, logconsole):
+    potiron.logconsole = logconsole
     globals()["_FIELDS"] = [field.decode() for field in red.lrange('FIELDS', 0, -1)]
     globals()["_JSON_FIELDS"] = extract_json_fields(_FIELDS)
     for key, value in red.hgetall('PARAMETERS').items():
         globals()[f"_{key.decode().upper()}"] = value.decode()
     if _ENABLE_JSON:
-        globals()["_FIRST_PACKET"] = {feature[1:].lower(): globals()[feature] for feature in ("_FORMAT", "_CK", "_TSHARK_FILTER", "_JSON_FIELDS")}
+        globals()["_FIRST_PACKET"] = {feature[1:].lower(): globals()[feature] for feature in ("_FORMAT", "_TSHARK_FILTER", "_JSON_FIELDS")}
     if _CK:
         globals()["_PROTOCOLS"] = potiron.define_protocols(get_homedir() / "doc/protocols")
     globals()["_KEY_FUNCTION"] = globals()[_ck_mapping[_CK]]
@@ -65,7 +66,7 @@ def standard_process(red, files):
 def _process_file(inputfile):
     to_add, to_incr, filename, sensorname = _get_data_structures(inputfile)
     if _RED.sismember("FILES", filename):
-        return f'[INFO] Filename {inputfile} was already imported ... skip ...\n'
+        return f'Filename {inputfile} was already imported ... skip ...\n'
     # FIXME Users have to be carefull with the files extensions to not process data from capture files
     # FIXME (potiron-json-tshark module), and the same sample again from json files (potiron_redis module)
 
@@ -99,7 +100,7 @@ def _process_file(inputfile):
 def _process_file_and_save_json(inputfile):
     to_add, to_incr, filename, sensorname = _get_data_structures(inputfile)
     if _RED.sismember("FILES", filename):
-        return f'[INFO] Filename {inputfile} was already imported ... skip ...\n'
+        return f'Filename {inputfile} was already imported ... skip ...\n'
     # FIXME Users have to be carefull with the files extensions to not process data from capture files
     # FIXME (potiron-json-tshark module), and the same sample again from json files (potiron_redis module)
 

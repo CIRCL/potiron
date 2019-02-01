@@ -76,7 +76,7 @@ if __name__ == '__main__':
     # Parameters parser
     parser = argparse.ArgumentParser(description="Start the tool tshark and store packets data in redis.")
     parser.add_argument("-i", "--input", type=str, nargs='+', required=True, help="Pcap or compressed pcap filename")
-    parser.add_argument("-c", "--console", action='store_true', help="Log output also to console")
+    parser.add_argument("-c", "--console", action='store_false', help="DO NOT log output also to console")
     parser.add_argument("-ff", "--fieldfilter", nargs='+',help='Parameters to filter fields to display (ex: "tcp.srcport udp.srcport")')
     parser.add_argument("-o", "--outputdir", type=str, nargs=1, help="Output directory where the json documents will be stored")
     parser.add_argument("-tf", "--tsharkfilter", type=str, nargs='+', help='Tshark Filter (with wireshark/tshark synthax. ex: "ip.proto == 6")')
@@ -135,9 +135,9 @@ if __name__ == '__main__':
 
     ck = args.combined_keys
 
-    parameters = {'rootdir': rootdir, 'tshark_filter': tsharkfilter, 'red': red, 'format': format,
-                  'enable_json': str(enable_json), 'logconsole': str(logconsole)}
+    parameters = {'rootdir': rootdir, 'tshark_filter': tsharkfilter, 'red': red,
+                  'enable_json': str(enable_json), 'format': format,}
     if format == 'standard':
         parameters.update({'field_filter': fieldfilter, 'ck': str(ck)})
     fetch_parameters(**parameters)
-    globals()[_to_call](red, files)
+    globals()[_to_call](red, files, logconsole)
