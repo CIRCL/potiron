@@ -19,7 +19,7 @@
 
 from collections import defaultdict
 from concurrent.futures import ProcessPoolExecutor
-from potiron.potiron_tshark import _set_redis_timestamp, _set_json_timestamp
+from potiron.potiron_tshark import day_from_filename, _set_redis_timestamp, _set_json_timestamp
 import os
 import json
 import potiron.potiron as potiron
@@ -47,7 +47,8 @@ def _process_file(inputfile):
         return f'Filename {inputfile} was already imported ... skip ...\n'
     proc = subprocess.Popen(_CMD.format(inputfile), shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 
-    lastday = None
+    lastday = day_from_filename(filename)
+    _RED.sadd("DAYS", lastday)
     for line in proc.stdout.readlines():
         packet = _create_packet(line)
         timestamp = _set_json_timestamp(packet.pop('timestamp'))
@@ -56,6 +57,7 @@ def _process_file(inputfile):
         day = day.replace('-', '')
         if day != lastday:
             _RED.sadd("DAYS", day)
+            lastday = day
         ports = "_".join([f"{port}{packet.pop(value)}" for port, value in zip(('src', 'dst'), ('sport', 'dport'))])
         key = f"{sensorname}_{ports}_{timestamp}"
         to_set[key] = {isn_type: value for isn_type, value in packet.items()}
@@ -78,7 +80,8 @@ def _process_file_and_save_json(inputfile):
     first_packet.update(_FIRST_PACKET)
     allpackets = [first_packet]
 
-    lastday = None
+    lastday = day_from_filename(filename)
+    _RED.sadd("DAYS", lastday)
     packet_id = 0
     for line in proc.stdout.readlines():
         packet = _create_packet(line)
@@ -89,6 +92,7 @@ def _process_file_and_save_json(inputfile):
         day = day.replace('-', '')
         if day != lastday:
             _RED.sadd("DAYS", day)
+            lastday = day
         ports = "_".join([f"{port}{packet.pop(value)}" for port, value in zip(('src', 'dst'), ('sport', 'dport'))])
         key = f"{sensorname}_{ports}_{timestamp}"
         to_set[key] = {isn_type: value for isn_type, value in packet.items()}

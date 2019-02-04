@@ -75,7 +75,8 @@ def _process_file(inputfile):
     proc = subprocess.Popen(_CMD.format(inputfile), shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     to_add["FILES"].add(filename)
 
-    lastday = None
+    lastday = day_from_filename(filename)
+    _RED.sadd("DAYS", lastday)
     for line in proc.stdout.readlines():
         packet = _create_packet(line)
         packet['timestamp'] = _set_redis_timestamp(packet['timestamp'])
@@ -111,7 +112,8 @@ def _process_file_and_save_json(inputfile):
     first_packet = {"type": potiron.TYPE_SOURCE, "sensorname": sensorname, "filename": filename}
     first_packet.update(_FIRST_PACKET)
     allpackets = [first_packet]
-    lastday = None
+    lastday = day_from_filename(filename)
+    _RED.sadd("DAYS", lastday)
     packet_id = 0
     for line in proc.stdout.readlines():
         packet = _create_packet(line)
@@ -150,6 +152,10 @@ def _create_packet(line):
             packet[special_field] = value
     packet = globals()[_TO_CALL](packet)
     return packet
+
+
+def day_from_filename(filename):
+    return filename.split('-')[-1].split('.')[0][:8]
 
 
 def _get_data_structures(inputfile):

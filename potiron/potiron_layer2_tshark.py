@@ -20,7 +20,7 @@
 from collections import defaultdict
 from concurrent.futures import ProcessPoolExecutor
 from potiron.potiron_isn_tshark import _create_json_packet
-from potiron.potiron_tshark import _set_json_timestamp
+from potiron.potiron_tshark import day_from_filename, _set_json_timestamp
 import json
 import os
 import potiron.potiron as potiron
@@ -48,7 +48,9 @@ def _process_file(inputfile):
         return f'Filename {inputfile} was already imported ... skip ...\n'
     proc = subprocess.Popen(_CMD.format(inputfile), shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 
-    lastday = None
+    lastday = day_from_filename(filename)
+    _RED.sadd("DAYS", lastday)
+    count_key = f"{sensorname}_{lastday}_count"
     for line in proc.stdout.readlines():
         packet = _create_packet(line)
         timestamp = _set_json_timestamp(packet.pop('timestamp'))
@@ -57,7 +59,8 @@ def _process_file(inputfile):
         day = day.replace('-', '')
         if day != lastday:
             _RED.sadd("DAYS", day)
-        count_key = f"{sensorname}_{day}_count"
+            count_key = f"{sensorname}_{day}_count"
+            lastday = day
         if packet['opcode'] == '1':
             keyname = f"{sensorname}_{packet['ipdst']}_{timestamp}"
             values = [packet[value] for value in ('ethsrc', 'ipsrc', 'arpsrc')]
@@ -93,7 +96,9 @@ def _process_file_and_save_json(inputfile):
     first_packet.update(_FIRST_PACKET)
     allpackets = [first_packet]
 
-    lastday = None
+    lastday = day_from_filename(filename)
+    _RED.sadd("DAYS", lastday)
+    count_key = f"{sensorname}_{lastday}_count"
     packet_id = 0
     for line in proc.stdout.readlines():
         packet = _create_packet(line)
@@ -104,7 +109,8 @@ def _process_file_and_save_json(inputfile):
         day = day.replace('-', '')
         if day != lastday:
             _RED.sadd("DAYS", day)
-        count_key = f"{sensorname}_{day}_count"
+            count_key = f"{sensorname}_{day}_count"
+            lastdady = day
         if packet['opcode'] == '1':
             keyname = f"{sensorname}_{packet['ipdst']}_{timestamp}"
             values = [packet[value] for value in ('ethsrc', 'ipsrc', 'arpsrc')]
