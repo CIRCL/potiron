@@ -39,7 +39,9 @@ def _check_parameter_fields(red, parameters):
     redis_format = red_parameters.pop('format')
     if current_format != redis_format:
         sys.exit(f"[INFO] Format error: You want to store data in {current_format} format but this redis instance is used to store data in {redis_format} format.")
-    if red_parameters != parameters:# and _deeper_parameter_fields_check(red, red_parameters, parameters):
+    if len(red_parameters) != len(parameters):
+        _fill_redis_parameters(red, red_parameters, parameters)
+    elif red_parameters != parameters:# and _deeper_parameter_fields_check(red, red_parameters, parameters):
         _deeper_parameter_fields_check(red, red_parameters, parameters)
 
 
@@ -113,6 +115,17 @@ def fetch_parameters(**parameters):
             parameters['tshark_filter'] = tshark_filter
         parameters['cmd'] = _predefine_cmd(tshark_filter, getattr(potiron, f"{format}_tshark_fields"))
         _check_parameters(red, parameters)
+
+
+def _fill_redis_parameters(red, red_parameters, parameters):
+    for key, value in parameters.items():
+        if key in red_parameters:
+            if value != red_parameters[key]:
+                sys.exit(f"Error with a critical parameter: {key} \
+                should be {red_parameters[key]} but is currently {value}.")
+        else:
+            red.hset("PARAMETERS", key, value)
+            print(f"Adding to parameters {key} value: {value}.")
 
 
 def _get_current_fields(field_filter):
