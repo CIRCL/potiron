@@ -32,7 +32,7 @@ _to_process = {'False': '_process_file', 'True': '_process_file_and_save_json'}
 def layer2_process(red, files, logconsole):
     potiron.logconsole = logconsole
     for key, value in red.hgetall('PARAMETERS').items():
-        globals()[f"_{key.decode().upper()}"] = value.decode()
+        globals()[f"_{key.upper()}"] = value
     if _ENABLE_JSON:
         globals()["_FIRST_PACKET"] = {feature[1:].lower(): globals()[feature] for feature in ("_FORMAT", "_TSHARK_FILTER")}
     globals()["_RED"] = red

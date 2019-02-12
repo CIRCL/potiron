@@ -34,7 +34,7 @@ def _check_parameters(red, parameters):
 
 
 def _check_parameter_fields(red, parameters):
-    red_parameters = {key.decode(): value.decode() for key, value in red.hgetall('PARAMETERS').items()}
+    red_parameters = red.hgetall('PARAMETERS')
     current_format = parameters.pop('format')
     redis_format = red_parameters.pop('format')
     if current_format != redis_format:
@@ -48,9 +48,9 @@ def _check_parameter_fields(red, parameters):
 def _check_standard_parameters(red, parameters):
     fields = parameters.pop('fields')
     if red.keys('FIELDS') and red.keys('PARAMETERS'):
-        red_fields = set(field.decode() for field in red.lrange('FIELDS', 0, -1))
+        red_fields = set(red.lrange('FIELDS', 0, -1))
         if red_fields != set(fields):
-            sys.exit(f'[INFO] Fields you are trying to ingest are not the same as the ones currently used: {red_json_fields}\n')
+            sys.exit(f'[INFO] Fields you are trying to ingest are not the same as the ones currently used: {red_fields}\n')
         _check_parameter_fields(red, parameters)
     else:
         red.rpush('FIELDS', *fields)

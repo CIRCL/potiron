@@ -35,11 +35,11 @@ _isn_fields = ('tcpseq', 'tcpack')
 def process_storage(red, files, ck, logconsole):
     potiron.logconsole = logconsole
     for key, value in red.hgetall('PARAMETERS').items():
-        globals()[f"_{key.decode().upper()}"] = value.decode()
+        globals()[f"_{key.upper()}"] = value
     globals()['_RED'] = red
     if _FORMAT == 'standard':
         _check_ck(red, ck)
-        globals()['_JSON_FIELDS'] = [field.decode() for field in red.lrange("JSON_FIELDS", 0, -1)]
+        globals()['_JSON_FIELDS'] = red.lrange("JSON_FIELDS", 0, -1)
         if ck == 'True':
             globals()['_PROTOCOLS'] = potiron.define_protocols(get_homedir() / "doc/protocols")
         globals()['_KEY_FUNCTION'] = globals()[_ck_mapping[str(ck)]]
@@ -140,7 +140,7 @@ def _store_standard_data(allpackets):
 
 
 def _check_ck(red, ck):
-    redis_ck = red.hget("PARAMETERS", 'ck').decode()
+    redis_ck = red.hget("PARAMETERS", 'ck')
     if redis_ck != str(ck):
         sys.exit(f"[INFO] CK parameter to use combined keys is set to {ck}, but in the redis instance you want to store data from you JSON files, this value is set to {redis_ck}. \
         Please either {'do not use' if ck else 'use'} '-ck' parameter in your command, or use a different redis instance where it is {'not set' if ck else 'set'}.")

@@ -49,7 +49,7 @@ if __name__ == '__main__':
     ck = args.combined_keys
     usocket = args.unix[0]
     try:
-        red = redis.Redis(unix_socket_path=usocket)
+        red = redis.Redis(unix_socket_path=usocket, decode_responses=True)
     except redis.ConnectionError as e:
         sys.exit(f"Could not connect to redis. {e}")
     for arg in args.input:

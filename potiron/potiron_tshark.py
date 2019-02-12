@@ -48,10 +48,10 @@ special_fields = {'length': -1, 'ipttl': -1, 'iptos': 0, 'tcpseq': -1,
 
 def standard_process(red, files, logconsole):
     potiron.logconsole = logconsole
-    globals()["_FIELDS"] = [field.decode() for field in red.lrange('FIELDS', 0, -1)]
+    globals()["_FIELDS"] = red.lrange('FIELDS', 0, -1)
     globals()["_JSON_FIELDS"] = extract_json_fields(_FIELDS)
     for key, value in red.hgetall('PARAMETERS').items():
-        globals()[f"_{key.decode().upper()}"] = value.decode()
+        globals()[f"_{key.upper()}"] = value
     if _ENABLE_JSON:
         globals()["_FIRST_PACKET"] = {feature[1:].lower(): globals()[feature] for feature in ("_FORMAT", "_TSHARK_FILTER", "_JSON_FIELDS")}
     if _CK:
