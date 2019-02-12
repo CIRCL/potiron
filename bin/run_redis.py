@@ -46,7 +46,8 @@ def launch_redis(redis_name, storage_directory: Path=None):
 def shutdown_redis(redis_name, storage_directory: Path=None):
     if not storage_directory:
         storage_directory = (get_homedir() / 'redis_backends')
-    Popen(["./shutdown_redis.sh"], cwd=(storage_directory / redis_name))
+    s = Popen(["./shutdown_redis.sh"], cwd=(storage_directory / redis_name))
+    s.wait()
 
 
 def check_all(backends, start, stop):
