@@ -48,7 +48,7 @@ def _process_file(inputfile):
     proc = subprocess.Popen(_CMD.format(inputfile), shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 
     lastday = day_from_filename(filename)
-    _RED.sadd("DAYS", lastday)
+    _RED.sadd(f"{sensorname}_DAYS", lastday)
     for line in proc.stdout.readlines():
         packet = _create_packet(line)
         timestamp = _set_json_timestamp(packet.pop('timestamp'))
@@ -56,7 +56,7 @@ def _process_file(inputfile):
         timestamp = f"{day}_{time}"
         day = day.replace('-', '')
         if day != lastday:
-            _RED.sadd("DAYS", day)
+            _RED.sadd(f"{sensorname}_DAYS", day)
             lastday = day
         ports = "_".join([f"{port}{packet.pop(value)}" for port, value in zip(('src', 'dst'), ('sport', 'dport'))])
         key = f"{sensorname}_{ports}_{timestamp}"
@@ -81,7 +81,7 @@ def _process_file_and_save_json(inputfile):
     allpackets = [first_packet]
 
     lastday = day_from_filename(filename)
-    _RED.sadd("DAYS", lastday)
+    _RED.sadd(f"{sensorname}_DAYS", lastday)
     packet_id = 0
     for line in proc.stdout.readlines():
         packet = _create_packet(line)
@@ -91,7 +91,7 @@ def _process_file_and_save_json(inputfile):
         timestamp = f'{day}_{time}'
         day = day.replace('-', '')
         if day != lastday:
-            _RED.sadd("DAYS", day)
+            _RED.sadd(f"{sensorname}_DAYS", day)
             lastday = day
         ports = "_".join([f"{port}{packet.pop(value)}" for port, value in zip(('src', 'dst'), ('sport', 'dport'))])
         key = f"{sensorname}_{ports}_{timestamp}"

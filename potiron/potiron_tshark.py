@@ -76,14 +76,14 @@ def _process_file(inputfile):
     to_add["FILES"].add(filename)
 
     lastday = day_from_filename(filename)
-    _RED.sadd("DAYS", lastday)
+    _RED.sadd(f"{sensorname}_DAYS", lastday)
     for line in proc.stdout.readlines():
         packet = _create_packet(line)
         packet['timestamp'] = _set_redis_timestamp(packet['timestamp'])
         timestamp = packet['timestamp']
         rKey = _KEY_FUNCTION(packet, sensorname, to_add)
         if timestamp != lastday:
-            to_add["DAYS"].add(timestamp)
+            to_add[f"{sensorname}_DAYS"].add(timestamp)
             lastday = timestamp
         for field in _JSON_FIELDS:
             to_incr[f"{rKey}:{field}"][packet[field]] += 1
@@ -113,7 +113,7 @@ def _process_file_and_save_json(inputfile):
     first_packet.update(_FIRST_PACKET)
     allpackets = [first_packet]
     lastday = day_from_filename(filename)
-    _RED.sadd("DAYS", lastday)
+    _RED.sadd(f"{sensorname}_DAYS", lastday)
     packet_id = 0
     for line in proc.stdout.readlines():
         packet = _create_packet(line)
@@ -122,7 +122,7 @@ def _process_file_and_save_json(inputfile):
         rKey = _KEY_FUNCTION(packet, sensorname, to_add)
         if packet['timestamp'] != lastday:
             day = packet['timestamp']
-            to_add["DAYS"].add(day)
+            to_add[f"{sensorname}_DAYS"].add(day)
             lastday = day
         for field in _JSON_FIELDS:
             to_incr[f"{rKey}:{field}"][packet[field]] += 1

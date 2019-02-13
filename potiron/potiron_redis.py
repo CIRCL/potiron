@@ -63,13 +63,13 @@ def _store_file(inputfile):
 def _store_isn_data(allpackets, sensorname, filename):
     to_set = {}
     lastday = day_from_filename(filename)
-    _RED.sadd("DAYS", lastday)
+    _RED.sadd(f"{sensorname}_DAYS", lastday)
     for packet in allpackets:
         day, time = packet.pop('timestamp').split(' ')
         timestamp = f"{day}_{time}"
         day = day.replace('-', '')
         if day != lastday:
-            _RED.sadd("DAYS", day)
+            _RED.sadd(f"{sensorname}_DAYS", day)
             lastday = day
         ports = "_".join([f"{port}{packet.pop(value)}" for port, value in zip(('src', 'dst'), ('sport', 'dport'))])
         key = f"{sensorname}_{ports}_{timestamp}"
@@ -86,14 +86,14 @@ def _store_layer2_data(allpackets, sensorname, filename):
     to_set = {}
     to_incr = defaultdict(lambda: defaultdict(int))
     lastday = day_from_filename(filename)
-    _RED.sadd("DAYS", lastday)
+    _RED.sadd(f"{sensorname}_DAYS", lastday)
     count_key = f"{sensorname}_{lastday}_count"
     for packet in allpackets:
         day, time = packet.pop('timestamp').split(' ')
         timestamp = f"{day}_{time}"
         day = day.replace('-', '')
         if day != lastday:
-            _RED.sadd("DAYS", day)
+            _RED.sadd(f"{sensorname}_DAYS", day)
             count_key = f"{sensorname}_{day}_count"
             lastday = day
         if packet['opcode'] == '1':
@@ -123,11 +123,11 @@ def _store_layer2_data(allpackets, sensorname, filename):
 def _store_standard_data(allpackets, sensorname, filename):
     to_incr = defaultdict(lambda: defaultdict(int))
     lastday = day_from_filename(filename)
-    _RED.sadd("DAYS", lastday)
+    _RED.sadd(f"{sensorname}_DAYS", lastday)
     for packet in allpackets:
         redis_key, day = _KEY_FUNCTION(packet, sensorname)
         if day != lastday:
-            _RED.sadd("DAYS", day)
+            _RED.sadd(f"{sensorname}_DAYS", day)
             lastday = day
         for field in _JSON_FIELDS:
             to_incr[f"{redis_key}:{field}"][packet[field]] += 1
