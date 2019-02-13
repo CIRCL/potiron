@@ -32,7 +32,7 @@ def _pick_parameters(red, inputfile, ck):
         packet = json.loads(f.read())[0]
     format = packet['format']
     if format == 'standard':
-        red.rpush('JSON_FIELDS', *_JSON_FIELDS)
+        red.rpush('JSON_FIELDS', *packet['json_fields'])
         red.hmset('PARAMETERS', {key: value for key, value in zip(('ck', 'format', 'tshark_filter'), (ck, format, packet['tshark_filter']))})
     else:
         red.hmset('PARAMETERS', {key: value for key, value in zip(('format', 'tshark_filter'), (format, packet['tshark_filter']))})
@@ -59,5 +59,5 @@ if __name__ == '__main__':
     input_directory = [Path(arg) for arg in args.input]
     files = [filename for directory in input_directory for filename in fetch_files(directory, ('.json',))]
     if not red.keys("PARAMETERS"):
-        _pick_parameters(red, files[0], ck)
+        _pick_parameters(red, files[0], str(ck))
     process_storage(red, files, ck, logconsole)
