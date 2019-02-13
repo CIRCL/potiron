@@ -52,16 +52,17 @@ def _store_file(inputfile):
     with open(inputfile, 'rt', encoding='utf-8') as f:
         allpackets = json.loads(f.read())
     status = _check_parameters(allpackets.pop(0))
-    if status != 1:
+    if isinstance(status, str):
         return status
-    if _RED.sismember("FILES", _FILENAME):
-        return f'Filename {_FILENAME} was already imported ... skip ...\n'
-    return globals()[_storage_mapping[_FORMAT]](allpackets)
+    sensorname, filename = status
+    if _RED.sismember("FILES", filename):
+        return f'Filename {filename} was already imported ... skip ...\n'
+    return globals()[_storage_mapping[_FORMAT]](allpackets, sensorname, filename)
 
 
-def _store_isn_data(allpackets):
+def _store_isn_data(allpackets, sensorname, filename):
     to_set = {}
-    lastday = day_from_filename(_FILENAME)
+    lastday = day_from_filename(filename)
     _RED.sadd("DAYS", lastday)
     for packet in allpackets:
         day, time = packet.pop('timestamp').split(' ')
@@ -71,38 +72,38 @@ def _store_isn_data(allpackets):
             _RED.sadd("DAYS", day)
             lastday = day
         ports = "_".join([f"{port}{packet.pop(value)}" for port, value in zip(('src', 'dst'), ('sport', 'dport'))])
-        key = f"{_SENSORNAME}_{ports}_{timestamp}"
+        key = f"{sensorname}_{ports}_{timestamp}"
         to_set[key] = {isn_type: packet[isn_type] for isn_type in _isn_fields}
     p = _RED.pipeline()
     for key, item in to_set.items():
         p.hmset(key, item)
     p.execute()
-    _RED.sadd("FILES", _FILENAME)
-    return f"ISN data from {_FILENAME} parsed from JSON file."
+    _RED.sadd("FILES", filename)
+    return f"ISN data from {filename} parsed from JSON file."
 
 
-def _store_layer2_data(allpackets):
+def _store_layer2_data(allpackets, sensorname, filename):
     to_set = {}
     to_incr = defaultdict(lambda: defaultdict(int))
-    lastday = day_from_filename(_FILENAME)
+    lastday = day_from_filename(filename)
     _RED.sadd("DAYS", lastday)
-    count_key = f"{_SENSORNAME}_{lastday}_count"
+    count_key = f"{sensorname}_{lastday}_count"
     for packet in allpackets:
         day, time = packet.pop('timestamp').split(' ')
         timestamp = f"{day}_{time}"
         day = day.replace('-', '')
         if day != lastday:
             _RED.sadd("DAYS", day)
-            count_key = f"{_SENSORNAME}_{day}_count"
+            count_key = f"{sensorname}_{day}_count"
             lastday = day
         if packet['opcode'] == '1':
-            keyname = f"{_SENSORNAME}_{packet['ipdst']}_{timestamp}"
+            keyname = f"{sensorname}_{packet['ipdst']}_{timestamp}"
             values = [packet[value] for value in ('ethsrc', 'ipsrc', 'arpsrc')]
             to_set[keyname] = {key: value for key, value in zip(('req_src_mac', 'req_src_ip', 'req_src_arp_mac'), values)}
             to_incr[count_key]['request'] += 1
             timestamp_key = timestamp
         else:
-            keyname = f"{_SENSORNAME}_{packet['ipsrc']}_{timestamp_key}"
+            keyname = f"{sensorname}_{packet['ipsrc']}_{timestamp_key}"
             values = [packet[value] for value in ('ipdst', 'ethsrc', 'ethdst', 'arpsrc', 'arpdst')]
             keys = ('rep_dst_ip', 'rep_src_mac', 'rep_dst_mac', 'rep_src_arp_mac', 'rep_dst_arp_mac')
             to_set[keyname] = {key: value for key, value in zip(keys, values)}
@@ -115,16 +116,16 @@ def _store_layer2_data(allpackets):
         for value, amount in values.items():
             p.zincrby(key, amount, value)
     p.execute()
-    _RED.sadd("FILES", _FILENAME)
-    return f"Layer2 data from {_FILENAME} parsed from JSON file."
+    _RED.sadd("FILES", filename)
+    return f"Layer2 data from {filename} parsed from JSON file."
 
 
-def _store_standard_data(allpackets):
+def _store_standard_data(allpackets, sensorname, filename):
     to_incr = defaultdict(lambda: defaultdict(int))
-    lastday = day_from_filename(_FILENAME)
+    lastday = day_from_filename(filename)
     _RED.sadd("DAYS", lastday)
     for packet in allpackets:
-        redis_key, day = _KEY_FUNCTION(packet)
+        redis_key, day = _KEY_FUNCTION(packet, sensorname)
         if day != lastday:
             _RED.sadd("DAYS", day)
             lastday = day
@@ -135,8 +136,8 @@ def _store_standard_data(allpackets):
         for value, amount in values.items():
             p.zincrby(key, amount, value)
     p.execute()
-    _RED.sadd("FILES", _FILENAME)
-    return f"Data from {_FILENAME} parsed from JSON file."
+    _RED.sadd("FILES", filename)
+    return f"Data from {filename} parsed from JSON file."
 
 
 def _check_ck(red, ck):
@@ -155,16 +156,14 @@ def _check_parameters(packet):
             return f'Fields you are trying to ingest are not the same as the ones currently used: {_JSON_FIELDS}'
     if packet['tshark_filter'] != _TSHARK_FILTER:
         return f"Error with the tshark_filter parameter value: {packet['thsark_filter']}, which should be {_TSHARK_FILTER} as mentioned in the redis parameters."
-    for feature in ('sensorname', 'filename'):
-        globals()[f'_{feature.upper()}'] = packet[feature]
-    return 1
+    return [packet[feature] for feature in ('sensorname', 'filename')]
 
 
-def _get_redis_key(packet):
+def _get_redis_key(packet, sensorname):
     day = packet.pop('timestamp').split(' ')[0].replace('-', '')
-    return f"{_SENSORNAME}:{day}", day
+    return f"{sensorname}:{day}", day
 
 
-def _get_redis_key_with_ck():
+def _get_redis_key_with_ck(pacekt, sensorname):
     day = packet.pop('timestamp').split(' ')[0].replace('-', '')
-    return f"{_SENSORNAME}:{_PROTOCOLS[packet['protocol']]}:{day}", day
+    return f"{sensorname}:{_PROTOCOLS[packet['protocol']]}:{day}", day
