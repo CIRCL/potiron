@@ -27,6 +27,7 @@ import sys
 import os
 import configparser
 import json
+import random
 from lib.helpers import get_homedir
 from potiron.potiron import get_annotations, errormsg
 app = Flask(__name__, static_folder='static', static_url_path='/static')
@@ -35,8 +36,8 @@ app = Flask(__name__, static_folder='static', static_url_path='/static')
 
 
 def check_fields():
-    if red.scard("DAYS") > 0:
-        if red.scard("FIELDS") > 0:
+    if red.scard(f"{sensorname}_DAYS") > 0:
+        if len(red.lrange("JSON_FIELDS", 0, -1)) > 0:
             return True
     # There was an error
     return False
@@ -48,8 +49,8 @@ def check_database():
     # Take a random day, random field, that was ranked and check if the
     # configured sensorname correspond to the ranked data
 
-    day = red.srandmember("DAYS")
-    field = red.srandmember("FIELDS")
+    day = red.srandmember(f"{sensorname}_DAYS")
+    field = random.sample(red.lrange("JSON_FIELDS", 0, -1), 1)[0]
     key = sensorname + ":" + day + ":" + field
     if not red.exists(key):
         return "The sensorname does not correspond to the data in redis."
@@ -61,10 +62,10 @@ def check_database():
 
 
 def get_latest_day():
-    if not red.exists("DAYS"):
+    if not red.exists(f"{sensorname}_DAYS"):
         return None
     days = []
-    for day in red.smembers("DAYS"):
+    for day in red.smembers(f"{sensorname}_DAYS"):
         days.append(day)
     days.sort()
     return days[-1]
@@ -194,8 +195,7 @@ def build_params():
 
 
 def get_enabled_fields_num():
-    x = red.scard("ENFIELDS")
-    return x
+    return len(red.lrange("JSON_FIELDS", 0, -1))
 
 
 def check_user_day(day):
@@ -210,7 +210,7 @@ def check_user_day(day):
         d = datetime.datetime.strptime(day, "%Y-%m-%d")
         day = d.strftime("%Y%m%d")
         # Check if there is data for this day
-        if red.sismember("DAYS", day) == 1:
+        if red.sismember(f"{sensorname}_DAYS", day) == 1:
             return day
     except ValueError as error:
         errormsg("check_user_day: " + str(error))
@@ -333,7 +333,7 @@ def deliver_custom():
                 today = d.strftime("%Y%m%d")
             except ValueError as e:
                 errormsg("deliver_custom: Invalid timestamp. " + str(e))
-        if red.sismember("FIELDS", fieldname):
+        if red.sismember("JSON_FIELDS", fieldname):
             return deliver_evolution(today, fieldname, field)
 
         emsg = "An invalid parameter was provided"
@@ -354,7 +354,7 @@ def send_foo(filename):
 
 def load_selected_fields():
     fields = []
-    for field in red.smembers("FIELDS"):
+    for field in red.lrange("JSON_FIELDS", 0, -1):
         k = "ENFIELDS"
         obj = dict()
         obj['name'] = field
@@ -373,14 +373,15 @@ def send_settings():
         if request.method == 'POST':
             sfields = request.form.getlist('selectedfields')
             vfields = dict()
+            json_fields = red.lrange("JSON_FIELDS", 0, -1)
             # Check if the fields are valid
             for field in sfields:
-                if red.sismember("FIELDS", field):
+                if field in json_fields:
                     red.sadd("ENFIELDS", field)
                     vfields[field] = True
                 # TODO log invalid fields
                 # Find checkboxes that were not set or unticketed and remove them
-            for f in red.smembers('FIELDS'):
+            for f in json_fields:
                 if (f in vfields) is False:
                     # Found a field that was not selected but is marked as being set
                     # in a previous iteration
