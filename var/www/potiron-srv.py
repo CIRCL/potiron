@@ -333,7 +333,7 @@ def deliver_custom():
                 today = d.strftime("%Y%m%d")
             except ValueError as e:
                 errormsg("deliver_custom: Invalid timestamp. " + str(e))
-        if red.sismember("JSON_FIELDS", fieldname):
+        if fieldname in red.lrange("JSON_FIELDS", 0, -1):
             return deliver_evolution(today, fieldname, field)
 
         emsg = "An invalid parameter was provided"
