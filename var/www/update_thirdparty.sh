@@ -29,10 +29,7 @@ mv temp/${filename}/js/* ./static/js/
 
 rm -rf ./static/fonts/ ./static/font-awesome-4.1.0/
 
-#mv temp/${filename}/fonts/ ./static/
-#mv temp/${filename}/font-awesome/ ./static/
-
 rm -rf ./static/css/plugins/
-mv temp/${filename}/dist/css/* ./static/css/
+mv temp/${filename}/css/* ./static/css/
 
 wget https://raw.githubusercontent.com/eternicode/bootstrap-datepicker/master/js/bootstrap-datepicker.js -O ./static/js/bootstrap-datepicker.js
