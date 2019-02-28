@@ -3,11 +3,8 @@
 set -e
 set -x
 
-## Set the default home directory for this repo. ##
-cd ..
-export POTIRON_HOME='./'
-
 ## Install redis ##
+sudo apt-get install -y tcl8.5 libgeoip-dev tshark
 git clone https://github.com/antirez/redis.git
 cd redis
 git checkout 5.0
