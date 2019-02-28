@@ -43,7 +43,6 @@ cd potiron
 pipenv install
 echo POTIRON_HOME="'`pwd`'" > .env
 pipenv shell
-pip install -e .
 npm install -g phantomjs-prebuilt
 cd ./var/www
 bash ./update_thirdparty.sh
