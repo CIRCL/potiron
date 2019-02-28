@@ -102,7 +102,7 @@ Parameters:
 
 ### Create interactive graphics
 
-**/!\ REWORK STILL IN PROGRESS, DOCUMENTATION TO COME ONCE IT IS DONE, SOON /!\**
+**/!\ REWORK STILL IN PROGRESS, DOCUMENTATION TO COME ONCE IT IS DONE, SOON /!\\**
 
 **NOTE**: On the other hand, GNU plot visualization provided with the server's part is working as expected
 
