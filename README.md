@@ -1,6 +1,5 @@
 
-potiron
-=======
+# potiron
 
 potiron -  Normalize, Index, Enrich and Visualize Network Capture
 
@@ -12,27 +11,100 @@ The current version potiron supports ipsumdump and tshark.
 
 ![Potiron web interface](./doc/screenshot.png?raw=true "Potiron web interface")
 
-Requirements
-------------
+## Install
 
-* Python >=3.4
+**IMPORTANT**: Use [pipenv](https://pipenv.readthedocs.io/en/latest/)
+
+**NOTE**: It requires python3.6+
+
+**Various packages required**:
+* libgeoip-dev
+* tcl8.5 (in order to `make test` to install redis, look below)
 * Flask
-* Redis
-* ipsumdump
 * tshark
 * npm
-* nodejs-legacy
 
-Install
--------
+### Install redis
 
-    pip3 install -r requirements.txt
-    npm install -g phantomjs-prebuilt
-    cd ./var/www
-    bash ./update_thirdparty.sh
+```bash
+git clone https://github.com/antirez/redis.git
+cd redis
+git checkout 5.0
+make
+make test
+cd ..
+```
 
-Usage
------
+### Install potiron
+
+```bash
+git clone https://github.com/CIRCL/potiron
+cd potiron
+pipenv install
+echo POTIRON_HOME="'`pwd`'" > .env
+pipenv shell
+pip install -e .
+npm install -g phantomjs-prebuilt
+cd ./var/www
+bash ./update_thirdparty.sh
+```
+
+## Usage
+
+### Start/Stop the redis instance(s)
+
+```bash
+run_redis.py --start --status
+```
+Alternatively you can specify which instance to run, by specifying its name using the `-n` parameter.
+
+For instance: `run_redis.py --start -n standard`
+
+Note that all the required files to run 2 redis instances are provided by default: `standard` and `isn`
+
+```bash
+# Obviously, following the same model:
+run_redis.py --stop
+# Which uses the same parameter to specify any instance name as well
+```
+
+### Create, delete or flush redis instances
+
+```bash
+# Create a new redis instance, which will be identified by the name you give to it
+manage_redis.py -c -n new_redis_instance
+
+# Delete any existing instance
+manage_redis.py -d -n any_instance_name
+# Be aware that without specifying any name, it will delete all the existing instances
+
+# Flush any running redis instance
+manage_redis.py -f -n any_running_instance_name
+# Be aware that without specifying any name, it will flush all the running instances
+```
+
+### Store data from pcap files in a redis instance
+
+```bash
+parse_pcap_files.py -u redis_backends/standard/standard.sock -i PATH_TO_ANY_PCAP_FILES
+```
+
+Parameters:
+* `-u`: Unix socket to connect to a redis instance *(Mandatory)*
+* `-i`: Path to the pcap files you want to store *(Mandatory)*
+* `-tf`: Tshark filter *(To select only certain samples of data)*
+* `-ej`: Store data into json files as well *(Optional)*
+* `-o`: Output directory for the JSON files *(Used only if `-ej` is set as well)*
+* `--isn`: Store ISN values of the packets *(Instead of using the standard format of data storage which is used by default)*
+* `-l2`: Store Layer2 values of the packets *(Instead of using the standard format of data storage which is used by default)*
+* `-ff`: Fields to store *(Only available with the standard format storage, all the default fields are saved otherwise)*
+* `-ck`: Use combined keys to separate each value stored by protocol *(Only available with the standard format storage)*
+
+### Create interactive graphics
+
+**/!\ REWORK STILL IN PROGRESS, DOCUMENTATION TO COME ONCE IT IS DONE, SOON /!\**
+
+**NOTE**: On the other hand, GNU plot visualization provided with the server's part is working as expected
 
 For all the following graphs, the parameters used are :
 
@@ -134,8 +206,7 @@ But the difference relies upon the links on each bubble. For users, using "-p" m
   - with "-p", only the red line of the previous plot is displayed, showing only the sum of all destination ports 53 for the complete dataset
   ![Destination ports without protocols](./doc/screenshot_dport_without_p.png "Destination ports without protocols")
 
-Summary
--------
+## Summary (deprecated version)
 
 * Usual potiron functionalities :
     - potiron-json-ipsumdump : create json files from pcap files
@@ -151,7 +222,7 @@ Summary
     - bokeh-export : process graphs to display specific values of a field for a month
         - input : redis data
         - output : bokeh plot
-    - export-csv-* : process datafiles for the graphs of the most frequent values of a field, the period depends on the parameter specified in the * caracter's place
+    - export-csv-\* : process datafiles for the graphs of the most frequent values of a field, the period depends on the parameter specified in the \* caracter's place
         - input : redis data
         - output : csv data files
     - generate : creates graphs corresponding to the csv files, using template.html as the template of the graph
