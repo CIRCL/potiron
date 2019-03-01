@@ -32,20 +32,25 @@ from lib.helpers import get_homedir
 from potiron.potiron import get_annotations, errormsg
 app = Flask(__name__, static_folder='static', static_url_path='/static')
 
-# returns true if all the mandatory fields are set
+_MISSING_FIELDS = "Mandatory fields are missing in the redis database."
+_MISCONFIGURATION = "Please check in the configuration file if you specified a valid sensorname for this redis instance. \
+                     Otherwise there is simply no data related to this sensorname."
 
+
+# returns true if all the mandatory fields are set
 
 def check_fields():
     if red.scard(f"{sensorname}_DAYS") > 0:
         if len(red.lrange("JSON_FIELDS", 0, -1)) > 0:
-            return True
-    # There was an error
-    return False
+            return 0
+        return 1
+    return 2
 
 
 def check_database():
-    if not check_fields():
-        return "Mandatory fields are missing in the redis database."
+    fields_status = check_fields()
+    if fields_status != 0:
+        return _MISSING_FIELDS if fields_status == 1 else _MISCONFIGURATION
     # Take a random day, random field, that was ranked and check if the
     # configured sensorname correspond to the ranked data
 
